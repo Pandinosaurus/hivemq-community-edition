@@ -15,14 +15,18 @@
  */
 package com.hivemq.metrics;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistryListener;
+import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MetricRegistryLogger implements MetricRegistryListener {
 
     private static final Logger log = LoggerFactory.getLogger(MetricRegistryLogger.class);
-
     @Override
     public void onGaugeAdded(final String name, final Gauge<?> gauge) {
         log.trace("Metrics gauge [{}] added", name);

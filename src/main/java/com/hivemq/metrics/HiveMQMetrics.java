@@ -32,7 +32,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> INCOMING_MESSAGE_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.incoming.total.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which counts every outgoing MQTT message
      *
@@ -40,7 +39,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> OUTGOING_MESSAGE_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.outgoing.total.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which counts every incoming MQTT CONNECT messages
      *
@@ -48,7 +46,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> INCOMING_CONNECT_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.incoming.connect.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which counts every incoming MQTT PUBLISH messages
      *
@@ -56,7 +53,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> INCOMING_PUBLISH_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.incoming.publish.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which counts every outgoing MQTT PUBLISH messages
      *
@@ -64,7 +60,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> OUTGOING_PUBLISH_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.outgoing.publish.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which counts every dropped PUBLISH messages
      *
@@ -72,7 +67,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> DROPPED_MESSAGE_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.dropped.count", Counter.class);
-
     /**
      * represents a {@link Gauge}, which holds the current amount of retained messages
      *
@@ -80,7 +74,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> RETAINED_MESSAGES_CURRENT =
             HiveMQMetric.gaugeValue("com.hivemq.messages.retained.current");
-
     /**
      * represents a {@link Gauge}, which holds the total amount of read bytes
      *
@@ -88,7 +81,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> BYTES_READ_TOTAL =
             HiveMQMetric.gaugeValue("com.hivemq.networking.bytes.read.total");
-
     /**
      * represents a {@link Gauge}, which holds total of written bytes
      *
@@ -96,7 +88,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> BYTES_WRITE_TOTAL =
             HiveMQMetric.gaugeValue("com.hivemq.networking.bytes.write.total");
-
     /**
      * represents a {@link Gauge}, which holds the current total number of connections
      *
@@ -104,7 +95,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> CONNECTIONS_OVERALL_CURRENT =
             HiveMQMetric.gaugeValue("com.hivemq.networking.connections.current");
-
     /**
      * represents a {@link Counter}, which is increased every time a network connection is closed
      *
@@ -112,7 +102,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> CONNECTIONS_CLOSED_COUNT =
             HiveMQMetric.valueOf("com.hivemq.networking.connections-closed.total.count", Counter.class);
-
     /**
      * represents a {@link Counter}, which measures the current count of subscriptions
      *
@@ -120,7 +109,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> SUBSCRIPTIONS_CURRENT =
             HiveMQMetric.valueOf("com.hivemq.subscriptions.overall.current", Counter.class);
-
     /**
      * represents a {@link Gauge}, which measures the current count of stored sessions
      *
@@ -128,41 +116,35 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Gauge<Number>> CLIENT_SESSIONS_CURRENT =
             HiveMQMetric.gaugeValue("com.hivemq.sessions.overall.current");
-
     /**
      * represents a {@link Gauge}, which measures the approximate memory usage of the retained message persistence if
      * the memory persistence is used.
      */
     public static final HiveMQMetric<Gauge<Number>> RETAINED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE =
             HiveMQMetric.gaugeValue("com.hivemq.persistence.retained-messages.in-memory.total-size");
-
     /**
-     * represents a {@link Gauge}, which measures the approximate memory usage of the subscription persistence if
-     * the memory persistence is used.
+     * represents a {@link Gauge}, which measures the approximate memory usage of the subscription persistence if the
+     * memory persistence is used.
      */
     public static final HiveMQMetric<Gauge<Number>> CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE =
             HiveMQMetric.gaugeValue("com.hivemq.persistence.client-session.subscriptions.in-memory.total-size");
-
     /**
-     * represents a {@link Gauge}, which measures the approximate memory usage of the client session persistence if
-     * the memory persistence is used.
+     * represents a {@link Gauge}, which measures the approximate memory usage of the client session persistence if the
+     * memory persistence is used.
      */
     public static final HiveMQMetric<Gauge<Number>> CLIENT_SESSIONS_MEMORY_PERSISTENCE_TOTAL_SIZE =
             HiveMQMetric.gaugeValue("com.hivemq.persistence.client-sessions.in-memory.total-size");
-
     /**
-     * represents a {@link Gauge}, which measures the approximate memory usage of the queued message persistence if
-     * the memory persistence is used.
+     * represents a {@link Gauge}, which measures the approximate memory usage of the queued message persistence if the
+     * memory persistence is used.
      */
     public static final HiveMQMetric<Gauge<Number>> QUEUED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE =
             HiveMQMetric.gaugeValue("com.hivemq.persistence.queued-messages.in-memory.total-size");
-
     /**
      * represents a {@link Counter} for the number of MQTT client channels which are currently not writable.
      */
     public static final HiveMQMetric<Counter> MQTT_CONNECTION_NOT_WRITABLE_CURRENT =
             HiveMQMetric.valueOf("com.hivemq.mqtt.connection.not-writable.current", Counter.class);
-
     /**
      * Represents a {@link Counter}, which holds the current amount of stored LWT messages.
      *
@@ -170,8 +152,6 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> WILL_MESSAGE_COUNT =
             HiveMQMetric.valueOf("com.hivemq.messages.will.count.current", Counter.class);
-
-
     /**
      * Represents a {@link Counter}, which holds the total amount of published LWT messages.
      *
@@ -179,6 +159,4 @@ public class HiveMQMetrics {
      */
     public static final HiveMQMetric<Counter> WILL_MESSAGE_PUBLISHED_COUNT_TOTAL =
             HiveMQMetric.valueOf("com.hivemq.messages.will.published.count.total", Counter.class);
-
 }
-

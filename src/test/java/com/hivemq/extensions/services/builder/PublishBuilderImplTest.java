@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Lukas Brandl
@@ -40,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 public class PublishBuilderImplTest {
 
     private FullConfigurationService configurationService;
-
     @Before
     public void before() {
         configurationService = new TestConfigurationBootstrap().getFullConfigurationService();
@@ -135,7 +135,6 @@ public class PublishBuilderImplTest {
         new PublishBuilderImpl(configurationService).userProperty("key", "val" + '\uD800');
     }
 
-
     @Test(expected = NullPointerException.class)
     public void test_null_qos() {
         new PublishBuilderImpl(configurationService).qos(null);
@@ -191,11 +190,9 @@ public class PublishBuilderImplTest {
         new PublishBuilderImpl(configurationService).contentType(RandomStringUtils.randomAlphanumeric(65536));
     }
 
-
     @Test
     public void test_all_values_set() {
-        final Publish publish = new PublishBuilderImpl(configurationService)
-                .topic("topic")
+        final Publish publish = new PublishBuilderImpl(configurationService).topic("topic")
                 .payload(ByteBuffer.wrap(new byte[]{1, 2, 3}))
                 .qos(Qos.EXACTLY_ONCE)
                 .retain(true)
@@ -204,12 +201,12 @@ public class PublishBuilderImplTest {
                 .responseTopic("responseTopic")
                 .messageExpiryInterval(10)
                 .payloadFormatIndicator(PayloadFormatIndicator.UTF_8)
-                .userProperty("key", "value").build();
-
+                .userProperty("key", "value")
+                .build();
         assertEquals("topic", publish.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3}, publish.getPayload().get().array());
         assertEquals(2, publish.getQos().getQosNumber());
-        assertEquals(true, publish.getRetain());
+        assertTrue(publish.getRetain());
         assertEquals("TYPE", publish.getContentType().get());
         assertArrayEquals(new byte[]{1, 2, 3, 4}, publish.getCorrelationData().get().array());
         assertEquals("responseTopic", publish.getResponseTopic().get());
@@ -220,8 +217,7 @@ public class PublishBuilderImplTest {
 
     @Test
     public void test_from_publish() {
-        final Publish original = new PublishBuilderImpl(configurationService)
-                .topic("topic")
+        final Publish original = new PublishBuilderImpl(configurationService).topic("topic")
                 .payload(ByteBuffer.wrap(new byte[]{1, 2, 3}))
                 .qos(Qos.EXACTLY_ONCE)
                 .retain(true)
@@ -230,34 +226,31 @@ public class PublishBuilderImplTest {
                 .responseTopic("responseTopic")
                 .messageExpiryInterval(10)
                 .payloadFormatIndicator(PayloadFormatIndicator.UTF_8)
-                .userProperty("key", "value").build();
-
+                .userProperty("key", "value")
+                .build();
         assertEquals("topic", original.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3}, original.getPayload().get().array());
         assertEquals(2, original.getQos().getQosNumber());
-        assertEquals(true, original.getRetain());
+        assertTrue(original.getRetain());
         assertEquals("TYPE", original.getContentType().get());
         assertArrayEquals(new byte[]{1, 2, 3, 4}, original.getCorrelationData().get().array());
         assertEquals("responseTopic", original.getResponseTopic().get());
         assertEquals(10L, original.getMessageExpiryInterval().get().longValue());
         assertEquals(PayloadFormatIndicator.UTF_8, original.getPayloadFormatIndicator().get());
         assertEquals("value", original.getUserProperties().getFirst("key").get());
-
         final Publish copy = new PublishBuilderImpl(configurationService).fromPublish(original).build();
         assertEquals("topic", copy.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3}, copy.getPayload().get().array());
         assertEquals(2, copy.getQos().getQosNumber());
-        assertEquals(true, copy.getRetain());
+        assertTrue(copy.getRetain());
         assertEquals("TYPE", copy.getContentType().get());
         assertArrayEquals(new byte[]{1, 2, 3, 4}, copy.getCorrelationData().get().array());
         assertEquals("responseTopic", copy.getResponseTopic().get());
         assertEquals(10L, copy.getMessageExpiryInterval().get().longValue());
         assertEquals(PayloadFormatIndicator.UTF_8, copy.getPayloadFormatIndicator().get());
         assertEquals("value", copy.getUserProperties().getFirst("key").get());
-
     }
-
-    private class TestPublish implements Publish {
+    private static class TestPublish implements Publish {
 
         @Override
         public Qos getQos() {

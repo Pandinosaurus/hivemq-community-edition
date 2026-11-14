@@ -34,12 +34,10 @@ public class ExtensionStartStopInputImpl implements ExtensionStartInput, Extensi
     private final @NotNull HiveMQExtension extension;
     private final @NotNull Map<String, HiveMQExtension> enabledExtensions;
     private final @NotNull ServerInformation serverInformation;
-
     public ExtensionStartStopInputImpl(
             final @NotNull HiveMQExtension extension,
             final @NotNull Map<String, HiveMQExtension> enabledExtensions,
             final @NotNull ServerInformation serverInformation) {
-
         this.extension = extension;
         this.enabledExtensions = enabledExtensions;
         this.serverInformation = serverInformation;
@@ -59,7 +57,8 @@ public class ExtensionStartStopInputImpl implements ExtensionStartInput, Extensi
     public @NotNull Map<String, @NotNull ExtensionInformation> getEnabledExtensions() {
         return enabledExtensions.entrySet()
                 .stream()
-                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, e -> new ExtensionInformationImpl(e.getValue())));
+                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey,
+                        e -> new ExtensionInformationImpl(e.getValue())));
     }
 
     @Override

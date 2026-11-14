@@ -16,7 +16,7 @@
 package com.hivemq.codec.decoder.mqtt5;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.puback.PUBACK;
@@ -24,101 +24,86 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Test;
+import util.DummyClientConnection;
 import util.TestMqttDecoder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Waldemar Ruck
- * @since 4.0
+ * @since  4.0
  */
 public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
 
     private final @NotNull Mqtt5PubAckReasonCode reasonCode = Mqtt5PubAckReasonCode.SUCCESS;
-
     @Test
     public void test_fixed_header() {
         final byte[] encoded0001 = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0001,
-                //   remaining length
-                8,
-                0, 5,
-                //   reason code (continue)
+                // remaining length
+                8, 0, 5,
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 4,
-                //     reason string
-                0x1F, 0, 1, 'x'
-        };
-
+                // reason string
+                0x1F, 0, 1, 'x'};
         decodeNullExpected(encoded0001);
-
         channel = new EmbeddedChannel(TestMqttDecoder.create());
-        clientConnection = new ClientConnection(channel, null);
+        clientConnection = new DummyClientConnection(channel, null);
         clientConnection.setProtocolVersion(protocolVersion);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         final byte[] encoded0010 = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0010,
-                //   remaining length
-                8,
-                0, 5,
-                //   reason code (continue)
+                // remaining length
+                8, 0, 5,
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 4,
-                //     reason string
-                0x1F, 0, 1, 'x'
-        };
-
+                // reason string
+                0x1F, 0, 1, 'x'};
         decodeNullExpected(encoded0010);
-
         channel = new EmbeddedChannel(TestMqttDecoder.create());
-        clientConnection = new ClientConnection(channel, null);
+        clientConnection = new DummyClientConnection(channel, null);
         clientConnection.setProtocolVersion(protocolVersion);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         final byte[] encoded0100 = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0100,
-                //   remaining length
-                8,
-                0, 5,
-                //   reason code (continue)
+                // remaining length
+                8, 0, 5,
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 4,
-                //     reason string
-                0x1F, 0, 1, 'x'
-        };
-
+                // reason string
+                0x1F, 0, 1, 'x'};
         decodeNullExpected(encoded0100);
-
         channel = new EmbeddedChannel(TestMqttDecoder.create());
-        clientConnection = new ClientConnection(channel, null);
+        clientConnection = new DummyClientConnection(channel, null);
         clientConnection.setProtocolVersion(protocolVersion);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         final byte[] encoded1000 = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_1000,
-                //   remaining length
-                8,
-                0, 5,
-                //   reason code (continue)
+                // remaining length
+                8, 0, 5,
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 4,
-                //     reason string
-                0x1F, 0, 1, 'x'
-        };
-
+                // reason string
+                0x1F, 0, 1, 'x'};
         decodeNullExpected(encoded1000);
     }
 
@@ -126,20 +111,20 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_big_packet() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 0b0100_0000,
-                //   remaining length (150)
+                // remaining length (150)
                 (byte) (128 + 22), 1,
                 // variable header
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (success)
+                // reason code (success)
                 (byte) reasonCode.getCode(),
-                //   properties (145)
+                // properties (145)
                 (byte) (128 + 17), 1,
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
+                // user properties
                 0x26, 0, 5, 't', 'e', 's', 't', '0', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '1', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e', //
@@ -148,132 +133,105 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
                 0x26, 0, 5, 't', 'e', 's', 't', '5', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '6', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '7', 0, 5, 'v', 'a', 'l', 'u', 'e', //
-                0x26, 0, 5, 't', 'e', 's', 't', '8', 0, 5, 'v', 'a', 'l', 'u', 'e',
-        };
-
+                0x26, 0, 5, 't', 'e', 's', 't', '8', 0, 5, 'v', 'a', 'l', 'u', 'e',};
         final PUBACK pubAck = decode(encoded);
         assertNotNull(pubAck);
-
         assertEquals(5, pubAck.getPacketIdentifier());
-
         assertEquals(reasonCode, pubAck.getReasonCode());
-
         assertEquals("success", pubAck.getReasonString());
-
         final ImmutableList<MqttUserProperty> userProperties = pubAck.getUserProperties().asList();
         assertEquals(9, userProperties.size());
         for (int i = 0; i < 9; i++) {
             assertEquals("test" + i, userProperties.get(i).getName());
             assertEquals("value", userProperties.get(i).getValue());
         }
-
     }
 
     @Test
     public void decode_1_byte_packet_id() {
-
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b0100_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(1);
         // variable header
-        //   packet identifier
+        // packet identifier
         byteBuf.writeByte(0);
-
         channel.writeInbound(byteBuf);
         final PUBACK pubAck = channel.readInbound();
-
         assertNull(pubAck);
     }
 
     @Test
     public void decode_failed_reason_code() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b0100_0000,
-                //  remaining length
+                // remaining length
                 3,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //  reason code
-                0x50
-
-        };
-
+                // reason code
+                0x50};
         decodeNullExpected(encoded);
     }
 
     @Test
     public void decode_minimal_packet_with_reason_code() {
-
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 0b0100_0000,
-                //   remaining length
+                // remaining length
                 4,
                 // variable header
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (success)
+                // reason code (success)
                 (byte) reasonCode.getCode(),
-                //   properties
-                0
-        };
-
+                // properties
+                0};
         final PUBACK pubAck = decode(encoded);
-
         assertNotNull(pubAck);
-
         assertEquals(5, pubAck.getPacketIdentifier());
         assertEquals(reasonCode, pubAck.getReasonCode());
     }
 
     @Test
     public void decode_invalid_packed_identifier() {
-
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 0b0100_0000,
-                //   remaining length
+                // remaining length
                 4,
                 // variable header
-                //   packet identifier
+                // packet identifier
                 0, 0,
-                //   reason code (success)
+                // reason code (success)
                 (byte) reasonCode.getCode(),
-                //   properties
-                0
-        };
-
+                // properties
+                0};
         decodeNullExpected(encoded);
     }
 
     @Test
     public void decode_invalid_property() {
-
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 0b0100_0000,
-                //   remaining length
+                // remaining length
                 8,
                 // variable header
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (success)
+                // reason code (success)
                 (byte) reasonCode.getCode(),
-                //   properties
-                4,
-                0x15, 0, 1, 'x'
-        };
-
+                // properties
+                4, 0x15, 0, 1, 'x'};
         decodeNullExpected(encoded);
     }
 
@@ -281,19 +239,16 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_minimal_packet() {
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b0100_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(2);
         // variable header
-        //   packet identifier
+        // packet identifier
         byteBuf.writeByte(0).writeByte(5);
-
         channel.writeInbound(byteBuf);
         final PUBACK pubAck = channel.readInbound();
-
         assertNotNull(pubAck);
-
         assertEquals(5, pubAck.getPacketIdentifier());
         assertEquals(Mqtt5PubAckReasonCode.SUCCESS, pubAck.getReasonCode());
         assertNull(pubAck.getReasonString());
@@ -304,21 +259,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_packet_without_properties() {
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b0100_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(3);
         // variable header
-        //   packet identifier
+        // packet identifier
         byteBuf.writeByte(0).writeByte(5);
-        //   reason code
+        // reason code
         byteBuf.writeByte(0x10);
-
         channel.writeInbound(byteBuf);
         final PUBACK pubAck = channel.readInbound();
-
         assertNotNull(pubAck);
-
         assertEquals(5, pubAck.getPacketIdentifier());
         assertEquals(Mqtt5PubAckReasonCode.NO_MATCHING_SUBSCRIBERS, pubAck.getReasonCode());
         assertNull(pubAck.getReasonString());
@@ -329,17 +281,15 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_not_enough_bytes() {
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b0100_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(2);
         // variable header
-        //   packet identifier
+        // packet identifier
         byteBuf.writeByte(0);
-
         channel.writeInbound(byteBuf);
         final PUBACK pubAck = channel.readInbound();
-
         assertNull(pubAck);
     }
 
@@ -347,26 +297,21 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_not_enough_bytes_for_fixed_header() {
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b0100_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(128);
-
         channel.writeInbound(byteBuf);
         final PUBACK pubAck = channel.readInbound();
-
         assertNull(pubAck);
     }
 
-    @NotNull
-    private PUBACK decode(final byte @NotNull [] encoded) {
+    @NotNull private PUBACK decode(final byte @NotNull [] encoded) {
         final ByteBuf byteBuf = channel.alloc().buffer();
         byteBuf.writeBytes(encoded);
         channel.writeInbound(byteBuf);
-
         final PUBACK pubAck = channel.readInbound();
         assertNotNull(pubAck);
-
         return pubAck;
     }
 
@@ -374,25 +319,22 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_user_properties_length_gt_packet_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 14,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 10,
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
-
+                // user properties
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         final PUBACK pubAck = decode(encoded);
         assertNotNull(pubAck);
-
         assertEquals(reasonCode, pubAck.getReasonCode());
         assertEquals("success", pubAck.getReasonString());
         assertEquals(0, pubAck.getUserProperties().asList().size());
@@ -402,22 +344,20 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_user_properties_incorrect_key_length_gt_must_be() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 28,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 24,
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
-
+                // user properties
+                0x26, 0, 4, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -425,22 +365,20 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_user_properties_incorrect_key_length_lt_must_be() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 27,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 23,
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
-
+                // user properties
+                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -448,21 +386,19 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_property_length_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 12,
-                //   packet identifier
+                // packet identifier
                 0, 5,
                 // variable header
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 8,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'};
         decodeNullExpected(encoded);
     }
 
@@ -470,20 +406,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_invalid_remaining_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 -1,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 10,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'};
         decodeChannelOpen(encoded);
     }
 
@@ -491,20 +425,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_invalid_remaining_length_and_property_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 -1,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 -3,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'};
         decodeChannelOpen(encoded);
     }
 
@@ -512,20 +444,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_property_length_gt_packet_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 14,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 9,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'};
         decodeNullExpected(encoded);
     }
 
@@ -533,20 +463,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_property_length_eq_packet_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 10,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 10,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's'};
         decodeNullExpected(encoded);
     }
 
@@ -554,20 +482,18 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
     public void test_decode_incorrect_property_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b0100_0000,
-                //   remaining length
+                // remaining length
                 13,
-                //   packet identifier
+                // packet identifier
                 0, 5,
-                //   reason code (continue)
+                // reason code (continue)
                 (byte) reasonCode.getCode(),
-                //   properties
+                // properties
                 15,
-                //     reason string
-                0x1F, 0, 8, 's', 'u', 'c', 'c', 'e', 's', 's', 's'
-        };
-
+                // reason string
+                0x1F, 0, 8, 's', 'u', 'c', 'c', 'e', 's', 's', 's'};
         decodeNullExpected(encoded);
     }
 
@@ -575,15 +501,12 @@ public class Mqtt5PubackDecoderTest extends AbstractMqtt5DecoderTest {
         final ByteBuf byteBuf = channel.alloc().buffer();
         byteBuf.writeBytes(encoded);
         channel.writeInbound(byteBuf);
-
         final PUBACK puback = channel.readInbound();
         assertNull(puback);
-
         assertTrue(channel.isOpen());
-
         channel = new EmbeddedChannel(TestMqttDecoder.create());
-        clientConnection = new ClientConnection(channel, null);
+        clientConnection = new DummyClientConnection(channel, null);
         clientConnection.setProtocolVersion(protocolVersion);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
     }
 }

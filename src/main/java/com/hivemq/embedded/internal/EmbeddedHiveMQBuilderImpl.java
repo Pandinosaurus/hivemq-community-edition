@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
 
 import com.hivemq.embedded.EmbeddedExtension;
@@ -35,7 +34,7 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     private @Nullable Path dataFolder = null;
     private @Nullable Path extensionsFolder = null;
     private @Nullable EmbeddedExtension embeddedExtension = null;
-
+    private boolean enableLoggingBootstrap = true;
     @Override
     public @NotNull EmbeddedHiveMQBuilder withConfigurationFolder(final @Nullable Path configFolder) {
         this.configFolder = configFolder;
@@ -61,13 +60,17 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     }
 
     @Override
+    public @NotNull EmbeddedHiveMQBuilder withoutLoggingBootstrap() {
+        this.enableLoggingBootstrap = false;
+        return this;
+    }
+
+    @Override
     public @NotNull EmbeddedHiveMQ build() {
         // Shim for the old API
         final File confFile = configFolder == null ? null : configFolder.toFile();
         final File dataFile = dataFolder == null ? null : dataFolder.toFile();
         final File extensionsFile = extensionsFolder == null ? null : extensionsFolder.toFile();
-
-        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile, embeddedExtension);
+        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile, embeddedExtension, enableLoggingBootstrap);
     }
-
 }

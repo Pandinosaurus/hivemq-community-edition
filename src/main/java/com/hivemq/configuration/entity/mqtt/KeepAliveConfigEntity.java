@@ -15,14 +15,14 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @XmlRootElement(name = "keep-alive")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -31,10 +31,8 @@ public class KeepAliveConfigEntity {
 
     @XmlElement(name = "max-keep-alive", defaultValue = "65535")
     private int maxKeepAlive = MqttConfigurationDefaults.KEEP_ALIVE_MAX_DEFAULT;
-
     @XmlElement(name = "allow-unlimited", defaultValue = "true")
     private boolean allowUnlimted = MqttConfigurationDefaults.KEEP_ALIVE_ALLOW_UNLIMITED_DEFAULT;
-
     public int getMaxKeepAlive() {
         return maxKeepAlive;
     }

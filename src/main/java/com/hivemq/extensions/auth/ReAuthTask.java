@@ -32,7 +32,6 @@ public class ReAuthTask extends AbstractEnhancedAuthTask<AuthInput, ReAuthOutput
             final @NotNull AuthenticatorProviderInput authenticatorProviderInput,
             final @NotNull String extensionId,
             final @NotNull ClientAuthenticators clientAuthenticators) {
-
         super(wrappedAuthenticatorProvider, authenticatorProviderInput, extensionId, clientAuthenticators);
     }
 
@@ -41,7 +40,6 @@ public class ReAuthTask extends AbstractEnhancedAuthTask<AuthInput, ReAuthOutput
             final @NotNull EnhancedAuthenticator authenticator,
             final @NotNull AuthInput input,
             final @NotNull ReAuthOutput output) {
-
         if (input.getAuthPacket().getReasonCode() == AuthReasonCode.REAUTHENTICATE) {
             authenticator.onReAuth(input, output);
         } else {

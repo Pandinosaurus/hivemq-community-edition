@@ -15,7 +15,11 @@
  */
 package com.hivemq.configuration.service.impl;
 
-import com.hivemq.configuration.service.*;
+import com.hivemq.configuration.service.FullConfigurationService;
+import com.hivemq.configuration.service.MqttConfigurationService;
+import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.statistics.UsageStatisticsConfig;
 
@@ -33,7 +37,6 @@ public class ConfigurationServiceImpl implements FullConfigurationService {
     private final SecurityConfigurationService securityConfigurationService;
     private final UsageStatisticsConfig usageStatisticsConfig;
     private final PersistenceConfigurationService persistenceConfigurationService;
-
     public ConfigurationServiceImpl(
             final ListenerConfigurationService listenerConfigurationService,
             final MqttConfigurationService mqttConfigurationService,

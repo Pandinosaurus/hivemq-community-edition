@@ -24,16 +24,13 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public class PersistenceConfigurator {
 
-    @NotNull
-    private final PersistenceConfigurationService persistenceConfigurationService;
-
+    @NotNull private final PersistenceConfigurationService persistenceConfigurationService;
     public PersistenceConfigurator(@NotNull final PersistenceConfigurationService persistenceConfigurationService) {
         this.persistenceConfigurationService = persistenceConfigurationService;
     }
 
     public void setPersistenceConfig(@NotNull final PersistenceEntity persistenceConfig) {
-        persistenceConfigurationService.setMode(PersistenceConfigurationService.PersistenceMode.valueOf(
-                persistenceConfig.getMode().name()));
-
+        persistenceConfigurationService
+                .setMode(PersistenceConfigurationService.PersistenceMode.valueOf(persistenceConfig.getMode().name()));
     }
 }

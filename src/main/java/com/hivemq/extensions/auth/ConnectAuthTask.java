@@ -31,7 +31,6 @@ public class ConnectAuthTask extends AbstractEnhancedAuthTask<AuthInput, Connect
             final @NotNull AuthenticatorProviderInput authenticatorProviderInput,
             final @NotNull String extensionId,
             final @NotNull ClientAuthenticators clientAuthenticators) {
-
         super(wrappedAuthenticatorProvider, authenticatorProviderInput, extensionId, clientAuthenticators);
     }
 
@@ -40,7 +39,6 @@ public class ConnectAuthTask extends AbstractEnhancedAuthTask<AuthInput, Connect
             final @NotNull EnhancedAuthenticator authenticator,
             final @NotNull AuthInput input,
             final @NotNull ConnectAuthOutput output) {
-
         authenticator.onAuth(input, output);
     }
 }

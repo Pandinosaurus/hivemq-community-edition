@@ -17,50 +17,41 @@ package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * @author Georg Held
  */
-
 @XmlType(propOrder = {})
 @XmlRootElement(name = "hivemq-extension")
 public class HiveMQExtensionEntity {
 
     public static final int DEFAULT_PRIORITY = 0;
     public static final int DEFAULT_START_PRIORITY = 1000;
-
-    @NotNull
-    @XmlElement(name = "id", required = true)
+    @NotNull @XmlElement(name = "id", required = true)
     private String id = "";
-
-    @NotNull
-    @XmlElement(name = "name", required = true)
+    @NotNull @XmlElement(name = "name", required = true)
     private String name = "";
-
-    @NotNull
-    @XmlElement(name = "version", required = true)
+    @NotNull @XmlElement(name = "version", required = true)
     private String version = "";
-
     @XmlElement(name = "priority", defaultValue = "0")
     private int priority = DEFAULT_PRIORITY;
-
     @XmlElement(name = "start-priority", defaultValue = "1000")
     private int startPriority = DEFAULT_START_PRIORITY;
-
-    @Nullable
-    @XmlElement(name = "author")
+    @Nullable @XmlElement(name = "author")
     private String author;
-
-
     public HiveMQExtensionEntity() {
     }
 
-    public HiveMQExtensionEntity(@NotNull final String id, @NotNull final String name, @NotNull final String version,
-                                 final int priority, final int startPriority, @Nullable final String author) {
+    public HiveMQExtensionEntity(
+            @NotNull final String id,
+            @NotNull final String name,
+            @NotNull final String version,
+            final int priority,
+            final int startPriority,
+            @Nullable final String author) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -69,18 +60,15 @@ public class HiveMQExtensionEntity {
         this.author = author;
     }
 
-    @NotNull
-    public String getId() {
+    @NotNull public String getId() {
         return this.id;
     }
 
-    @NotNull
-    public String getName() {
+    @NotNull public String getName() {
         return this.name;
     }
 
-    @NotNull
-    public String getVersion() {
+    @NotNull public String getVersion() {
         return this.version;
     }
 
@@ -92,8 +80,7 @@ public class HiveMQExtensionEntity {
         return startPriority;
     }
 
-    @Nullable
-    public String getAuthor() {
+    @Nullable public String getAuthor() {
         return this.author;
     }
 }

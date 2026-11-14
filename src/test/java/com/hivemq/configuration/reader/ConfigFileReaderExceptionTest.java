@@ -29,14 +29,11 @@ public class ConfigFileReaderExceptionTest extends AbstractConfigurationTest {
 
     @Test
     public void test_readConfig_run_with_unrecoverable_exception() throws IOException {
-        final String contents = "" +
-                "<hivemq>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>" + "</hivemq>";
         Files.write(contents.getBytes(UTF_8), xmlFile);
         doAnswer(invocation -> {
             throw new UnrecoverableException();
         }).when(envVarUtil).replaceEnvironmentVariablePlaceholders(any(String.class));
         reader.applyConfig();
     }
-
 }

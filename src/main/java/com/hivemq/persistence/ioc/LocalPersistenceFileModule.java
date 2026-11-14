@@ -44,7 +44,6 @@ class LocalPersistenceFileModule extends SingletonModule<Class<LocalPersistenceF
     private final @NotNull Injector persistenceInjector;
     private final @NotNull PersistenceType payloadPersistenceType;
     private final @NotNull PersistenceType retainedPersistenceType;
-
     public LocalPersistenceFileModule(@NotNull final Injector persistenceInjector) {
         super(LocalPersistenceFileModule.class);
         this.persistenceInjector = persistenceInjector;
@@ -54,42 +53,32 @@ class LocalPersistenceFileModule extends SingletonModule<Class<LocalPersistenceF
 
     @Override
     protected void configure() {
-
         /* Local */
         if (payloadPersistenceType == PersistenceType.FILE) {
-            bindLocalPersistence(PublishPayloadLocalPersistence.class,
-                    PublishPayloadXodusLocalPersistence.class,
-                    null);
+            bindLocalPersistence(PublishPayloadLocalPersistence.class, PublishPayloadXodusLocalPersistence.class, null);
         }
         if (retainedPersistenceType == PersistenceType.FILE) {
             bindLocalPersistence(RetainedMessageLocalPersistence.class,
                     RetainedMessageXodusLocalPersistence.class,
                     null);
         }
-
         if (payloadPersistenceType == PersistenceType.FILE_NATIVE ||
                 retainedPersistenceType == PersistenceType.FILE_NATIVE) {
             install(new LocalPersistenceRocksDBModule(persistenceInjector));
         }
-
         bindLocalPersistence(ClientSessionLocalPersistence.class,
                 ClientSessionXodusLocalPersistence.class,
                 ClientSessionLocalProvider.class);
-
         bindLocalPersistence(ClientSessionSubscriptionLocalPersistence.class,
                 ClientSessionSubscriptionXodusLocalPersistence.class,
                 ClientSessionSubscriptionLocalProvider.class);
-
-        bindLocalPersistence(ClientQueueLocalPersistence.class,
-                ClientQueueXodusLocalPersistence.class,
-                null);
+        bindLocalPersistence(ClientQueueLocalPersistence.class, ClientQueueXodusLocalPersistence.class, null);
     }
 
     private void bindLocalPersistence(
             final @NotNull Class localPersistenceClass,
             final @NotNull Class localPersistenceImplClass,
             final @Nullable Class localPersistenceProviderClass) {
-
         final Object instance = persistenceInjector.getInstance(localPersistenceImplClass);
         if (instance != null) {
             bind(localPersistenceImplClass).toInstance(instance);

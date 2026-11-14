@@ -43,7 +43,14 @@ public interface MqttServerDisconnector {
             final @NotNull Channel channel,
             final @Nullable String logMessage,
             final @Nullable String eventLogMessage) {
-        disconnect(channel, logMessage, eventLogMessage, null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, false, true);
+        disconnect(channel,
+                logMessage,
+                eventLogMessage,
+                null,
+                null,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                false,
+                true);
     }
 
     /**
@@ -65,8 +72,14 @@ public interface MqttServerDisconnector {
             final @Nullable String eventLogMessage,
             final @Nullable Mqtt5DisconnectReasonCode reasonCode,
             final @Nullable String reasonString) {
-
-        disconnect(channel, logMessage, eventLogMessage, reasonCode, reasonString, Mqtt5UserProperties.NO_USER_PROPERTIES, false, false);
+        disconnect(channel,
+                logMessage,
+                eventLogMessage,
+                reasonCode,
+                reasonString,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                false,
+                false);
     }
 
     void disconnect(

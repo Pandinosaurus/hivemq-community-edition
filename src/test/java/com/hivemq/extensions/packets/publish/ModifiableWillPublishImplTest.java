@@ -31,7 +31,9 @@ import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Lukas Brandl
@@ -40,7 +42,6 @@ import static org.junit.Assert.*;
 public class ModifiableWillPublishImplTest {
 
     private @NotNull FullConfigurationService configurationService;
-
     @Before
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getFullConfigurationService();
@@ -48,8 +49,7 @@ public class ModifiableWillPublishImplTest {
 
     @Test
     public void setWillDelay() {
-        final WillPublishPacketImpl packet = new WillPublishPacketImpl(
-                "topic",
+        final WillPublishPacketImpl packet = new WillPublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
                 ByteBuffer.wrap("payload".getBytes()),
                 false,
@@ -61,21 +61,16 @@ public class ModifiableWillPublishImplTest {
                 UserPropertiesImpl.of(ImmutableList.of()),
                 0,
                 1234L);
-        final ModifiableWillPublishImpl modifiablePacket =
-                new ModifiableWillPublishImpl(packet, configurationService);
-
+        final ModifiableWillPublishImpl modifiablePacket = new ModifiableWillPublishImpl(packet, configurationService);
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setWillDelay(10);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(10, modifiablePacket.getWillDelay());
     }
 
     @Test
     public void setWillDelay_same() {
-        final WillPublishPacketImpl packet = new WillPublishPacketImpl(
-                "topic",
+        final WillPublishPacketImpl packet = new WillPublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
                 ByteBuffer.wrap("payload".getBytes()),
                 false,
@@ -87,21 +82,16 @@ public class ModifiableWillPublishImplTest {
                 UserPropertiesImpl.of(ImmutableList.of()),
                 0,
                 1234L);
-        final ModifiableWillPublishImpl modifiablePacket =
-                new ModifiableWillPublishImpl(packet, configurationService);
-
+        final ModifiableWillPublishImpl modifiablePacket = new ModifiableWillPublishImpl(packet, configurationService);
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setWillDelay(0);
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(0, modifiablePacket.getWillDelay());
     }
 
     @Test
     public void copy_noChanges() {
-        final WillPublishPacketImpl packet = new WillPublishPacketImpl(
-                "topic",
+        final WillPublishPacketImpl packet = new WillPublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
                 ByteBuffer.wrap("payload".getBytes()),
                 false,
@@ -113,18 +103,14 @@ public class ModifiableWillPublishImplTest {
                 UserPropertiesImpl.of(ImmutableList.of()),
                 0,
                 1234L);
-        final ModifiableWillPublishImpl modifiablePacket =
-                new ModifiableWillPublishImpl(packet, configurationService);
-
+        final ModifiableWillPublishImpl modifiablePacket = new ModifiableWillPublishImpl(packet, configurationService);
         final PublishPacketImpl copy = modifiablePacket.copy();
-
         assertEquals(packet, copy);
     }
 
     @Test
     public void copy_changes() {
-        final WillPublishPacketImpl packet = new WillPublishPacketImpl(
-                "topic",
+        final WillPublishPacketImpl packet = new WillPublishPacketImpl("topic",
                 Qos.AT_LEAST_ONCE,
                 ByteBuffer.wrap("payload".getBytes()),
                 false,
@@ -136,9 +122,7 @@ public class ModifiableWillPublishImplTest {
                 UserPropertiesImpl.of(ImmutableList.of()),
                 0,
                 1234L);
-        final ModifiableWillPublishImpl modifiablePacket =
-                new ModifiableWillPublishImpl(packet, configurationService);
-
+        final ModifiableWillPublishImpl modifiablePacket = new ModifiableWillPublishImpl(packet, configurationService);
         modifiablePacket.setTopic("modifiedTopic");
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
         modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
@@ -151,9 +135,7 @@ public class ModifiableWillPublishImplTest {
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
         modifiablePacket.setWillDelay(10);
         final WillPublishPacketImpl copy = modifiablePacket.copy();
-
-        final WillPublishPacketImpl expectedPacket = new WillPublishPacketImpl(
-                "modifiedTopic",
+        final WillPublishPacketImpl expectedPacket = new WillPublishPacketImpl("modifiedTopic",
                 Qos.AT_LEAST_ONCE,
                 ByteBuffer.wrap("modifiedPayload".getBytes()),
                 true,
@@ -171,7 +153,11 @@ public class ModifiableWillPublishImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(ModifiableWillPublishImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier
+                // thinks
+                // @NotNull
+                // Optional is
+                // @NotNull
                 .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "userProperties")
                 .withIgnoredFields("configurationService", "modified")
                 .withRedefinedSuperclass()

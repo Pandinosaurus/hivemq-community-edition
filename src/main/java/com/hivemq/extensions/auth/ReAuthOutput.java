@@ -37,14 +37,12 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
 
     private @NotNull Mqtt5DisconnectReasonCode reasonCode = Mqtt5DisconnectReasonCode.NOT_AUTHORIZED;
     private @NotNull Mqtt5DisconnectReasonCode timeoutReasonCode = Mqtt5DisconnectReasonCode.NOT_AUTHORIZED;
-
     public ReAuthOutput(
             final @NotNull PluginOutPutAsyncer asyncer,
             final boolean validateUTF8,
             final @NotNull ModifiableDefaultPermissions defaultPermissions,
             final @NotNull ModifiableClientSettingsImpl clientSettings,
             final int timeout) {
-
         super(asyncer, validateUTF8, defaultPermissions, clientSettings, timeout);
         setDefaultReasonStrings();
     }
@@ -70,7 +68,6 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
     public void failAuthentication(
             final @NotNull DisconnectedReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         final Mqtt5DisconnectReasonCode disconnectReasonCode = checkReasonCode(reasonCode);
         failAuthentication(reasonString);
         this.reasonCode = disconnectReasonCode;
@@ -80,7 +77,6 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @NotNull DisconnectedReasonCode reasonCode) {
-
         final Mqtt5DisconnectReasonCode disconnectReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback);
         timeoutReasonCode = disconnectReasonCode;
@@ -92,7 +88,6 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
             final @NotNull TimeoutFallback fallback,
             final @NotNull DisconnectedReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         final Mqtt5DisconnectReasonCode disconnectReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback, reasonString);
         timeoutReasonCode = disconnectReasonCode;
@@ -125,7 +120,6 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
 
     private static @NotNull Mqtt5DisconnectReasonCode checkReasonCode(
             final @NotNull DisconnectedReasonCode disconnectedReasonCode) {
-
         Preconditions.checkNotNull(disconnectedReasonCode, "Disconnected reason code must never be null");
         final Mqtt5DisconnectReasonCode disconnectReasonCode = Mqtt5DisconnectReasonCode.from(disconnectedReasonCode);
         Preconditions.checkArgument(disconnectReasonCode != null,

@@ -17,10 +17,9 @@ package com.hivemq.configuration.entity.listener;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -28,13 +27,10 @@ public abstract class ListenerEntity {
 
     @XmlElement(name = "port", required = true)
     private int port;
-
     @XmlElement(name = "bind-address", required = true)
     private @NotNull String bindAddress = "0.0.0.0";
-
     @XmlElement(name = "name")
     private @Nullable String name;
-
     public int getPort() {
         return port;
     }

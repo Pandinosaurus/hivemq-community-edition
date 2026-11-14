@@ -19,9 +19,10 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
- * @since 1.4
+ * @since  1.4
  */
 public enum MessageType {
+
     RESERVED_ZERO(0),
     CONNECT(1),
     CONNACK(2),
@@ -38,13 +39,9 @@ public enum MessageType {
     PINGRESP(13),
     DISCONNECT(14),
     AUTH(15);
-
     private static final @NotNull MessageType @NotNull [] VALUES = values();
-
     private final int type;
-
     MessageType(final int type) {
-
         this.type = type;
     }
 

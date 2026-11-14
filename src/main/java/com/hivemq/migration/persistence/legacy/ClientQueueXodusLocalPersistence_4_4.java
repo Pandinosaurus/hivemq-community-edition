@@ -27,7 +27,6 @@ import com.hivemq.persistence.clientqueue.ClientQueueEntry;
 import com.hivemq.persistence.local.xodus.EnvironmentUtil;
 import com.hivemq.persistence.local.xodus.XodusLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.Bucket;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import com.hivemq.util.ThreadPreConditions;
 import jetbrains.exodus.ByteIterable;
@@ -46,81 +45,56 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.Key;
 import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
 
-/**
- * @author Lukas Brandl
- * @author Silvio Giebl
- */
 @LazySingleton
 public class ClientQueueXodusLocalPersistence_4_4 extends XodusLocalPersistence {
 
-    @NotNull
-    private static final Logger log = LoggerFactory.getLogger(ClientQueueXodusLocalPersistence_4_4.class);
-
+    @NotNull private static final Logger log = LoggerFactory.getLogger(ClientQueueXodusLocalPersistence_4_4.class);
     private static final String PERSISTENCE_NAME = "client_queue";
     public static final String PERSISTENCE_VERSION = "040000";
-
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     final ClientQueuePersistenceSerializer_4_4 serializer;
-
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     final ConcurrentHashMap<Integer, Map<Key, AtomicInteger>> queueSizeBuckets;
-
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     final ConcurrentHashMap<Integer, Map<Key, AtomicInteger>> retainedQueueSizeBuckets;
-
-
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     final ConcurrentHashMap<String, AtomicInteger> queueQos0MemoryMap;
-
-
     // Key = shared-name/topic-filter, Value = amount of QoS > 0 messages
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     final ConcurrentHashMap<String, AtomicInteger> sharedSubscriptionSizes;
-
     @Inject
     ClientQueueXodusLocalPersistence_4_4(
-            final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull EnvironmentUtil environmentUtil,
             final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
             final @NotNull PersistenceStartup persistenceStartup) {
-
-        super(environmentUtil, localPersistenceFileUtil, persistenceStartup,
-                InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get(), false);
-
-        this.serializer = new ClientQueuePersistenceSerializer_4_4(payloadPersistence);
+        super(environmentUtil,
+                localPersistenceFileUtil,
+                persistenceStartup,
+                InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get(),
+                false);
+        this.serializer = new ClientQueuePersistenceSerializer_4_4();
         this.queueSizeBuckets = new ConcurrentHashMap<>();
         this.retainedQueueSizeBuckets = new ConcurrentHashMap<>();
         this.queueQos0MemoryMap = new ConcurrentHashMap<>();
         this.sharedSubscriptionSizes = new ConcurrentHashMap<>();
-
-
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected String getName() {
         return PERSISTENCE_NAME;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected String getVersion() {
         return PERSISTENCE_VERSION;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected StoreConfig getStoreConfig() {
         return StoreConfig.WITHOUT_DUPLICATES_WITH_PREFIXING;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected Logger getLogger() {
         return log;
     }
@@ -132,27 +106,26 @@ public class ClientQueueXodusLocalPersistence_4_4 extends XodusLocalPersistence 
 
     @Override
     protected void init() {
-        //noop
+        // noop
     }
 
-    public void add(@NotNull final String queueId, final boolean shared, @NotNull final PUBLISH_4_4 publish,
-                    final boolean retained, final int bucketIndex) {
+    public void add(
+            @NotNull final String queueId,
+            final boolean shared,
+            @NotNull final PUBLISH_4_4 publish,
+            final boolean retained,
+            final int bucketIndex) {
         checkNotNull(queueId, "Queue ID must not be null");
         checkNotNull(publish, "Publish must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
-
         final Key key = new Key(queueId, shared);
-
         final Bucket bucket = buckets[bucketIndex];
-
         final ByteIterable keyBytes = serializer.serializeNewPublishKey(key);
         final ByteIterable valueBytes = serializer.serializePublishWithoutPacketId(publish, retained);
-
         bucket.getEnvironment().executeInTransaction(txn -> bucket.getStore().put(txn, keyBytes, valueBytes));
     }
 
     public void iterate(final @NotNull QueueCallback_4_4 callback_4_4) {
-
         for (final Bucket bucket : buckets) {
             bucket.getEnvironment().executeInReadonlyTransaction(txn -> {
                 try (final Cursor cursor = bucket.getStore().openCursor(txn)) {
@@ -182,9 +155,8 @@ public class ClientQueueXodusLocalPersistence_4_4 extends XodusLocalPersistence 
             });
         }
     }
-
     public interface QueueCallback_4_4 {
+
         void onItem(@NotNull Key queueId, @NotNull ImmutableList<ClientQueueEntry> messages);
     }
-
 }

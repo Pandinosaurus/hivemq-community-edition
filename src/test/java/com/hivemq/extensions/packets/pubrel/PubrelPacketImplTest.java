@@ -29,7 +29,9 @@ public class PubrelPacketImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(PubrelPacketImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks
+                // @NotNull Optional is
+                // @NotNull
                 .withNonnullFields("reasonCode", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();

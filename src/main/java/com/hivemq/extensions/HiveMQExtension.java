@@ -32,7 +32,6 @@ import java.nio.file.Path;
 public interface HiveMQExtension {
 
     String HIVEMQ_EXTENSION_XML_FILE = "hivemq-extension.xml";
-
     /**
      * Calls the extension's extensionStart() with the given input and output.
      *
@@ -48,7 +47,8 @@ public interface HiveMQExtension {
      * @param extensionStopInput  the {@link ExtensionStopInput} which is passed to the extension's extensionStart()
      * @param extensionStopOutput the {@link ExtensionStopOutput} which is passed to the extension's extensionStart()
      */
-    void stop(@NotNull ExtensionStopInput extensionStopInput, @NotNull ExtensionStopOutput extensionStopOutput) throws Throwable;
+    void stop(@NotNull ExtensionStopInput extensionStopInput, @NotNull ExtensionStopOutput extensionStopOutput)
+            throws Throwable;
 
     /**
      * Cleans the extensions resources and optionally disables the extension

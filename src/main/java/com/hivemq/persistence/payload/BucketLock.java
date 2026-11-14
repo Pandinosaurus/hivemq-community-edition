@@ -21,15 +21,9 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * @author Lukas Brandl
- */
 public class BucketLock {
 
     private final Lock @NotNull [] locks;
-
     public BucketLock(final int bucketCount) {
         locks = new Lock[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
@@ -37,14 +31,11 @@ public class BucketLock {
         }
     }
 
-
     public int getBucketCount() {
         return locks.length;
     }
 
-
-    public void accessBucketByPaloadId(final @NotNull long payloadId, final @NotNull BucketAccessCallback callback) {
-        checkNotNull(payloadId);
+    public void accessBucketByPayloadId(final long payloadId, final @NotNull BucketAccessCallback callback) {
         final int index = BucketUtils.getBucket(Long.toString(payloadId), locks.length);
         accessBucket(index, callback);
     }
@@ -53,14 +44,14 @@ public class BucketLock {
         final Lock lock = locks[index];
         lock.lock();
         try {
-            callback.call();
+            callback.call(index);
         } finally {
             lock.unlock();
         }
     }
-
     @FunctionalInterface
     interface BucketAccessCallback {
-        void call();
+
+        void call(int bucketIndex);
     }
 }

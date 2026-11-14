@@ -30,10 +30,9 @@ public class SubackOutboundOutputImpl extends AbstractSimpleAsyncOutput<SubackOu
 
     private final @NotNull ModifiableSubackPacketImpl subAckPacket;
     private boolean failed;
-
     public SubackOutboundOutputImpl(
-            final @NotNull PluginOutPutAsyncer asyncer, final @NotNull ModifiableSubackPacketImpl subAckPacket) {
-
+            final @NotNull PluginOutPutAsyncer asyncer,
+            final @NotNull ModifiableSubackPacketImpl subAckPacket) {
         super(asyncer);
         this.subAckPacket = subAckPacket;
     }

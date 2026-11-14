@@ -21,21 +21,19 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  * The MQTT PINGRESP message
  *
  * @author Dominik Obermaier
- * @since 1.4
+ * @since  1.4
  */
 public class PINGRESP implements Message {
 
     public static final PINGRESP INSTANCE = new PINGRESP();
-
-    @NotNull
-    @Override
+    @NotNull @Override
     public MessageType getType() {
         return MessageType.PINGRESP;
     }
 
     @Override
     public void setEncodedLength(final int bufferSize) {
-        //noop since ping resp is always 2 bytes
+        // noop since ping resp is always 2 bytes
     }
 
     @Override
@@ -45,7 +43,7 @@ public class PINGRESP implements Message {
 
     @Override
     public void setRemainingLength(final int length) {
-        //noop
+        // noop
     }
 
     @Override
@@ -55,7 +53,7 @@ public class PINGRESP implements Message {
 
     @Override
     public void setPropertyLength(final int length) {
-        //noop
+        // noop
     }
 
     @Override
@@ -65,7 +63,7 @@ public class PINGRESP implements Message {
 
     @Override
     public void setOmittedProperties(final int omittedProperties) {
-        //noop
+        // noop
     }
 
     @Override

@@ -35,12 +35,9 @@ public enum Mqtt5PubAckReasonCode implements Mqtt5ReasonCode {
     PACKET_IDENTIFIER_IN_USE(MqttCommonReasonCode.PACKET_IDENTIFIER_IN_USE),
     QUOTA_EXCEEDED(MqttCommonReasonCode.QUOTA_EXCEEDED),
     PAYLOAD_FORMAT_INVALID(MqttCommonReasonCode.PAYLOAD_FORMAT_INVALID);
-
     private static final @NotNull Mqtt5PubAckReasonCode[] VALUES = values();
-
     private final int code;
     private final @NotNull AckReasonCode ackReasonCode;
-
     Mqtt5PubAckReasonCode(final int code) {
         this.code = code;
         ackReasonCode = AckReasonCode.valueOf(name());
@@ -58,22 +55,19 @@ public enum Mqtt5PubAckReasonCode implements Mqtt5ReasonCode {
     public @NotNull AckReasonCode toAckReasonCode() {
         return ackReasonCode;
     }
-
     private static final @NotNull Mqtt5PubAckReasonCode @NotNull [] ACK_LOOKUP =
             new Mqtt5PubAckReasonCode[AckReasonCode.values().length];
-
     static {
         for (final Mqtt5PubAckReasonCode reasonCode : VALUES) {
             ACK_LOOKUP[reasonCode.ackReasonCode.ordinal()] = reasonCode;
         }
     }
-
     /**
      * Returns the PUBACK Reason Code belonging to the given byte code.
      *
-     * @param code the byte code.
-     * @return the PUBACK Reason Code belonging to the given byte code or <code>null</code> if the byte code is not a
-     * valid PUBACK Reason Code.
+     * @param  code the byte code.
+     * @return      the PUBACK Reason Code belonging to the given byte code or <code>null</code> if the byte code is not
+     *              a valid PUBACK Reason Code.
      */
     public static @Nullable Mqtt5PubAckReasonCode fromCode(final int code) {
         for (final Mqtt5PubAckReasonCode reasonCode : VALUES) {

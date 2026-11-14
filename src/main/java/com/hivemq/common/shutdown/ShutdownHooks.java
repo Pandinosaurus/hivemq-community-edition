@@ -36,8 +36,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A implementation for all shutdown hooks.
  * <p>
- * If you add a shutdown hook, the shutdown hook is added to the registry. Please note that the
- * synchronous shutdown hook is <b>not</b> executed by itself when HiveMQ is shutting down.
+ * If you add a shutdown hook, the shutdown hook is added to the registry. Please note that the synchronous shutdown
+ * hook is <b>not</b> executed by itself when HiveMQ is shutting down.
  *
  * @author Dominik Obermaier
  */
@@ -45,16 +45,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ShutdownHooks {
 
     private static final Logger log = LoggerFactory.getLogger(ShutdownHooks.class);
-
     private final @NotNull AtomicBoolean shuttingDown;
     private final @NotNull Multimap</* Priority */Integer, HiveMQShutdownHook> synchronousHooks;
-
     @Inject
     public ShutdownHooks() {
         shuttingDown = new AtomicBoolean(false);
-
-        synchronousHooks = MultimapBuilder.SortedSetMultimapBuilder
-                .treeKeys(Ordering.natural().reverse()) //High priorities first
+        synchronousHooks = MultimapBuilder.SortedSetMultimapBuilder.treeKeys(Ordering.natural().reverse()) // High
+                // priorities
+                // first
                 .arrayListValues()
                 .build();
     }
@@ -73,8 +71,7 @@ public class ShutdownHooks {
             return;
         }
         checkNotNull(hiveMQShutdownHook, "A shutdown hook must not be null");
-        log.trace("Adding shutdown hook {} with priority {}", hiveMQShutdownHook.name(),
-                hiveMQShutdownHook.priority());
+        log.trace("Adding shutdown hook {} with priority {}", hiveMQShutdownHook.name(), hiveMQShutdownHook.priority());
         synchronousHooks.put(hiveMQShutdownHook.priority().getValue(), hiveMQShutdownHook);
     }
 
@@ -88,8 +85,8 @@ public class ShutdownHooks {
             return;
         }
         checkNotNull(hiveMQShutdownHook, "A shutdown hook must not be null");
-
-        log.trace("Removing shutdown hook {} with priority {}", hiveMQShutdownHook.name(),
+        log.trace("Removing shutdown hook {} with priority {}",
+                hiveMQShutdownHook.name(),
                 hiveMQShutdownHook.priority());
         synchronousHooks.values().remove(hiveMQShutdownHook);
     }
@@ -106,16 +103,16 @@ public class ShutdownHooks {
         log.info("Shutting down HiveMQ. Please wait, this could take a while...");
         final ScheduledExecutorService executorService =
                 Executors.newSingleThreadScheduledExecutor(ThreadFactoryUtil.create("shutdown-log-executor"));
-        executorService.scheduleAtFixedRate(
-                () -> log.info(
-                        "Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ."),
-                10, 10, TimeUnit.SECONDS);
+        executorService.scheduleAtFixedRate(() -> log.info(
+                "Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ."),
+                10,
+                10,
+                TimeUnit.SECONDS);
         for (final HiveMQShutdownHook runnable : synchronousHooks.values()) {
             log.trace(MarkerFactory.getMarker("SHUTDOWN_HOOK"), "Running shutdown hook {}", runnable.name());
             runnable.run();
         }
         executorService.shutdown();
-
         log.info("Shutdown completed.");
     }
 }

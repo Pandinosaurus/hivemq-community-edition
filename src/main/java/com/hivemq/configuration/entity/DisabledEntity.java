@@ -15,13 +15,13 @@
  */
 package com.hivemq.configuration.entity;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -29,7 +29,6 @@ public abstract class DisabledEntity {
 
     @XmlElement(name = "enabled", defaultValue = "false")
     private boolean enabled = false;
-
     public boolean isEnabled() {
         return enabled;
     }

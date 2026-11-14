@@ -27,46 +27,37 @@ import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
  * AUTH Packet is used for the authentication.
  *
  * @author Waldemar Ruck
- * @since 4.0
+ * @since  4.0
  */
 public class AUTH extends MqttMessageWithUserProperties.MqttMessageWithReasonCode<Mqtt5AuthReasonCode> {
 
     /**
-     * Method by which the authentication is performed.
-     * Authentication Method is UTF-8 Encoded. It is a Protocol Error to omit the Authentication Method or to include it more than once.
+     * Method by which the authentication is performed. Authentication Method is UTF-8 Encoded. It is a Protocol Error
+     * to omit the Authentication Method or to include it more than once.
      */
-    @NotNull
-    private final String authMethod;
-
+    @NotNull private final String authMethod;
     /**
-     * Necessary Data for the authentication.
-     * It is a Protocol Error to include Authentication Data more than once.
+     * Necessary Data for the authentication. It is a Protocol Error to include Authentication Data more than once.
      */
-    @Nullable
-    private final byte[] authData;
-
-    public AUTH(@NotNull final String authMethod,
-                @Nullable final byte[] authData,
-                @NotNull final Mqtt5AuthReasonCode reasonCode,
-                @NotNull final Mqtt5UserProperties userProperties,
-                @Nullable final String reasonString) {
-
+    @Nullable private final byte[] authData;
+    public AUTH(
+            @NotNull final String authMethod,
+            @Nullable final byte[] authData,
+            @NotNull final Mqtt5AuthReasonCode reasonCode,
+            @NotNull final Mqtt5UserProperties userProperties,
+            @Nullable final String reasonString) {
         super(reasonCode, reasonString, userProperties);
-
         Preconditions.checkNotNull(reasonCode, "Reason code must never be null");
         Preconditions.checkNotNull(authMethod, "Auth method must never be null");
-
         this.authMethod = authMethod;
         this.authData = authData;
     }
 
-    @Nullable
-    public byte[] getAuthData() {
+    @Nullable public byte[] getAuthData() {
         return authData;
     }
 
-    @NotNull
-    public String getAuthMethod() {
+    @NotNull public String getAuthMethod() {
         return authMethod;
     }
 
@@ -79,8 +70,7 @@ public class AUTH extends MqttMessageWithUserProperties.MqttMessageWithReasonCod
         return new AUTH("", null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, null);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public MessageType getType() {
         return MessageType.AUTH;
     }

@@ -25,11 +25,9 @@ import java.util.EnumSet;
 public enum ClientState {
 
     CONNECTING,
-
     AUTHENTICATING,
     RE_AUTHENTICATING,
     AUTHENTICATED,
-
     DISCONNECTING,
     CONNECT_FAILED,
     DISCONNECTED_UNSPECIFIED,
@@ -37,11 +35,12 @@ public enum ClientState {
     DISCONNECTED_BY_SERVER,
     DISCONNECTED_TAKEN_OVER,
     DISCONNECTED_TAKE_OVER_FAILED;
-
     private static final @NotNull EnumSet<ClientState> DISCONNECTED = EnumSet.of(CONNECT_FAILED,
-            DISCONNECTED_UNSPECIFIED, DISCONNECTED_BY_CLIENT, DISCONNECTED_BY_SERVER, DISCONNECTED_TAKEN_OVER,
+            DISCONNECTED_UNSPECIFIED,
+            DISCONNECTED_BY_CLIENT,
+            DISCONNECTED_BY_SERVER,
+            DISCONNECTED_TAKEN_OVER,
             DISCONNECTED_TAKE_OVER_FAILED);
-
     public boolean disconnected() {
         return DISCONNECTED.contains(this);
     }

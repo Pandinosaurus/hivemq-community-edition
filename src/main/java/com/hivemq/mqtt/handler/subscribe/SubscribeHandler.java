@@ -34,14 +34,14 @@ import javax.inject.Singleton;
 public class SubscribeHandler extends SimpleChannelInboundHandler<SUBSCRIBE> {
 
     private final @NotNull IncomingSubscribeHandler incomingSubscribeHandler;
-
     @Inject
     public SubscribeHandler(final @NotNull IncomingSubscribeHandler incomingSubscribeHandler) {
         this.incomingSubscribeHandler = incomingSubscribeHandler;
     }
 
     @Override
-    protected void channelRead0(@NotNull final ChannelHandlerContext ctx, @NotNull final SUBSCRIBE msg) throws Exception {
+    protected void channelRead0(@NotNull final ChannelHandlerContext ctx, @NotNull final SUBSCRIBE msg)
+            throws Exception {
         SubscribeMessageBarrier.addToPipeline(ctx);
         incomingSubscribeHandler.interceptOrDelegate(ctx, msg);
     }

@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.persistence.util;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.*;
-import com.google.inject.Inject;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -36,7 +35,6 @@ import java.util.concurrent.Callable;
 public class FutureUtils {
 
     private static final Logger log = LoggerFactory.getLogger(FutureUtils.class);
-
     public static ListenableFuture<Void> voidFutureFromList(final ImmutableList<ListenableFuture<Void>> futures) {
         final SettableFuture<Void> result = SettableFuture.create();
         Futures.whenAllComplete(futures).call((Callable<Void>) () -> {
@@ -44,9 +42,9 @@ public class FutureUtils {
             for (final ListenableFuture<Void> future : futures) {
                 // The callback is executed immediately because the future is already completed.
                 Futures.addCallback(future, new FutureCallback<>() {
+
                     @Override
                     public void onSuccess(final Void entry) {
-
                     }
 
                     @Override
@@ -69,9 +67,10 @@ public class FutureUtils {
 
     public static void addExceptionLogger(final ListenableFuture<?> listenableFuture) {
         Futures.addCallback(listenableFuture, new FutureCallback<Object>() {
+
             @Override
             public void onSuccess(@Nullable final Object o) {
-                //no op
+                // no op
             }
 
             @Override

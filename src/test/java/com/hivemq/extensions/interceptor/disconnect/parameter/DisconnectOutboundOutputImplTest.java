@@ -35,9 +35,7 @@ public class DisconnectOutboundOutputImplTest {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 mock(ModifiableOutboundDisconnectPacketImpl.class);
-
         final DisconnectOutboundOutputImpl output = new DisconnectOutboundOutputImpl(asyncer, modifiablePacket);
-
         assertSame(modifiablePacket, output.getDisconnectPacket());
     }
 
@@ -46,18 +44,14 @@ public class DisconnectOutboundOutputImplTest {
         final PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 mock(ModifiableOutboundDisconnectPacketImpl.class);
-
         final DisconnectOutboundOutputImpl output = new DisconnectOutboundOutputImpl(asyncer, modifiablePacket);
-
         final DisconnectOutboundInputImpl input = mock(DisconnectOutboundInputImpl.class);
         final DisconnectPacketImpl packet = mock(DisconnectPacketImpl.class);
         final ModifiableOutboundDisconnectPacketImpl newModifiablePacket =
                 mock(ModifiableOutboundDisconnectPacketImpl.class);
         when(input.getDisconnectPacket()).thenReturn(packet);
         when(modifiablePacket.update(packet)).thenReturn(newModifiablePacket);
-
         final DisconnectOutboundOutputImpl updated = output.update(input);
-
         assertSame(newModifiablePacket, updated.getDisconnectPacket());
     }
 }

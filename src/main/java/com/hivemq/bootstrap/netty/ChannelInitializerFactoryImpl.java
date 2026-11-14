@@ -15,8 +15,16 @@
  */
 package com.hivemq.bootstrap.netty;
 
-import com.hivemq.bootstrap.netty.initializer.*;
-import com.hivemq.configuration.service.entity.*;
+import com.hivemq.bootstrap.netty.initializer.AbstractChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TcpChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TlsTcpChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TlsWebsocketChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.WebsocketChannelInitializer;
+import com.hivemq.configuration.service.entity.Listener;
+import com.hivemq.configuration.service.entity.TcpListener;
+import com.hivemq.configuration.service.entity.TlsTcpListener;
+import com.hivemq.configuration.service.entity.TlsWebsocketListener;
+import com.hivemq.configuration.service.entity.WebsocketListener;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.security.ssl.NonSslHandler;
@@ -32,75 +40,56 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory {
 
-    @NotNull
-    private final ChannelDependencies channelDependencies;
-
-    @NotNull
-    private final SslFactory sslFactory;
-
-    @NotNull
-    private final Provider<NonSslHandler> nonSslHandlerProvider;
-
-    @NotNull
-    private final EventLog eventLog;
-
+    @NotNull private final ChannelDependencies channelDependencies;
+    @NotNull private final SslFactory sslFactory;
+    @NotNull private final Provider<NonSslHandler> nonSslHandlerProvider;
+    @NotNull private final EventLog eventLog;
     @Inject
-    public ChannelInitializerFactoryImpl(@NotNull final ChannelDependencies channelDependencies,
-                                         @NotNull final SslFactory sslFactory,
-                                         @NotNull final Provider<NonSslHandler> nonSslHandlerProvider,
-                                         @NotNull final EventLog eventLog) {
+    public ChannelInitializerFactoryImpl(
+            @NotNull final ChannelDependencies channelDependencies,
+            @NotNull final SslFactory sslFactory,
+            @NotNull final Provider<NonSslHandler> nonSslHandlerProvider,
+            @NotNull final EventLog eventLog) {
         this.channelDependencies = channelDependencies;
         this.sslFactory = sslFactory;
         this.nonSslHandlerProvider = nonSslHandlerProvider;
         this.eventLog = eventLog;
     }
 
-    @NotNull
-    public AbstractChannelInitializer getChannelInitializer(@NotNull final Listener listener) {
-
+    @NotNull public AbstractChannelInitializer getChannelInitializer(@NotNull final Listener listener) {
         checkNotNull(listener, "Listener must not be null");
-
         if (listener instanceof TcpListener) {
-
             if (listener instanceof TlsTcpListener) {
                 return createTlsTcpInitializer((TlsTcpListener) listener);
             } else {
                 return createTcpInitializer((TcpListener) listener);
             }
         }
-
         if (listener instanceof WebsocketListener) {
-
             if (listener instanceof TlsWebsocketListener) {
                 return createTlsWebsocketInitializer((TlsWebsocketListener) listener);
             } else {
                 return createWebsocketInitializer((WebsocketListener) listener);
             }
         }
-
         throw new IllegalArgumentException("Unknown listener type");
     }
 
-    @NotNull
-    protected AbstractChannelInitializer createTcpInitializer(@NotNull final TcpListener listener) {
+    @NotNull protected AbstractChannelInitializer createTcpInitializer(@NotNull final TcpListener listener) {
         return new TcpChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
-    @NotNull
-    protected AbstractChannelInitializer createTlsTcpInitializer(@NotNull final TlsTcpListener listener) {
+    @NotNull protected AbstractChannelInitializer createTlsTcpInitializer(@NotNull final TlsTcpListener listener) {
         sslFactory.verifySslAtBootstrap(listener, listener.getTls());
         return new TlsTcpChannelInitializer(channelDependencies, listener, sslFactory);
     }
 
-    @NotNull
-    protected AbstractChannelInitializer createWebsocketInitializer(@NotNull final WebsocketListener listener) {
+    @NotNull protected AbstractChannelInitializer createWebsocketInitializer(@NotNull final WebsocketListener listener) {
         return new WebsocketChannelInitializer(channelDependencies, listener, nonSslHandlerProvider);
     }
 
-    @NotNull
-    protected AbstractChannelInitializer createTlsWebsocketInitializer(@NotNull final TlsWebsocketListener listener) {
+    @NotNull protected AbstractChannelInitializer createTlsWebsocketInitializer(@NotNull final TlsWebsocketListener listener) {
         sslFactory.verifySslAtBootstrap(listener, listener.getTls());
         return new TlsWebsocketChannelInitializer(channelDependencies, listener, sslFactory);
     }
-
 }

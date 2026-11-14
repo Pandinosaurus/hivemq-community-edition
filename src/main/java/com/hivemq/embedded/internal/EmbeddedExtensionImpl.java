@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
 
 import com.hivemq.embedded.EmbeddedExtension;
@@ -30,7 +29,6 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
     private final int priority;
     private final int startPriority;
     private final @NotNull ExtensionMain extensionMain;
-
     EmbeddedExtensionImpl(
             final @NotNull String id,
             final @NotNull String name,
@@ -39,7 +37,6 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
             final int priority,
             final int startPriority,
             final @NotNull ExtensionMain extensionMain) {
-
         this.id = id;
         this.name = name;
         this.version = version;
@@ -49,23 +46,19 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
         this.extensionMain = extensionMain;
     }
 
-    @NotNull
-    public String getId() {
+    @NotNull public String getId() {
         return id;
     }
 
-    @NotNull
-    public String getName() {
+    @NotNull public String getName() {
         return name;
     }
 
-    @NotNull
-    public String getVersion() {
+    @NotNull public String getVersion() {
         return version;
     }
 
-    @Nullable
-    public String getAuthor() {
+    @Nullable public String getAuthor() {
         return author;
     }
 
@@ -77,16 +70,14 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
         return startPriority;
     }
 
-    @NotNull
-    public ExtensionMain getExtensionMain() {
+    @NotNull public ExtensionMain getExtensionMain() {
         return extensionMain;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String toString() {
-        return "EmbeddedExtension{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", version='" + version +
-                '\'' + ", author='" + author + '\'' + ", priority=" + priority + ", startPriority=" + startPriority +
+        return "EmbeddedExtension{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", version='" + version + '\'' +
+                ", author='" + author + '\'' + ", priority=" + priority + ", startPriority=" + startPriority +
                 ", extensionMain=" + extensionMain.getClass().getSimpleName() + '}';
     }
 }

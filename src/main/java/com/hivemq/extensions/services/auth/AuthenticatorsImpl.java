@@ -39,12 +39,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AuthenticatorsImpl implements Authenticators {
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticatorsImpl.class);
-
     private final @NotNull ReadWriteLock authenticatorsLock = new ReentrantReadWriteLock();
-    @GuardedBy("authenticatorsLock")
-    private final @NotNull TreeMap<String, WrappedAuthenticatorProvider> authenticatorPluginMap;
+    @GuardedBy("authenticatorsLock") private final @NotNull TreeMap<String, WrappedAuthenticatorProvider> authenticatorPluginMap;
     private final @NotNull HiveMQExtensions hiveMQExtensions;
-
     @Inject
     public AuthenticatorsImpl(final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
@@ -53,7 +50,6 @@ public class AuthenticatorsImpl implements Authenticators {
 
     @Override
     public @NotNull Map<@NotNull String, @NotNull WrappedAuthenticatorProvider> getAuthenticatorProviderMap() {
-
         final Lock readLock = authenticatorsLock.readLock();
         readLock.lock();
         try {
@@ -65,13 +61,11 @@ public class AuthenticatorsImpl implements Authenticators {
 
     @Override
     public void registerAuthenticatorProvider(final @NotNull WrappedAuthenticatorProvider provider) {
-
         final Lock writeLock = authenticatorsLock.writeLock();
         writeLock.lock();
         try {
             final ClassLoader extensionClassLoader = provider.getClassLoader();
             final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(extensionClassLoader);
-
             if (extension != null) {
                 authenticatorPluginMap.put(extension.getId(), provider);
                 if (provider.isEnhanced()) {
@@ -87,7 +81,6 @@ public class AuthenticatorsImpl implements Authenticators {
 
     @Override
     public void checkAuthenticationSafetyAndLifeness() {
-
         // Only check for lifeness if safety is given
         if (InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.get()) {
             // Check lifeness

@@ -34,22 +34,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class KeepAliveDisconnectServiceTest {
 
-    private final @NotNull ShutdownHooks shutdownHooks = new ShutdownHooks();
+    private final @NotNull MqttServerDisconnector mqttServerDisconnector = mock();
     private final @NotNull ArgumentCaptor<Channel> channelArgumentCaptor = ArgumentCaptor.forClass(Channel.class);
-
-    private final @NotNull MqttServerDisconnector mqttServerDisconnector = mock(MqttServerDisconnector.class);
-
-    private @NotNull KeepAliveDisconnectService keepAliveDisconnectService;
-
-
+    private final @NotNull ShutdownHooks shutdownHooks = new ShutdownHooks();
+    private final @NotNull KeepAliveDisconnectService keepAliveDisconnectService =
+            new KeepAliveDisconnectService(mqttServerDisconnector, shutdownHooks);
     @Before
     public void setUp() {
-        keepAliveDisconnectService = new KeepAliveDisconnectService(mqttServerDisconnector, shutdownHooks);
-        doAnswer(invocation -> null).when(mqttServerDisconnector).disconnect(channelArgumentCaptor.capture(), any(), any(), any(), any());
+        doAnswer(invocation -> null).when(mqttServerDisconnector)
+                .disconnect(channelArgumentCaptor.capture(), any(), any(), any(), any());
     }
 
     @After
@@ -79,8 +78,8 @@ public class KeepAliveDisconnectServiceTest {
 
     @Test
     public void test_whenMoreThanOneBatchIsSubmitted_thenTheTaskIsScheduledAndExecuted() {
-        final Channel channel = mock(Channel.class);
-        final EventLoop eventLoop = mock(EventLoop.class);
+        final Channel channel = mock();
+        final EventLoop eventLoop = mock();
         when(channel.eventLoop()).thenReturn(eventLoop);
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         doAnswer(invocation -> {
@@ -88,13 +87,12 @@ public class KeepAliveDisconnectServiceTest {
             executorService.execute(runnable);
             return null;
         }).when(eventLoop).execute(any());
-
         for (int i = 0; i < 10000; i++) {
             keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
         }
-
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() == 2000);
         } finally {
             executorService.shutdown();
@@ -104,8 +102,8 @@ public class KeepAliveDisconnectServiceTest {
     @Test
     public void test_whenTasksAreSlowlySubmitted_thenAllTasksWillBeExecuted() {
         // TestChannel behaves odd sometimes, this is safe
-        final Channel channel = mock(Channel.class);
-        final EventLoop eventLoop = mock(EventLoop.class);
+        final Channel channel = mock();
+        final EventLoop eventLoop = mock();
         when(channel.eventLoop()).thenReturn(eventLoop);
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         doAnswer(invocation -> {
@@ -113,7 +111,6 @@ public class KeepAliveDisconnectServiceTest {
             executorService.execute(runnable);
             return null;
         }).when(eventLoop).execute(any());
-
         new Thread(() -> {
             for (int i = 0; i < 2000; i++) {
                 keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
@@ -124,9 +121,9 @@ public class KeepAliveDisconnectServiceTest {
                 }
             }
         }).start();
-
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() == 2000);
         } finally {
             executorService.shutdown();
@@ -136,8 +133,8 @@ public class KeepAliveDisconnectServiceTest {
     @Test
     public void test_whenTasksAreSlowlySubmittedAndThrowExceptions_thenAllTasksWillBeExecuted() {
         // TestChannel behaves odd sometimes, this is safe
-        final Channel channel = mock(Channel.class);
-        final EventLoop eventLoop = mock(EventLoop.class);
+        final Channel channel = mock();
+        final EventLoop eventLoop = mock();
         when(channel.eventLoop()).thenReturn(eventLoop);
         final Random random = new Random();
         final AtomicInteger withoutException = new AtomicInteger(0);
@@ -149,11 +146,9 @@ public class KeepAliveDisconnectServiceTest {
             } else {
                 withoutException.incrementAndGet();
             }
-
             executorService.execute(runnable);
             return null;
         }).when(eventLoop).execute(any());
-
         new Thread(() -> {
             while (withoutException.get() <= 100) {
                 keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
@@ -164,9 +159,9 @@ public class KeepAliveDisconnectServiceTest {
                 }
             }
         }).start();
-
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() >= 100);
         } finally {
             executorService.shutdown();

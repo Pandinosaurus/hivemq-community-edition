@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author Dominik Obermaier
  * @author Christoph Schaebel
- * @since 3.0
+ * @since  3.0
  */
 @Immutable
 public class WebsocketListener implements Listener {
@@ -43,7 +43,6 @@ public class WebsocketListener implements Listener {
     private final boolean allowExtensions;
     private final @NotNull List<String> subprotocols;
     private final @NotNull String name;
-
     protected WebsocketListener(
             final int port,
             final @NotNull String bindAddress,
@@ -104,7 +103,6 @@ public class WebsocketListener implements Listener {
     public @NotNull List<String> getSubprotocols() {
         return subprotocols;
     }
-
     /**
      * A builder which allows to conveniently build a listener object with a fluent API
      */
@@ -112,16 +110,14 @@ public class WebsocketListener implements Listener {
 
         protected @NotNull String path;
         protected @NotNull List<String> subprotocols;
-
         protected @Nullable String name;
         protected @Nullable Integer port;
         protected @Nullable String bindAddress;
         protected boolean allowExtensions;
-
         public Builder() {
             path = "";
             subprotocols = new ArrayList<>();
-            subprotocols.add("mqtt"); //Add default subprotocol which is required by the MQTT spec
+            subprotocols.add("mqtt"); // Add default subprotocol which is required by the MQTT spec
             allowExtensions = false;
         }
 
@@ -138,8 +134,8 @@ public class WebsocketListener implements Listener {
         /**
          * Sets the port of the websocket listener
          *
-         * @param port the port
-         * @return the Builder
+         * @param  port the port
+         * @return      the Builder
          */
         public @NotNull Builder port(final int port) {
             this.port = port;
@@ -149,8 +145,8 @@ public class WebsocketListener implements Listener {
         /**
          * Sets the bind address of the websocket listener
          *
-         * @param bindAddress the bind address
-         * @return the Builder
+         * @param  bindAddress the bind address
+         * @return             the Builder
          */
         public @NotNull Builder bindAddress(final @NotNull String bindAddress) {
             checkNotNull(bindAddress);
@@ -161,8 +157,8 @@ public class WebsocketListener implements Listener {
         /**
          * Sets the websocket path of the websocket listener
          *
-         * @param path the path
-         * @return the Builder
+         * @param  path the path
+         * @return      the Builder
          */
         public @NotNull Builder path(final @NotNull String path) {
             checkNotNull(path);
@@ -173,8 +169,8 @@ public class WebsocketListener implements Listener {
         /**
          * Sets the name of the websocket listener
          *
-         * @param name the name
-         * @return the Builder
+         * @param  name the name
+         * @return      the Builder
          */
         public @NotNull Builder name(final @NotNull String name) {
             checkNotNull(name);
@@ -185,8 +181,8 @@ public class WebsocketListener implements Listener {
         /**
          * Sets if websocket extensions should be allowed or not
          *
-         * @param allowExtensions if websocket extensions should be allowed or not
-         * @return the Builder
+         * @param  allowExtensions if websocket extensions should be allowed or not
+         * @return                 the Builder
          */
         public @NotNull Builder allowExtensions(final boolean allowExtensions) {
             this.allowExtensions = allowExtensions;
@@ -198,8 +194,8 @@ public class WebsocketListener implements Listener {
          * <p>
          * Typically you should use 'mqtt' and/or 'mqttv3.1
          *
-         * @param subprotocols a list of websocket subprotocols
-         * @return the Builder
+         * @param  subprotocols a list of websocket subprotocols
+         * @return              the Builder
          */
         public @NotNull Builder subprotocols(final @NotNull List<String> subprotocols) {
             checkNotNull(subprotocols);

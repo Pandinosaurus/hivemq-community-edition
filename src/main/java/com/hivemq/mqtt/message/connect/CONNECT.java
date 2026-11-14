@@ -39,24 +39,19 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
     private final int keepAlive;
     private final boolean cleanStart;
     private long sessionExpiryInterval;
-
     // restrictions
     private int receiveMaximum;
     private int topicAliasMaximum;
     private long maximumPacketSize;
     private final boolean responseInformationRequested;
     private final boolean problemInformationRequested;
-
     // simple auth
     private final @Nullable String username;
     private final byte @Nullable [] password;
-
     // enhanced auth
     private final @Nullable String authMethod;
     private final byte @Nullable [] authData;
-
     private final @Nullable MqttWillPublish willPublish;
-
     private CONNECT(
             final @NotNull ProtocolVersion protocolVersion,
             final @NotNull String clientIdentifier,
@@ -74,7 +69,6 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
             final byte @Nullable [] authData,
             final @Nullable MqttWillPublish willPublish,
             final @NotNull Mqtt5UserProperties userProperties) {
-
         super(userProperties);
         this.protocolVersion = protocolVersion;
         this.clientIdentifier = clientIdentifier;
@@ -193,7 +187,6 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
     public @NotNull MessageType getType() {
         return MessageType.CONNECT;
     }
-
     public static class Mqtt3Builder {
 
         private @NotNull ProtocolVersion protocolVersion = ProtocolVersion.MQTTv3_1_1;
@@ -201,16 +194,12 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
         private int keepAlive;
         private boolean cleanStart;
         private long sessionExpiryInterval;
-
         private @Nullable String username;
         private byte @Nullable [] password;
-
         private @Nullable MqttWillPublish willPublish;
-
         public @NotNull CONNECT build() {
             Preconditions.checkNotNull(clientIdentifier, "client identifier must never be null");
-            return new CONNECT(
-                    protocolVersion,
+            return new CONNECT(protocolVersion,
                     clientIdentifier,
                     keepAlive,
                     cleanStart,
@@ -275,30 +264,23 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
         private int keepAlive;
         private boolean cleanStart;
         private long sessionExpiryInterval;
-
         // restrictions
         private int receiveMaximum;
         private int topicAliasMaximum;
         private long maximumPacketSize;
         private boolean responseInformationRequested = DEFAULT_RESPONSE_INFORMATION_REQUESTED;
         private boolean problemInformationRequested = DEFAULT_PROBLEM_INFORMATION_REQUESTED;
-
         // simple auth
         private @Nullable String username;
         private byte @Nullable [] password;
-
         // enhanced auth
         private @Nullable String authMethod;
         private byte @Nullable [] authData;
-
         private @Nullable MqttWillPublish willPublish;
-
         private @NotNull Mqtt5UserProperties userProperties = Mqtt5UserProperties.NO_USER_PROPERTIES;
-
         public @NotNull CONNECT build() {
             Preconditions.checkNotNull(clientIdentifier, "client identifier must never be null");
-            return new CONNECT(
-                    ProtocolVersion.MQTTv5,
+            return new CONNECT(ProtocolVersion.MQTTv5,
                     clientIdentifier,
                     keepAlive,
                     cleanStart,
@@ -391,10 +373,8 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
             return this;
         }
     }
-
     public static @NotNull CONNECT from(final @NotNull ConnectPacketImpl packet, final @NotNull String clusterId) {
-        return new CONNECT(
-                MqttVersionUtil.toProtocolVersion(packet.getMqttVersion()),
+        return new CONNECT(MqttVersionUtil.toProtocolVersion(packet.getMqttVersion()),
                 packet.getClientId(),
                 packet.getKeepAlive(),
                 packet.getCleanStart(),

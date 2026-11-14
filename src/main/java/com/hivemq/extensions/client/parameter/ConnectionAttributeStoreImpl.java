@@ -34,9 +34,7 @@ import java.util.Optional;
 public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
 
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-
     private final @NotNull Channel channel;
-
     public ConnectionAttributeStoreImpl(@NotNull final Channel channel) {
         Preconditions.checkNotNull(channel, "channel must not be null");
         this.channel = channel;
@@ -46,7 +44,6 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
     public void put(@NotNull final String key, @NotNull final ByteBuffer value) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
         Preconditions.checkNotNull(value, "Value of connection attribute must not be null.");
-
         ConnectionAttributes.getInstance(channel).put(key, value);
     }
 
@@ -54,7 +51,6 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
     public void putAsString(@NotNull final String key, @NotNull final String value) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
         Preconditions.checkNotNull(value, "Value of connection attribute must not be null.");
-
         putAsString(key, value, DEFAULT_CHARSET);
     }
 
@@ -63,15 +59,12 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
         Preconditions.checkNotNull(value, "Value of connection attribute must not be null.");
         Preconditions.checkNotNull(charset, "Charset of connection attribute must not be null.");
-
         put(key, ByteBuffer.wrap(value.getBytes(charset)));
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Optional<ByteBuffer> get(@NotNull final String key) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
-
         final ConnectionAttributes connectionAttributes = ConnectionAttributes.getInstanceIfPresent(channel);
         if (connectionAttributes == null) {
             return Optional.empty();
@@ -79,30 +72,24 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
         return connectionAttributes.get(key);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Optional<String> getAsString(@NotNull final String key) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
-
         return getAsString(key, DEFAULT_CHARSET);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Optional<String> getAsString(@NotNull final String key, @NotNull final Charset charset) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
         Preconditions.checkNotNull(charset, "Charset of connection attribute must not be null.");
-
         final byte[] bytes = Bytes.getBytesFromReadOnlyBuffer(get(key));
-
         if (bytes == null) {
             return Optional.empty();
         }
         return Optional.of(new String(bytes, charset));
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Optional<Map<String, ByteBuffer>> getAll() {
         final ConnectionAttributes connectionAttributes = ConnectionAttributes.getInstanceIfPresent(channel);
         if (connectionAttributes == null) {
@@ -111,11 +98,9 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
         return connectionAttributes.getAll();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Optional<ByteBuffer> remove(@NotNull final String key) {
         Preconditions.checkNotNull(key, "Key of connection attribute must not be null.");
-
         final ConnectionAttributes connectionAttributes = ConnectionAttributes.getInstanceIfPresent(channel);
         if (connectionAttributes == null) {
             return Optional.empty();
@@ -130,5 +115,4 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
             connectionAttributes.clear();
         }
     }
-
 }

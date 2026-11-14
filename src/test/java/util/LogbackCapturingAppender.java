@@ -30,7 +30,8 @@ import java.util.List;
  * <p>
  * <code>
  * <p>
- * final LogbackCapturingAppender capturing = LogbackCapturingAppender.Factory.weaveInto(LicensingConnectionLimiter.log);<br/>
+ * final LogbackCapturingAppender capturing =
+ * LogbackCapturingAppender.Factory.weaveInto(LicensingConnectionLimiter.log);<br/>
  * <br/>
  * .... fancy test logic here .... <br/>
  * <br/>
@@ -43,10 +44,10 @@ import java.util.List;
  * @author Dominik Obermaier
  */
 public final class LogbackCapturingAppender extends AppenderBase<ILoggingEvent> {
+
     public static class Factory {
 
-        private static final List<LogbackCapturingAppender> ALL = new ArrayList<LogbackCapturingAppender>();
-
+        private static final List<LogbackCapturingAppender> ALL = new ArrayList<>();
         private Factory() {
         }
 
@@ -56,19 +57,15 @@ public final class LogbackCapturingAppender extends AppenderBase<ILoggingEvent> 
             return appender;
         }
 
-
         public static void cleanUp() {
             for (final LogbackCapturingAppender appender : ALL) {
                 appender.cleanUp();
             }
         }
     }
-
     private final Logger log;
     private ILoggingEvent captured;
-
-    private final List<ILoggingEvent> allCaptured = new ArrayList<ILoggingEvent>();
-
+    private final List<ILoggingEvent> allCaptured = new ArrayList<>();
     public LogbackCapturingAppender(final org.slf4j.Logger sl4jLogger) {
         log = (Logger) sl4jLogger;
         addAppender(log);
@@ -111,6 +108,5 @@ public final class LogbackCapturingAppender extends AppenderBase<ILoggingEvent> 
 
     private void cleanUp() {
         log.detachAppender(this);
-
     }
 }

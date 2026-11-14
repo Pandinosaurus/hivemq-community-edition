@@ -25,18 +25,16 @@ import javax.inject.Provider;
 
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
 
-
 /**
  * @author Christoph Schäbel
  */
 public class TcpChannelInitializer extends AbstractChannelInitializer {
 
-    @NotNull
-    private final Provider<NonSslHandler> nonSslHandlerProvider;
-
-    public TcpChannelInitializer(@NotNull final ChannelDependencies channelDependencies,
-                                 @NotNull final TcpListener tcpListener,
-                                 @NotNull final Provider<NonSslHandler> nonSslHandlerProvider) {
+    @NotNull private final Provider<NonSslHandler> nonSslHandlerProvider;
+    public TcpChannelInitializer(
+            @NotNull final ChannelDependencies channelDependencies,
+            @NotNull final TcpListener tcpListener,
+            @NotNull final Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, tcpListener);
         this.nonSslHandlerProvider = nonSslHandlerProvider;
     }
@@ -45,5 +43,4 @@ public class TcpChannelInitializer extends AbstractChannelInitializer {
     protected void addSpecialHandlers(@NotNull final Channel ch) {
         ch.pipeline().addFirst(NON_SSL_HANDLER, nonSslHandlerProvider.get());
     }
-
 }

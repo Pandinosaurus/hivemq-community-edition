@@ -15,51 +15,51 @@
  */
 package com.hivemq.bootstrap;
 
-import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.entity.TcpListener;
 import com.hivemq.exceptions.UnrecoverableException;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Dominik Obermaier
  */
 public class StartupListenerVerifierTest {
 
-
     @Test(expected = UnrecoverableException.class)
-    public void test_verifier_verify_only_listener_failed() throws Exception {
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        new StartupListenerVerifier(Lists.newArrayList(failed)).verifyAndPrint();
+    public void test_verifier_verify_only_listener_failed() {
+        final ListenerStartupInformation failed = ListenerStartupInformation
+                .failedListenerStartup(new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+        new StartupListenerVerifier(List.of(failed)).verifyAndPrint();
     }
 
     @Test(expected = UnrecoverableException.class)
-    public void test_verifier_verify_all_listeners_failed() throws Exception {
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        final ListenerStartupInformation failed2 = ListenerStartupInformation.failedListenerStartup(1234, new TcpListener(1234, "0.0.0.0"), new RuntimeException("anotherreason"));
-
-        new StartupListenerVerifier(Lists.newArrayList(failed, failed2)).verifyAndPrint();
+    public void test_verifier_verify_all_listeners_failed() {
+        final ListenerStartupInformation failed = ListenerStartupInformation
+                .failedListenerStartup(new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+        final ListenerStartupInformation failed2 = ListenerStartupInformation
+                .failedListenerStartup(new TcpListener(1234, "0.0.0.0"), new RuntimeException("anotherreason"));
+        new StartupListenerVerifier(List.of(failed, failed2)).verifyAndPrint();
     }
 
     @Test
-    public void test_verifier_verify_some_listeners_failed() throws Exception {
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        final ListenerStartupInformation success = ListenerStartupInformation.successfulListenerStartup(1234, new TcpListener(1234, "0.0.0.0"));
-
-        new StartupListenerVerifier(Lists.newArrayList(failed, success)).verifyAndPrint();
-
-        //We don't receive an exception so everything is good
+    public void test_verifier_verify_some_listeners_failed() {
+        final ListenerStartupInformation failed = ListenerStartupInformation
+                .failedListenerStartup(new TcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+        final ListenerStartupInformation success =
+                ListenerStartupInformation.successfulListenerStartup(new TcpListener(1234, "0.0.0.0"));
+        new StartupListenerVerifier(List.of(failed, success)).verifyAndPrint();
+        // We don't receive an exception so everything is good
     }
 
     @Test(expected = UnrecoverableException.class)
-    public void test_verifier_verify_empty_listeners() throws Exception {
-        new StartupListenerVerifier(new ArrayList<ListenerStartupInformation>()).verifyAndPrint();
+    public void test_verifier_verify_empty_listeners() {
+        new StartupListenerVerifier(new ArrayList<>()).verifyAndPrint();
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_verifier_doesnt_accept_null() throws Exception {
+    public void test_verifier_doesnt_accept_null() {
         new StartupListenerVerifier(null);
     }
-
 }

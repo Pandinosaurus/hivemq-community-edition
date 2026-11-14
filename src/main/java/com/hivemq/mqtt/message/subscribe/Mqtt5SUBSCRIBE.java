@@ -20,12 +20,11 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public interface Mqtt5SUBSCRIBE {
 
     int DEFAULT_NO_SUBSCRIPTION_IDENTIFIER = -1;
-
     /**
      * @return a List of topics and their corresponding QoS the SUBSCRIBE message contains
      */

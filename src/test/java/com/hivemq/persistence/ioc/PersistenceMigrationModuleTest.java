@@ -24,6 +24,7 @@ import com.hivemq.bootstrap.ioc.lazysingleton.LazySingletonScope;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.local.memory.RetainedMessageMemoryLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadNoopPersistenceImpl;
@@ -31,32 +32,25 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpöck
- * @since 4.1.0
+ * @since  4.1.0
  */
 public class PersistenceMigrationModuleTest {
 
-    @Mock
-    private SystemInformation systemInformation;
-
-    @Mock
-    private MqttConfigurationService mqttConfigurationService;
-
-    @Mock
-    private PersistenceConfigurationService persistenceConfigurationService;
-
+    private final @NotNull SystemInformation systemInformation = mock();
+    private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
+    private final @NotNull PersistenceConfigurationService persistenceConfigurationService = mock();
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        when(persistenceConfigurationService.getMode()).thenReturn(PersistenceConfigurationService.PersistenceMode.FILE);
+        when(persistenceConfigurationService.getMode())
+                .thenReturn(PersistenceConfigurationService.PersistenceMode.FILE);
     }
 
     @Test
@@ -64,6 +58,7 @@ public class PersistenceMigrationModuleTest {
         final Injector injector = Guice.createInjector(
                 new PersistenceMigrationModule(new MetricRegistry(), persistenceConfigurationService),
                 new AbstractModule() {
+
                     @Override
                     protected void configure() {
                         bind(SystemInformation.class).toInstance(systemInformation);
@@ -71,20 +66,19 @@ public class PersistenceMigrationModuleTest {
                         bind(MqttConfigurationService.class).toInstance(mqttConfigurationService);
                     }
                 });
-
         final PersistenceStartup instance1 = injector.getInstance(PersistenceStartup.class);
         final PersistenceStartup instance2 = injector.getInstance(PersistenceStartup.class);
-
         assertSame(instance1, instance2);
     }
 
     @Test
     public void test_memory_persistence() {
-        when(persistenceConfigurationService.getMode()).thenReturn(PersistenceConfigurationService.PersistenceMode.IN_MEMORY);
-
+        when(persistenceConfigurationService.getMode())
+                .thenReturn(PersistenceConfigurationService.PersistenceMode.IN_MEMORY);
         final Injector injector = Guice.createInjector(
                 new PersistenceMigrationModule(new MetricRegistry(), persistenceConfigurationService),
                 new AbstractModule() {
+
                     @Override
                     protected void configure() {
                         bind(SystemInformation.class).toInstance(systemInformation);
@@ -93,6 +87,7 @@ public class PersistenceMigrationModuleTest {
                     }
                 });
         assertTrue(injector.getInstance(PublishPayloadPersistence.class) instanceof PublishPayloadNoopPersistenceImpl);
-        assertTrue(injector.getInstance(RetainedMessageLocalPersistence.class) instanceof RetainedMessageMemoryLocalPersistence);
+        assertTrue(injector
+                .getInstance(RetainedMessageLocalPersistence.class) instanceof RetainedMessageMemoryLocalPersistence);
     }
 }

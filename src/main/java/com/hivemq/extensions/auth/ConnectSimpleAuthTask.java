@@ -31,7 +31,6 @@ public class ConnectSimpleAuthTask extends AbstractAuthTask<AuthConnectInput, Co
             final @NotNull WrappedAuthenticatorProvider wrappedAuthenticatorProvider,
             final @NotNull AuthenticatorProviderInput authenticatorProviderInput,
             final @NotNull String extensionId) {
-
         super(wrappedAuthenticatorProvider, authenticatorProviderInput, extensionId);
     }
 

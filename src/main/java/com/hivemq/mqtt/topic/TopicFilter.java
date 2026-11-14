@@ -24,7 +24,6 @@ public class TopicFilter {
 
     private final @NotNull String topic;
     private final @Nullable String sharedName;
-
     public TopicFilter(final @NotNull String topic, final @Nullable String sharedName) {
         this.topic = topic;
         this.sharedName = sharedName;
@@ -40,11 +39,14 @@ public class TopicFilter {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final TopicFilter that = (TopicFilter) o;
-        return topic.equals(that.topic) &&
-                Objects.equals(sharedName, that.sharedName);
+        return topic.equals(that.topic) && Objects.equals(sharedName, that.sharedName);
     }
 
     @Override

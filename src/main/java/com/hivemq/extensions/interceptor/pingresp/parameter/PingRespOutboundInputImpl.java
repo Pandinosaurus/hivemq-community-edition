@@ -34,11 +34,9 @@ public class PingRespOutboundInputImpl
 
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;
-
     public PingRespOutboundInputImpl(
             final @NotNull ClientInformation clientInformation,
             final @NotNull ConnectionInformation connectionInformation) {
-
         this.clientInformation = clientInformation;
         this.connectionInformation = connectionInformation;
     }

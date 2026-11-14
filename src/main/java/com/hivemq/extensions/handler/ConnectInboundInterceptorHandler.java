@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.FullConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -65,7 +64,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConnectInboundInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectInboundInterceptorHandler.class);
-
     private final @NotNull FullConfigurationService configurationService;
     private final @NotNull PluginOutPutAsyncer asyncer;
     private final @NotNull HiveMQExtensions hiveMQExtensions;
@@ -74,7 +72,6 @@ public class ConnectInboundInterceptorHandler {
     private final @NotNull Interceptors interceptors;
     private final @NotNull ServerInformation serverInformation;
     private final @NotNull MqttConnacker connacker;
-
     @Inject
     public ConnectInboundInterceptorHandler(
             final @NotNull FullConfigurationService configurationService,
@@ -85,7 +82,6 @@ public class ConnectInboundInterceptorHandler {
             final @NotNull Interceptors interceptors,
             final @NotNull ServerInformation serverInformation,
             final @NotNull MqttConnacker connacker) {
-
         this.configurationService = configurationService;
         this.asyncer = asyncer;
         this.hiveMQExtensions = hiveMQExtensions;
@@ -96,58 +92,46 @@ public class ConnectInboundInterceptorHandler {
         this.connacker = connacker;
     }
 
-
     public void handleInboundConnect(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT connect) {
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        final String clientId = clientConnection.getClientId();
+        final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(channel);
+        final String clientId = clientConnectionContext.getClientId();
         if (clientId == null) {
             return;
         }
-
         final ImmutableMap<String, ConnectInboundInterceptorProvider> providers =
                 interceptors.connectInboundInterceptorProviders();
         if (providers.isEmpty()) {
             ctx.fireChannelRead(connect);
             return;
         }
-
         final ClientInformation clientInfo = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         final ConnectionInformation connectionInfo = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
-
         final ConnectInboundProviderInputImpl providerInput =
                 new ConnectInboundProviderInputImpl(serverInformation, clientInfo, connectionInfo);
-
-        final long timestamp =
-                Objects.requireNonNullElse(clientConnection.getConnectReceivedTimestamp(),
-                        System.currentTimeMillis());
+        final long timestamp = Objects.requireNonNullElse(clientConnectionContext.getConnectReceivedTimestamp(),
+                System.currentTimeMillis());
         final ConnectPacketImpl packet = new ConnectPacketImpl(connect, timestamp);
         final ConnectInboundInputImpl input = new ConnectInboundInputImpl(clientInfo, connectionInfo, packet);
         final ExtensionParameterHolder<ConnectInboundInputImpl> inputHolder = new ExtensionParameterHolder<>(input);
-
         final ModifiableConnectPacketImpl modifiablePacket =
                 new ModifiableConnectPacketImpl(packet, configurationService);
         final ConnectInboundOutputImpl output = new ConnectInboundOutputImpl(asyncer, modifiablePacket);
         final ExtensionParameterHolder<ConnectInboundOutputImpl> outputHolder = new ExtensionParameterHolder<>(output);
-
         final ConnectInterceptorContext context =
                 new ConnectInterceptorContext(clientId, providers.size(), ctx, inputHolder, outputHolder);
-
         for (final Map.Entry<String, ConnectInboundInterceptorProvider> entry : providers.entrySet()) {
             final ConnectInboundInterceptorProvider provider = entry.getValue();
-
             final HiveMQExtension extension = hiveMQExtensions.getExtension(entry.getKey());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
             }
-
             final ConnectInterceptorTask task =
                     new ConnectInterceptorTask(provider, providerInput, extension.getId(), clientId);
             executorService.handlePluginInOutTaskExecution(context, inputHolder, outputHolder, task);
         }
     }
-
     private class ConnectInterceptorContext extends PluginInOutTaskContext<ConnectInboundOutputImpl>
             implements Runnable {
 
@@ -156,14 +140,12 @@ public class ConnectInboundInterceptorHandler {
         private final @NotNull ChannelHandlerContext ctx;
         private final @NotNull ExtensionParameterHolder<ConnectInboundInputImpl> inputHolder;
         private final @NotNull ExtensionParameterHolder<ConnectInboundOutputImpl> outputHolder;
-
         ConnectInterceptorContext(
                 final @NotNull String clientId,
                 final int interceptorCount,
                 final @NotNull ChannelHandlerContext ctx,
                 final @NotNull ExtensionParameterHolder<ConnectInboundInputImpl> inputHolder,
                 final @NotNull ExtensionParameterHolder<ConnectInboundOutputImpl> outputHolder) {
-
             super(clientId);
             this.interceptorCount = interceptorCount;
             this.counter = new AtomicInteger(0);
@@ -205,22 +187,18 @@ public class ConnectInboundInterceptorHandler {
             if (output.isPrevent()) {
                 final String logMessage = output.getLogMessage();
                 final String reasonString = output.getReasonString();
-                connacker.connackError(
-                        ctx.channel(),
-                        logMessage,
-                        logMessage,
-                        Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR,
-                        reasonString);
+                connacker.connackError(ctx
+                        .channel(), logMessage, logMessage, Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR, reasonString);
             } else {
                 final CONNECT connect = CONNECT.from(inputHolder.get().getConnectPacket(), hivemqId.get());
-                final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-                clientConnection.setClientId(connect.getClientIdentifier());
-                clientConnection.setExtensionClientInformation(new ClientInformationImpl(connect.getClientIdentifier()));
-                clientConnection.setCleanStart(connect.isCleanStart());
-                clientConnection.setConnectKeepAlive(connect.getKeepAlive());
-                clientConnection.setAuthUsername(connect.getUsername());
-                clientConnection.setAuthPassword(connect.getPassword());
-
+                final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(ctx.channel());
+                clientConnectionContext.setClientId(connect.getClientIdentifier());
+                clientConnectionContext
+                        .setExtensionClientInformation(new ClientInformationImpl(connect.getClientIdentifier()));
+                clientConnectionContext.setCleanStart(connect.isCleanStart());
+                clientConnectionContext.setConnectKeepAlive(connect.getKeepAlive());
+                clientConnectionContext.setAuthUsername(connect.getUsername());
+                clientConnectionContext.setAuthPassword(connect.getPassword());
                 ctx.fireChannelRead(connect);
             }
         }
@@ -233,13 +211,11 @@ public class ConnectInboundInterceptorHandler {
         private final @NotNull ConnectInboundProviderInputImpl providerInput;
         private final @NotNull String extensionId;
         private final @NotNull String clientId;
-
         private ConnectInterceptorTask(
                 final @NotNull ConnectInboundInterceptorProvider provider,
                 final @NotNull ConnectInboundProviderInputImpl providerInput,
                 final @NotNull String extensionId,
                 final @NotNull String clientId) {
-
             this.provider = provider;
             this.providerInput = providerInput;
             this.extensionId = extensionId;
@@ -248,8 +224,8 @@ public class ConnectInboundInterceptorHandler {
 
         @Override
         public @NotNull ConnectInboundOutputImpl apply(
-                final @NotNull ConnectInboundInputImpl input, final @NotNull ConnectInboundOutputImpl output) {
-
+                final @NotNull ConnectInboundInputImpl input,
+                final @NotNull ConnectInboundOutputImpl output) {
             if (output.isPrevent()) {
                 // it's already prevented so no further interceptors must be called.
                 return output;

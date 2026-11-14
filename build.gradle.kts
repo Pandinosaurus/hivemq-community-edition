@@ -1,5 +1,4 @@
-import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import com.github.jengelman.gradle.plugins.shadow.transformers.PreserveFirstFoundResourceTransformer
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
@@ -7,171 +6,164 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin")
-    id("com.github.johnrengelman.shadow")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.sgtsilvio.gradle.metadata")
-    id("com.github.sgtsilvio.gradle.javadoc-links")
-    id("com.github.breadmoirai.github-release")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
-    id("com.github.ben-manes.versions")
+    alias(libs.plugins.mavenCentralPublishing)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.defaults)
+    alias(libs.plugins.metadata)
+    alias(libs.plugins.hivemq.oci.version.catalog)
+    alias(libs.plugins.oci)
+    alias(libs.plugins.javadocLinks)
+    alias(libs.plugins.githubRelease)
 
     /* Code Quality Plugins */
-    id("jacoco")
-    id("pmd")
-    id("com.github.spotbugs")
-    id("de.thetaphi.forbiddenapis")
+    jacoco
+    alias(libs.plugins.forbiddenApis)
+    alias(libs.plugins.spotless)
+
+    /* Compliance */
+    alias(libs.plugins.hivemq.license)
 }
-
-
-/* ******************** metadata ******************** */
 
 group = "com.hivemq"
 description = "HiveMQ CE is a Java-based open source MQTT broker that fully supports MQTT 3.x and MQTT 5"
 
 metadata {
-    readableName.set("HiveMQ Community Edition")
+    readableName = "HiveMQ Community Edition"
     organization {
-        name.set("HiveMQ GmbH")
-        url.set("https://www.hivemq.com/")
+        name = "HiveMQ GmbH"
+        url = "https://www.hivemq.com/"
     }
     license {
         apache2()
     }
     developers {
         register("cschaebe") {
-            fullName.set("Christoph Schaebel")
-            email.set("christoph.schaebel@hivemq.com")
+            fullName = "Christoph Schaebel"
+            email = "christoph.schaebel@hivemq.com"
         }
         register("lbrandl") {
-            fullName.set("Lukas Brandl")
-            email.set("lukas.brandl@hivemq.com")
+            fullName = "Lukas Brandl"
+            email = "lukas.brandl@hivemq.com"
         }
         register("flimpoeck") {
-            fullName.set("Florian Limpoeck")
-            email.set("florian.limpoeck@hivemq.com")
+            fullName = "Florian Limpoeck"
+            email = "florian.limpoeck@hivemq.com"
         }
         register("sauroter") {
-            fullName.set("Georg Held")
-            email.set("georg.held@hivemq.com")
+            fullName = "Georg Held"
+            email = "georg.held@hivemq.com"
         }
         register("SgtSilvio") {
-            fullName.set("Silvio Giebl")
-            email.set("silvio.giebl@hivemq.com")
+            fullName = "Silvio Giebl"
+            email = "silvio.giebl@hivemq.com"
         }
     }
     github {
-        org.set("hivemq")
-        repo.set("hivemq-community-edition")
         issues()
     }
 }
 
-
-/* ******************** java ******************** */
-
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion = JavaLanguageVersion.of(21)
     }
-
     withJavadocJar()
     withSourcesJar()
 }
 
-
-/* ******************** dependencies ******************** */
+tasks.compileJava {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
+    api(libs.hivemq.extensionSdk)
 
     // netty
-    implementation("io.netty:netty-buffer:${property("netty.version")}")
-    implementation("io.netty:netty-codec:${property("netty.version")}")
-    implementation("io.netty:netty-codec-http:${property("netty.version")}")
-    implementation("io.netty:netty-common:${property("netty.version")}")
-    implementation("io.netty:netty-handler:${property("netty.version")}")
-    implementation("io.netty:netty-transport:${property("netty.version")}")
+    implementation(libs.netty.buffer)
+    implementation(libs.netty.codec)
+    implementation(libs.netty.codec.http)
+    implementation(libs.netty.common)
+    implementation(libs.netty.handler)
+    implementation(libs.netty.transport)
 
     // logging
-    implementation("org.slf4j:slf4j-api:${property("slf4j.version")}")
-    implementation("org.slf4j:jul-to-slf4j:${property("slf4j.version")}")
-    implementation("ch.qos.logback:logback-classic:${property("logback.version")}")
+    implementation(libs.slf4j.api)
+    implementation(libs.julToSlf4j)
+    implementation(libs.logback.classic)
 
     // security
-    implementation("org.bouncycastle:bcprov-jdk15on:${property("bouncycastle.version")}")
-    implementation("org.bouncycastle:bcpkix-jdk15on:${property("bouncycastle.version")}")
+    implementation(platform(libs.bouncycastle.bom))
+    implementation(libs.bouncycastle.prov)
+    implementation(libs.bouncycastle.pkix)
 
     // persistence
-    implementation("org.rocksdb:rocksdbjni:${property("rocksdb.version")}")
-    implementation("org.jetbrains.xodus:xodus-openAPI:${property("xodus.version")}") {
+    implementation(libs.rocksdb)
+    implementation(libs.xodus.openApi) {
         exclude("org.jetbrains", "annotations")
     }
-    implementation("org.jetbrains.xodus:xodus-environment:${property("xodus.version")}") {
+    implementation(libs.xodus.environment) {
         exclude("org.jetbrains", "annotations")
     }
     // override transitive dependencies of xodus that have security vulnerabilities
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib:${property("kotlin.version")}")
-        implementation("org.apache.commons:commons-compress:${property("commons-compress.version")}")
+        implementation(libs.kotlin.stdlib)
+        implementation(libs.apache.commonsCompress)
     }
 
     // config
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:${property("jakarta-xml-bind.version")}")
-    runtimeOnly("com.sun.xml.bind:jaxb-impl:${property("jaxb.version")}")
+    implementation(libs.jaxb.api)
+    runtimeOnly(libs.jaxb.impl)
 
     // metrics
-    api("io.dropwizard.metrics:metrics-core:${property("metrics.version")}")
-    implementation("io.dropwizard.metrics:metrics-jmx:${property("metrics.version")}")
-    runtimeOnly("io.dropwizard.metrics:metrics-logback:${property("metrics.version")}")
-    implementation("com.github.oshi:oshi-core:${property("oshi.version")}")
+    api(libs.dropwizard.metrics)
+    implementation(libs.dropwizard.metrics.jmx)
+    runtimeOnly(libs.dropwizard.metrics.logback)
+    implementation(libs.oshi)
     // net.java.dev.jna:jna (transitive dependency of com.github.oshi:oshi-core) is used in imports
 
     // dependency injection
-    implementation("com.google.inject:guice:${property("guice.version")}") {
+    implementation(libs.guice) {
         exclude("com.google.guava", "guava")
     }
-    implementation("javax.annotation:javax.annotation-api:${property("javax.annotation.version")}")
+    implementation(libs.javax.annotation.api)
     // javax.inject:javax.inject (transitive dependency of com.google.inject:guice) is used in imports
 
     // common
-    implementation("commons-io:commons-io:${property("commons-io.version")}")
-    implementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
-    implementation("com.google.guava:guava:${property("guava.version")}") {
+    implementation(libs.apache.commonsIO)
+    implementation(libs.apache.commonsLang)
+    implementation(libs.guava) {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
     // com.google.code.findbugs:jsr305 (transitive dependency of com.google.guava:guava) is used in imports
-    implementation("net.openhft:zero-allocation-hashing:${property("zero-allocation-hashing.version")}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    implementation("org.jctools:jctools-core:${property("jctools.version")}")
+    implementation(libs.zeroAllocationHashing)
+    implementation(libs.jackson.databind)
+    implementation(libs.jctools)
 
     /* primitive data structures */
-    implementation("org.eclipse.collections:eclipse-collections:${property("eclipse.collections.version")}")
+    implementation(libs.eclipse.collections)
 }
-
 
 /* ******************** test ******************** */
 
 dependencies {
-    testImplementation("junit:junit:${property("junit.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:${property("equalsverifier.version")}")
-    testImplementation("net.jodah:concurrentunit:${property("concurrentunit.version")}")
-    testImplementation("org.jboss.shrinkwrap:shrinkwrap-api:${property("shrinkwrap.version")}")
-    testRuntimeOnly("org.jboss.shrinkwrap:shrinkwrap-impl-base:${property("shrinkwrap.version")}")
-    testImplementation("net.bytebuddy:byte-buddy:${property("bytebuddy.version")}")
-    testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:${property("wiremock.version")}")
-    testImplementation("org.javassist:javassist:${property("javassist.version")}")
-    testImplementation("org.awaitility:awaitility:${property("awaitility.version")}")
-    testImplementation("com.github.stefanbirkner:system-rules:${property("system-rules.version")}") {
-        exclude("junit", "junit-dep")
-    }
+    testImplementation(libs.junit)
+    testImplementation(libs.mockito)
+    testImplementation(libs.equalsVerifier)
+    testImplementation(libs.concurrentUnit)
+    testImplementation(libs.shrinkwrap.api)
+    testRuntimeOnly(libs.shrinkwrap.impl)
+    testImplementation(libs.byteBuddy)
+    testImplementation(libs.wiremock.standalone)
+    testImplementation(libs.javassist)
+    testImplementation(libs.awaitility)
+    testImplementation(libs.systemStubs)
 }
 
 tasks.test {
@@ -188,7 +180,7 @@ tasks.test {
         "--add-opens",
         "jdk.management/com.sun.management.internal=ALL-UNNAMED",
         "--add-exports",
-        "java.base/jdk.internal.misc=ALL-UNNAMED"
+        "java.base/jdk.internal.misc=ALL-UNNAMED",
     )
 
     val inclusions = rootDir.resolve("inclusions.txt")
@@ -201,10 +193,8 @@ tasks.test {
 
     testLogging {
         events = setOf(TestLogEvent.STARTED, TestLogEvent.FAILED)
-        exceptionFormat = TestExceptionFormat.FULL
     }
 }
-
 
 /* ******************** distribution ******************** */
 
@@ -214,12 +204,37 @@ tasks.jar {
         "Implementation-Vendor" to metadata.organization.get().name.get(),
         "Implementation-Version" to project.version,
         "HiveMQ-Version" to project.version,
-        "Main-Class" to "com.hivemq.HiveMQServer"
+        "Main-Class" to "com.hivemq.HiveMQServer",
     )
 }
 
 tasks.shadowJar {
+    // INCLUDE lets the service/metadata transformers process every duplicate copy instead of silently
+    // dropping the later ones, which the default EXCLUDE does before the transformers ever run.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
+    // Several dependencies ship their own copy of these license/notice/metadata files under identical
+    // paths; INCLUDE would otherwise pack each as a duplicate jar entry. Keep the first found copy.
+    // Third-party license compliance is covered separately by src/distribution/third-party-licenses.
+    transform<PreserveFirstFoundResourceTransformer> {
+        include(
+            "about.html",
+            "LICENSE-EDL-1.0.txt",
+            "LICENSE-EPL-1.0.txt",
+            "META-INF/AL2.0",
+            "META-INF/LGPL2.1",
+            "META-INF/LICENSE",
+            "META-INF/LICENSE.md",
+            "META-INF/LICENSE.txt",
+            "META-INF/NOTICE",
+            "META-INF/NOTICE.md",
+            "META-INF/NOTICE.txt",
+            "META-INF/io.netty.versions.properties",
+            "META-INF/maven/org.jctools/jctools-core/pom.properties",
+            "META-INF/maven/org.jctools/jctools-core/pom.xml",
+            "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+        )
+    }
 }
 
 val hivemqZip by tasks.registering(Zip::class) {
@@ -227,74 +242,125 @@ val hivemqZip by tasks.registering(Zip::class) {
 
     val name = "hivemq-ce-${project.version}"
 
-    archiveFileName.set("$name.zip")
+    archiveFileName = "$name.zip"
 
-    from("src/distribution") { exclude("**/.gitkeep") }
+    from("src/distribution") {
+        exclude("**/.gitkeep")
+        filesMatching(listOf("**/*.sh", "bin/init-script/hivemq", "bin/init-script/hivemq-debian")) {
+            permissions { unix(0b111_101_101) }
+        }
+    }
     from("src/main/resources/config.xml") { into("conf") }
     from("src/main/resources/config.xsd") { into("conf") }
     from(tasks.shadowJar) { into("bin").rename { "hivemq.jar" } }
+    from(tasks.named("cyclonedxDirectBom")) { into("sbom").include("bom.json", "bom.xml") }
     into(name)
 }
 
+oci {
+    registries {
+        dockerHub {
+            optionalCredentials()
+        }
+        // The eclipse-temurin base image is served from ECR Public (PLT-1261). Anonymous pulls need no
+        // credentials. exclusiveContent keeps this group from also being looked up on Docker Hub.
+        registry("ecrPublic") {
+            url = uri("https://public.ecr.aws")
+            optionalCredentials()
+            exclusiveContent { includeGroup("hivemq.library") }
+        }
+    }
+    imageMapping {
+        mapGroup("hivemq.library") {
+            toImage(nameSpec("hivemq/library/") + name)
+        }
+    }
+    imageDefinitions.register("main") {
+        imageName = "hivemq/hivemq-ce"
+        allPlatforms {
+            dependencies {
+                runtime(ociImages.eclipse.temurin.oci)
+            }
+            config {
+                user = "10000"
+                ports = setOf(/* MQTT */ "1883", /* MQTT over WebSocket */ "8000")
+                environment = mapOf(
+                    "JAVA_OPTS" to "-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA",
+                    "HIVEMQ_ALLOW_ALL_CLIENTS" to "true",
+                    "LANG" to "en_US.UTF-8",
+                    // As the user id that runs the container (10000 by default) does not have an entry in /etc/passwd, set the home directory explicitly.
+                    // If not set, HOME would default to "/".
+                    // Java uses this value for the system property "user.home".
+                    "HOME" to "/opt/hivemq",
+                )
+                entryPoint = listOf("/opt/docker-entrypoint.sh")
+                arguments = listOf("/opt/hivemq/bin/run.sh")
+                volumes = setOf("/opt/hivemq/data", "/opt/hivemq/log")
+                workingDirectory = "/opt/hivemq"
+            }
+            layer("main") {
+                contents {
+                    into("opt") {
+                        from("src/oci/docker-entrypoint.sh") { filePermissions = 0b111_101_101 }
+                        permissions("hivemq/", 0b111_111_101)
+                        into("hivemq") {
+                            permissions("**/*.sh", 0b111_101_101)
+                            permissions("conf/", 0b111_111_101)
+                            permissions("conf/config.xml", 0b110_110_100)
+                            permissions("conf/logback.xml", 0b110_110_100)
+                            permissions("data/", 0b111_111_101)
+                            permissions("extensions/", 0b111_111_101)
+                            permissions("extensions/*/", 0b111_111_101)
+                            permissions("extensions/*/hivemq-extension.xml", 0b110_110_100)
+                            permissions("log/", 0b111_111_101)
+                            from("src/distribution") { filter { exclude("**/.gitkeep") } }
+                            from("src/oci/config.xml") { into("conf") }
+                            from("src/main/resources/config.xsd") { into("conf") }
+                            from(tasks.shadowJar) { into("bin").rename(".*", "hivemq.jar") }
+                            from(tasks.named("cyclonedxDirectBom")) {
+                                filter { include("bom.json", "bom.xml") }
+                                into("sbom")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        specificPlatform(platform("linux", "amd64"))
+        specificPlatform(platform("linux", "arm64", "v8"))
+    }
+}
+
 tasks.javadoc {
+    doFirst {
+        // create stub element-list files for Kotlin dependencies (transitive from xodus) that don't have Javadoc on javadoc.io
+        listOf(
+            "org.jetbrains.kotlin/kotlin-stdlib/${libs.versions.kotlin.get()}",
+            "io.github.microutils/kotlin-logging/1.4.1",
+        ).forEach {
+            val dir = layout.buildDirectory.dir("tmp/javadocLinks/$it").get().asFile
+            dir.mkdirs()
+            dir.resolve("element-list").createNewFile()
+        }
+    }
+
     (options as StandardJavadocDocletOptions).addStringOption("-html5")
 
     include("com/hivemq/embedded/*")
 
+    val javadocCleanerResult = providers.javaexec {
+        classpath(layout.projectDirectory.file("gradle/tools/javadoc-cleaner-1.0.jar"))
+    }.result
     doLast {
-        javaexec {
-            classpath("gradle/tools/javadoc-cleaner-1.0.jar")
-        }
-    }
-
-    doLast { // javadoc search fix for jdk 11 https://bugs.openjdk.java.net/browse/JDK-8215291
-        copy {
-            from(destinationDir!!.resolve("search.js"))
-            into(temporaryDir)
-            filter { line -> line.replace("if (ui.item.p == item.l) {", "if (item.m && ui.item.p == item.l) {") }
-        }
-        delete(destinationDir!!.resolve("search.js"))
-        copy {
-            from(temporaryDir.resolve("search.js"))
-            into(destinationDir!!)
-        }
+        javadocCleanerResult.get()
     }
 }
-
 
 /* ******************** checks ******************** */
 
 jacoco {
-    toolVersion = "${property("jacoco.version")}"
+    toolVersion = libs.versions.jacoco.get()
 }
-
-pmd {
-    toolVersion = "${property("pmd.version")}"
-    sourceSets = listOf(project.sourceSets.main.get())
-    isIgnoreFailures = true
-    rulesMinimumPriority.set(3)
-}
-
-spotbugs {
-    toolVersion.set("${property("spotbugs.version")}")
-    ignoreFailures.set(true)
-    reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
-}
-
-dependencies {
-    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.8.0")
-}
-
-dependencyCheck {
-    analyzers.apply {
-        centralEnabled = false
-    }
-    format = org.owasp.dependencycheck.reporting.ReportGenerator.Format.ALL
-    scanConfigurations = listOf("runtimeClasspath")
-    suppressionFile = "$projectDir/gradle/dependency-check/suppress.xml"
-}
-
-tasks.check { dependsOn(tasks.dependencyCheckAnalyze) }
 
 forbiddenApis {
     bundledSignatures = setOf("jdk-system-out")
@@ -307,126 +373,31 @@ tasks.forbiddenApisMain {
 
 tasks.forbiddenApisTest { enabled = false }
 
-
-/* ******************** compliance ******************** */
-
-license {
-    header = file("HEADER")
-    mapping("java", "SLASHSTAR_STYLE")
-}
-
-downloadLicenses {
-    aliases = mapOf(
-        license("Apache License, Version 2.0", "https://opensource.org/licenses/Apache-2.0") to listOf(
-            "Apache 2",
-            "Apache 2.0",
-            "Apache-2.0",
-            "Apache License 2.0",
-            "Apache License, 2.0",
-            "Apache License v2.0",
-            "Apache License, Version 2",
-            "Apache License Version 2.0",
-            "Apache License, Version 2.0",
-            "Apache License, version 2.0",
-            "The Apache License, Version 2.0",
-            "Apache Software License - Version 2.0",
-            "Apache Software License, version 2.0",
-            "The Apache Software License, Version 2.0"
-        ),
-        license("MIT License", "https://opensource.org/licenses/MIT") to listOf(
-            "MIT License",
-            "MIT license",
-            "The MIT License",
-            "The MIT License (MIT)"
-        ),
-        license("CDDL, Version 1.0", "https://opensource.org/licenses/CDDL-1.0") to listOf(
-            "CDDL, Version 1.0",
-            "Common Development and Distribution License 1.0",
-            "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0",
-            license("CDDL", "https://glassfish.dev.java.net/public/CDDLv1.0.html")
-        ),
-        license("CDDL, Version 1.1", "https://oss.oracle.com/licenses/CDDL+GPL-1.1") to listOf(
-            "CDDL 1.1",
-            "CDDL, Version 1.1",
-            "Common Development And Distribution License 1.1",
-            "CDDL+GPL License",
-            "CDDL + GPLv2 with classpath exception",
-            "Dual license consisting of the CDDL v1.1 and GPL v2",
-            "CDDL or GPLv2 with exceptions",
-            "CDDL/GPLv2+CE"
-        ),
-        license("LGPL, Version 2.0", "https://opensource.org/licenses/LGPL-2.0") to listOf(
-            "LGPL, Version 2.0",
-            "GNU General Public License, version 2"
-        ),
-        license("LGPL, Version 2.1", "https://opensource.org/licenses/LGPL-2.1") to listOf(
-            "LGPL, Version 2.1",
-            "LGPL, version 2.1",
-            "GNU Lesser General Public License version 2.1 (LGPLv2.1)",
-            license("GNU Lesser General Public License", "http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html")
-        ),
-        license("LGPL, Version 3.0", "https://opensource.org/licenses/LGPL-3.0") to listOf(
-            "LGPL, Version 3.0",
-            "Lesser General Public License, version 3 or greater"
-        ),
-        license("EPL, Version 1.0", "https://opensource.org/licenses/EPL-1.0") to listOf(
-            "EPL, Version 1.0",
-            "Eclipse Public License - v 1.0",
-            "Eclipse Public License - Version 1.0",
-            license("Eclipse Public License", "http://www.eclipse.org/legal/epl-v10.html")
-        ),
-        license("EPL, Version 2.0", "https://opensource.org/licenses/EPL-2.0") to listOf(
-            "EPL 2.0",
-            "EPL, Version 2.0"
-        ),
-        license("EDL, Version 1.0", "https://www.eclipse.org/org/documents/edl-v10.php") to listOf(
-            "EDL 1.0",
-            "EDL, Version 1.0",
-            "Eclipse Distribution License - v 1.0"
-        ),
-        license("BSD 3-Clause License", "https://opensource.org/licenses/BSD-3-Clause") to listOf(
-            "BSD 3-clause",
-            "BSD-3-Clause",
-            "BSD 3-Clause License",
-            "3-Clause BSD License",
-            "New BSD License",
-            license("BSD", "http://asm.ow2.org/license.html"),
-            license("BSD", "http://asm.objectweb.org/license.html"),
-            license("BSD", "LICENSE.txt")
-        ),
-        license("Bouncy Castle License", "https://www.bouncycastle.org/licence.html") to listOf(
-            "Bouncy Castle Licence"
-        ),
-        license("W3C License", "https://opensource.org/licenses/W3C") to listOf(
-            "W3C License",
-            "W3C Software Copyright Notice and License",
-            "The W3C Software License"
-        ),
-        license("CC0", "https://creativecommons.org/publicdomain/zero/1.0/") to listOf(
-            "CC0",
-            "Public Domain"
-        )
-    )
-
-    dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
-}
-
-val updateThirdPartyLicenses by tasks.registering {
-    group = "license"
-    dependsOn(tasks.downloadLicenses)
-    doLast {
-        javaexec {
-            classpath("gradle/tools/license-third-party-tool-2.0.jar")
-            args(
-                "$buildDir/reports/license/dependency-license.xml",
-                "$projectDir/src/distribution/third-party-licenses/licenses",
-                "$projectDir/src/distribution/third-party-licenses/licenses.html"
-            )
-        }
+spotless {
+    java {
+        licenseHeaderFile(rootDir.resolve("HEADER"))
+        eclipse().configFile(rootDir.resolve("eclipse-formatter.xml"))
+        endWithNewline()
+        formatAnnotations()
+        importOrder("", "javax|java", "\\#")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+    }
+    format("misc") {
+        target("**/*.md", "**/*.yml", "**/*.yaml", "**/*.xml", "**/*.properties", "**/*.kts")
+        targetExclude("**/.claude/**", "**/.idea/**", "**/build/**", "eclipse-formatter.xml")
+        trimTrailingWhitespace()
+        endWithNewline()
+        leadingTabsToSpaces(4)
     }
 }
 
+/* ******************** compliance ******************** */
+
+hivemqLicense {
+    projectName.set("HiveMQ")
+    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+}
 
 /* ******************** publishing ******************** */
 
@@ -434,39 +405,32 @@ publishing {
     publications {
         register<MavenPublication>("distribution") {
             artifact(hivemqZip)
-
             artifactId = "hivemq-community-edition"
         }
-
         register<MavenPublication>("embedded") {
             from(components["java"])
-
             artifactId = "hivemq-community-edition-embedded"
         }
     }
 }
 
 signing {
-    val signKey: String? by project
-    val signKeyPass: String? by project
-    useInMemoryPgpKeys(signKey, signKeyPass)
+    isRequired = !"true".equals(project.findProperty("signingDisabled") as String?, true)
+    val signingKey: String? by project
+    val signingPassword: String? by project
+    useInMemoryPgpKeys(signingKey, signingPassword)
     sign(publishing.publications["embedded"])
-}
-
-nexusPublishing {
-    repositories {
-        sonatype()
-    }
 }
 
 githubRelease {
     token(System.getenv("GITHUB_TOKEN"))
-    tagName(project.version.toString())
     releaseAssets(hivemqZip)
-    allowUploadToExisting(true)
+    tagName = project.version.toString()
+    allowUploadToExisting = true
 }
 
-val javaComponent = components["java"] as AdhocComponentWithVariants
-javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
-    skip()
+shadow {
+    // Disable publishing `shadowRuntimeElements` as an optional variant of the `java` component.
+    // See https://github.com/GradleUp/shadow/pull/1662 (Shadow 9.1.0).
+    addShadowVariantIntoJavaComponent = false
 }

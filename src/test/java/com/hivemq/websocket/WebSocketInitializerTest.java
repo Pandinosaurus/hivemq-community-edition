@@ -20,69 +20,56 @@ import com.hivemq.configuration.service.entity.WebsocketListener;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_OBJECT_AGGREGATOR;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_SERVER_CODEC;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_WEBSOCKET_ENCODER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_BINARY_FRAME_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_SERVER_PROTOCOL_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_TEXT_FRAME_HANDLER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class WebSocketInitializerTest {
 
-    private EmbeddedChannel channel;
-
-    private WebsocketListener websocketListener;
-
+    private final EmbeddedChannel channel = new EmbeddedChannel();
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        channel = new EmbeddedChannel();
-
         channel.pipeline().addLast("dummy", new DummyHandler());
-
-        websocketListener = new WebsocketListener.Builder()
-                .port(8000)
-                .bindAddress("0.0.0.0")
-                .build();
     }
 
     @Test
-    public void test_handler_in_pipeline() throws Exception {
-
+    public void test_handler_in_pipeline() {
+        final WebsocketListener websocketListener =
+                new WebsocketListener.Builder().port(8000).bindAddress("0.0.0.0").build();
         final WebSocketInitializer webSocketInitializer = new WebSocketInitializer(websocketListener);
-
         webSocketInitializer.addHandlers(channel, "dummy");
-
         final List<String> handlerNames = channel.pipeline().names();
-
-        assertEquals(true, handlerNames.contains(HTTP_SERVER_CODEC));
-        assertEquals(true, handlerNames.contains(HTTP_OBJECT_AGGREGATOR));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_SERVER_PROTOCOL_HANDLER));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_BINARY_FRAME_HANDLER));
-        assertEquals(true, handlerNames.contains(WEBSOCKET_TEXT_FRAME_HANDLER));
-        assertEquals(true, handlerNames.contains(MQTT_WEBSOCKET_ENCODER));
-
+        assertTrue(handlerNames.contains(HTTP_SERVER_CODEC));
+        assertTrue(handlerNames.contains(HTTP_OBJECT_AGGREGATOR));
+        assertTrue(handlerNames.contains(WEBSOCKET_SERVER_PROTOCOL_HANDLER));
+        assertTrue(handlerNames.contains(WEBSOCKET_BINARY_FRAME_HANDLER));
+        assertTrue(handlerNames.contains(WEBSOCKET_TEXT_FRAME_HANDLER));
+        assertTrue(handlerNames.contains(MQTT_WEBSOCKET_ENCODER));
     }
 
     @Test
-    public void test_handler_order() throws Exception {
-
+    public void test_handler_order() {
+        final WebsocketListener websocketListener =
+                new WebsocketListener.Builder().port(8000).bindAddress("0.0.0.0").build();
         final WebSocketInitializer webSocketInitializer = new WebSocketInitializer(websocketListener);
-
         webSocketInitializer.addHandlers(channel, "dummy");
-
         final List<String> handlerNames = channel.pipeline().names();
-
         final int hscIdx = handlerNames.indexOf(HTTP_SERVER_CODEC);
         final int hoaIdx = handlerNames.indexOf(HTTP_OBJECT_AGGREGATOR);
         final int wsphIdx = handlerNames.indexOf(WEBSOCKET_SERVER_PROTOCOL_HANDLER);
         final int wbfhIdx = handlerNames.indexOf(WEBSOCKET_BINARY_FRAME_HANDLER);
         final int wtfhIdx = handlerNames.indexOf(WEBSOCKET_TEXT_FRAME_HANDLER);
         final int mweIdx = handlerNames.indexOf(MQTT_WEBSOCKET_ENCODER);
-
         assertTrue(hscIdx < hoaIdx);
         assertTrue(hoaIdx < wsphIdx);
         assertTrue(wsphIdx < wbfhIdx);
@@ -91,11 +78,10 @@ public class WebSocketInitializerTest {
     }
 
     @Test
-    public void test_no_subprotocols() throws Exception {
-        websocketListener = new WebsocketListener.Builder()
-                .port(8000)
+    public void test_no_subprotocols() {
+        final WebsocketListener websocketListener = new WebsocketListener.Builder().port(8000)
                 .bindAddress("0.0.0.0")
-                .subprotocols(new ArrayList<String>())
+                .subprotocols(new ArrayList<>())
                 .build();
         final WebSocketInitializer webSocketInitializer = new WebSocketInitializer(websocketListener);
         final String subprotocolString = webSocketInitializer.getSubprotocolString();
@@ -103,26 +89,22 @@ public class WebSocketInitializerTest {
     }
 
     @Test
-    public void test_one_subprotocol() throws Exception {
-        websocketListener = new WebsocketListener.Builder()
-                .port(8000)
+    public void test_one_subprotocol() {
+        final WebsocketListener websocketListener = new WebsocketListener.Builder().port(8000)
                 .bindAddress("0.0.0.0")
                 .subprotocols(Lists.newArrayList("mqttv3.1"))
                 .build();
-
         final WebSocketInitializer webSocketInitializer = new WebSocketInitializer(websocketListener);
         final String subprotocolString = webSocketInitializer.getSubprotocolString();
         assertEquals("mqttv3.1", subprotocolString);
     }
 
     @Test
-    public void test_multiple_subprotocols() throws Exception {
-        websocketListener = new WebsocketListener.Builder()
-                .port(8000)
+    public void test_multiple_subprotocols() {
+        final WebsocketListener websocketListener = new WebsocketListener.Builder().port(8000)
                 .bindAddress("0.0.0.0")
                 .subprotocols(Lists.newArrayList("mqttv3.1", "mqtt"))
                 .build();
-
         final WebSocketInitializer webSocketInitializer = new WebSocketInitializer(websocketListener);
         final String subprotocolString = webSocketInitializer.getSubprotocolString();
         assertEquals("mqttv3.1,mqtt", subprotocolString);

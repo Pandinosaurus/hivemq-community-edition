@@ -26,13 +26,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class CompletableScheduledFutureImpl<T> extends CompletableScheduledFuture<T> {
 
-    @Nullable
-    private ScheduledFuture<?> scheduledFuture;
-
+    @Nullable private ScheduledFuture<?> scheduledFuture;
     @Override
     public long getDelay(@NotNull final TimeUnit unit) {
         return Objects.requireNonNull(scheduledFuture).getDelay(unit);
@@ -47,8 +45,7 @@ public class CompletableScheduledFutureImpl<T> extends CompletableScheduledFutur
         this.scheduledFuture = scheduledFuture;
     }
 
-    @Nullable
-    public ScheduledFuture<?> getScheduledFuture() {
+    @Nullable public ScheduledFuture<?> getScheduledFuture() {
         return scheduledFuture;
     }
 

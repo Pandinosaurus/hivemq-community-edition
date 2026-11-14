@@ -30,19 +30,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * @author Florian Limpöck
  * @author Silvio Giebl
- * @since 4.0.0
+ * @since  4.0.0
  */
 @Immutable
 public class UserPropertiesImpl implements UserProperties {
 
     private static final UserPropertiesImpl NO_USER_PROPERTIES = new UserPropertiesImpl(ImmutableList.of());
-
     public static @NotNull UserPropertiesImpl of(final @NotNull ImmutableList<MqttUserProperty> list) {
         return list.isEmpty() ? NO_USER_PROPERTIES : new UserPropertiesImpl(list);
     }
-
     private final @NotNull ImmutableList<MqttUserProperty> list;
-
     private UserPropertiesImpl(final @NotNull ImmutableList<MqttUserProperty> list) {
         this.list = list;
     }

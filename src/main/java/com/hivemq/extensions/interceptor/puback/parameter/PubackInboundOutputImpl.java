@@ -31,10 +31,9 @@ public class PubackInboundOutputImpl extends AbstractSimpleAsyncOutput<PubackInb
 
     private final @NotNull ModifiablePubackPacketImpl pubackPacket;
     private boolean failed = false;
-
     public PubackInboundOutputImpl(
-            final @NotNull PluginOutPutAsyncer asyncer, final @NotNull ModifiablePubackPacketImpl pubackPacket) {
-
+            final @NotNull PluginOutPutAsyncer asyncer,
+            final @NotNull ModifiablePubackPacketImpl pubackPacket) {
         super(asyncer);
         this.pubackPacket = pubackPacket;
     }

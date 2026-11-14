@@ -16,10 +16,15 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.client.parameter.*;
+import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
+import com.hivemq.extension.sdk.api.client.parameter.ConnectionAttributeStore;
+import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
+import com.hivemq.extension.sdk.api.client.parameter.Listener;
+import com.hivemq.extension.sdk.api.client.parameter.ProxyInformation;
+import com.hivemq.extension.sdk.api.client.parameter.TlsInformation;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import io.netty.channel.Channel;
@@ -37,18 +42,15 @@ public class ConnectionInformationImpl implements ConnectionInformation {
     private final @Nullable InetAddress inetAddress;
     private final @Nullable Listener listener;
     private final @Nullable ClientTlsInformation tlsInformation;
-
-    public ConnectionInformationImpl(final @NotNull ClientConnection clientConnection) {
-        Preconditions.checkNotNull(clientConnection);
-
-        final Channel channel = clientConnection.getChannel();
+    public ConnectionInformationImpl(final @NotNull ClientConnectionContext clientConnectionContext) {
+        Preconditions.checkNotNull(clientConnectionContext);
+        final Channel channel = clientConnectionContext.getChannel();
         Preconditions.checkNotNull(channel);
         mqttVersion = ExtensionInformationUtil.mqttVersionFromChannel(channel);
-        inetAddress = clientConnection.getChannelAddress().orElse(null);
+        inetAddress = clientConnectionContext.getChannelAddress().orElse(null);
         listener = ExtensionInformationUtil.getListenerFromChannel(channel);
         tlsInformation = ExtensionInformationUtil.getTlsInformationFromChannel(channel);
         connectionAttributeStore = new ConnectionAttributeStoreImpl(channel);
-
     }
 
     @Override
@@ -68,7 +70,7 @@ public class ConnectionInformationImpl implements ConnectionInformation {
 
     @Override
     public @NotNull Optional<ProxyInformation> getProxyInformation() {
-        //Noop since community edition has no proxy protocol...
+        // Noop since community edition has no proxy protocol...
         return Optional.empty();
     }
 
@@ -77,10 +79,10 @@ public class ConnectionInformationImpl implements ConnectionInformation {
         return connectionAttributeStore;
     }
 
-
     @Override
     public @NotNull Optional<TlsInformation> getTlsInformation() {
-        if (tlsInformation != null && tlsInformation.getClientCertificate().isPresent() && tlsInformation.getClientCertificateChain().isPresent()) {
+        if (tlsInformation != null && tlsInformation.getClientCertificate().isPresent() &&
+                tlsInformation.getClientCertificateChain().isPresent()) {
             return Optional.of((TlsInformation) tlsInformation);
         }
         return Optional.empty();

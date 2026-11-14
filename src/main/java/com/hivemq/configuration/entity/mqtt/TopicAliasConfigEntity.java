@@ -16,17 +16,16 @@
 package com.hivemq.configuration.entity.mqtt;
 
 import com.hivemq.configuration.entity.EnabledEntity;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.TOPIC_ALIAS_MAX_PER_CLIENT_DEFAULT;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @XmlRootElement(name = "topic-alias")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -35,9 +34,7 @@ public class TopicAliasConfigEntity extends EnabledEntity {
 
     @XmlElement(name = "max-per-client", defaultValue = "5")
     private int maxPerClient = TOPIC_ALIAS_MAX_PER_CLIENT_DEFAULT;
-
     public int getMaxPerClient() {
         return maxPerClient;
     }
-
 }

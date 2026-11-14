@@ -1,0 +1,39 @@
+name: Run Snyk monitor on push
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: snyk-push-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-snyk-monitor:
+    runs-on: ubuntu-latest
+    environment: snyk-monitor-development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: hivemq-community-edition
+
+      - name: Setup Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6
+        with:
+          distribution: temurin
+          java-version: |
+            11
+            21
+
+      - name: Run Snyk monitor
+        uses: hivemq/hivemq-snyk-composite-action@278fb241e6462620b4efcddaef783d7f60174c93 # v3
+        with:
+          snyk-token: ${{ secrets.SNYK_TOKEN }}
+          org: hivemq-community-broker
+          project-name: hivemq-community-edition
+          remote-repo-url: hivemq-community-edition
+          project-lifecycle: development
+          path: hivemq-community-edition

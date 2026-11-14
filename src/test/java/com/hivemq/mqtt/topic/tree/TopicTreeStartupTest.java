@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
@@ -33,8 +34,6 @@ import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Set;
 
@@ -42,78 +41,81 @@ import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TopicTreeStartupTest {
 
-    @Mock
-    ClientSessionPersistence clientSessionPersistence;
-
-    @Mock
-    ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
-
-    @Mock
-    SharedSubscriptionService sharedSubscriptionService;
-
-
+    private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
+    private final @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence = mock();
+    private final @NotNull SharedSubscriptionService sharedSubscriptionService = mock();
     private LocalTopicTree topicTree;
     private TopicTreeStartup topicTreeStartup;
-
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
-
-        topicTreeStartup =
-                new TopicTreeStartup(topicTree, clientSessionPersistence, clientSessionSubscriptionPersistence,
-                        sharedSubscriptionService);
+        topicTreeStartup = new TopicTreeStartup(topicTree,
+                clientSessionPersistence,
+                clientSessionSubscriptionPersistence,
+                sharedSubscriptionService);
     }
 
     @Test
     public void test_populate_topic_tree() throws Exception {
-
-        final ListenableFuture<Set<String>> future = Futures.immediateFuture(Sets.newHashSet("client1", "client2", "client3"));
+        final ListenableFuture<Set<String>> future =
+                Futures.immediateFuture(Sets.newHashSet("client1", "client2", "client3"));
         when(clientSessionPersistence.getAllClients()).thenReturn(future);
-
-        when(clientSessionPersistence.getSession(anyString(), anyBoolean())).thenReturn(new ClientSession(false, SESSION_EXPIRY_MAX));
-
-        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client1"))).thenReturn(ImmutableSet.of(new Topic("topic1", QoS.AT_LEAST_ONCE)));
-        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client2"))).thenReturn(ImmutableSet.of(new Topic("topic1", QoS.AT_LEAST_ONCE), new Topic("topic2", QoS.EXACTLY_ONCE)));
-        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client3"))).thenReturn(ImmutableSet.of(new Topic("topic3", QoS.AT_MOST_ONCE, true, true, Mqtt5RetainHandling.DO_NOT_SEND, null)));
-
+        when(clientSessionPersistence.getSession(anyString(), anyBoolean()))
+                .thenReturn(new ClientSession(false, SESSION_EXPIRY_MAX));
+        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client1")))
+                .thenReturn(ImmutableSet.of(new Topic("topic1", QoS.AT_LEAST_ONCE)));
+        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client2"))).thenReturn(
+                ImmutableSet.of(new Topic("topic1", QoS.AT_LEAST_ONCE), new Topic("topic2", QoS.EXACTLY_ONCE)));
+        when(clientSessionSubscriptionPersistence.getSubscriptions(eq("client3"))).thenReturn(ImmutableSet
+                .of(new Topic("topic3", QoS.AT_MOST_ONCE, true, true, Mqtt5RetainHandling.DO_NOT_SEND, null)));
         topicTreeStartup.postConstruct();
-
-        final Set<SubscriberWithIdentifiers> subscribersForTopic1 = topicTree.findTopicSubscribers("topic1").getSubscribers();
-        final Set<SubscriberWithIdentifiers> subscribersForTopic2 = topicTree.findTopicSubscribers("topic2").getSubscribers();
-        final Set<SubscriberWithIdentifiers> subscribersForTopic3 = topicTree.findTopicSubscribers("topic3").getSubscribers();
-
-        assertThat(subscribersForTopic1, hasItems(new SubscriberWithIdentifiers("client1", 1, (byte) 0, null, ImmutableList.of(), null),
-                new SubscriberWithIdentifiers("client2", 1, (byte) 0, null, ImmutableList.of(), null)));
-        assertThat(subscribersForTopic2, hasItems(new SubscriberWithIdentifiers("client2", 2, SubscriptionFlag.getDefaultFlags(false, false, false), null, ImmutableList.of(), null)));
-        assertThat(subscribersForTopic3, hasItems(new SubscriberWithIdentifiers("client3", 0, SubscriptionFlag.getDefaultFlags(false, true, true), null, ImmutableList.of(), null)));
+        final Set<SubscriberWithIdentifiers> subscribersForTopic1 =
+                topicTree.findTopicSubscribers("topic1").getSubscribers();
+        final Set<SubscriberWithIdentifiers> subscribersForTopic2 =
+                topicTree.findTopicSubscribers("topic2").getSubscribers();
+        final Set<SubscriberWithIdentifiers> subscribersForTopic3 =
+                topicTree.findTopicSubscribers("topic3").getSubscribers();
+        assertThat(subscribersForTopic1,
+                hasItems(new SubscriberWithIdentifiers("client1", 1, (byte) 0, null, ImmutableList.of(), null),
+                        new SubscriberWithIdentifiers("client2", 1, (byte) 0, null, ImmutableList.of(), null)));
+        assertThat(subscribersForTopic2,
+                hasItems(new SubscriberWithIdentifiers("client2",
+                        2,
+                        SubscriptionFlag.getDefaultFlags(false, false, false),
+                        null,
+                        ImmutableList.of(),
+                        null)));
+        assertThat(subscribersForTopic3,
+                hasItems(new SubscriberWithIdentifiers("client3",
+                        0,
+                        SubscriptionFlag.getDefaultFlags(false, true, true),
+                        null,
+                        ImmutableList.of(),
+                        null)));
     }
 
     @Test
     public void test_remove_clean_session_subs() throws Exception {
-
         final ListenableFuture<Set<String>> future = Futures.immediateFuture(Sets.newHashSet("client1", "client2"));
         when(clientSessionPersistence.getAllClients()).thenReturn(future);
-
         when(clientSessionPersistence.getSession(anyString(), anyBoolean())).thenReturn(new ClientSession(false, 0));
-
         topicTreeStartup.postConstruct();
-
         verify(clientSessionSubscriptionPersistence).removeAllLocally("client1");
         verify(clientSessionSubscriptionPersistence).removeAllLocally("client2");
-
-        final Set<SubscriberWithIdentifiers> subscribersForTopic1 = topicTree.findTopicSubscribers("topic1").getSubscribers();
-        final Set<SubscriberWithIdentifiers> subscribersForTopic2 = topicTree.findTopicSubscribers("topic2").getSubscribers();
-
+        final Set<SubscriberWithIdentifiers> subscribersForTopic1 =
+                topicTree.findTopicSubscribers("topic1").getSubscribers();
+        final Set<SubscriberWithIdentifiers> subscribersForTopic2 =
+                topicTree.findTopicSubscribers("topic2").getSubscribers();
         assertTrue(subscribersForTopic1.isEmpty());
         assertTrue(subscribersForTopic2.isEmpty());
     }
-
 }

@@ -33,7 +33,6 @@ import java.time.Duration;
 class ConnectSimpleAuthOutput implements SimpleAuthOutput {
 
     private final @NotNull ConnectAuthOutput delegate;
-
     ConnectSimpleAuthOutput(final @NotNull ConnectAuthOutput delegate) {
         this.delegate = delegate;
     }
@@ -41,6 +40,11 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
     @Override
     public void authenticateSuccessfully() {
         delegate.authenticateSuccessfully();
+    }
+
+    @Override
+    public void authenticateSuccessfully(final boolean clearPasswordAfterAuth) {
+        delegate.authenticateSuccessfully(clearPasswordAfterAuth);
     }
 
     @Override
@@ -92,7 +96,6 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
     public @NotNull Async<SimpleAuthOutput> async(
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback) {
-
         return new AsyncWrapper<>(delegate.async(timeout, fallback), this);
     }
 
@@ -101,7 +104,6 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @NotNull ConnackReasonCode reasonCode) {
-
         return new AsyncWrapper<>(delegate.async(timeout, fallback, reasonCode), this);
     }
 
@@ -110,7 +112,6 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @Nullable String reasonString) {
-
         return new AsyncWrapper<>(delegate.async(timeout, fallback, reasonString), this);
     }
 
@@ -120,15 +121,12 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
             final @NotNull TimeoutFallback fallback,
             final @NotNull ConnackReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         return new AsyncWrapper<>(delegate.async(timeout, fallback, reasonCode, reasonString), this);
     }
-
     private static class AsyncWrapper<T> implements Async<T> {
 
         private final @NotNull Async<?> delegate;
         private final @NotNull T output;
-
         public AsyncWrapper(final @NotNull Async<?> delegate, final @NotNull T output) {
             this.delegate = delegate;
             this.output = output;
@@ -139,8 +137,7 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
             delegate.resume();
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public T getOutput() {
             return output;
         }

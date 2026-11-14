@@ -16,13 +16,16 @@
 package com.hivemq.configuration.entity;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
-import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.INCOMING_BANDWIDTH_THROTTLING_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CLIENT_ID_LENGTH_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CONNECTIONS_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_TOPIC_LENGTH_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.NO_CONNECT_IDLE_TIMEOUT_DEFAULT;
 
 /**
  * @author Dominik Obermaier
@@ -35,19 +38,14 @@ public class RestrictionsEntity {
 
     @XmlElement(name = "max-connections", defaultValue = "-1")
     private @NotNull Long maxConnections = MAX_CONNECTIONS_DEFAULT;
-
     @XmlElement(name = "max-client-id-length", defaultValue = "65535")
     private @NotNull Integer maxClientIdLength = MAX_CLIENT_ID_LENGTH_DEFAULT;
-
     @XmlElement(name = "max-topic-length", defaultValue = "65535")
     private @NotNull Integer maxTopicLength = MAX_TOPIC_LENGTH_DEFAULT;
-
     @XmlElement(name = "no-connect-idle-timeout", defaultValue = "10000")
     private @NotNull Long noConnectIdleTimeout = NO_CONNECT_IDLE_TIMEOUT_DEFAULT;
-
     @XmlElement(name = "incoming-bandwidth-throttling", defaultValue = "0")
     private @NotNull Long incomingBandwidthThrottling = INCOMING_BANDWIDTH_THROTTLING_DEFAULT;
-
     public long getMaxConnections() {
         return maxConnections;
     }

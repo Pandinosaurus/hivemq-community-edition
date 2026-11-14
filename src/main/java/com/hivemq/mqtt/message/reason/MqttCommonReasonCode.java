@@ -46,9 +46,7 @@ public enum MqttCommonReasonCode implements Mqtt5ReasonCode {
     CONNECTION_RATE_EXCEEDED(0x9F),
     SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED(0xA1),
     WILDCARD_SUBSCRIPTION_NOT_SUPPORTED(0xA2);
-
     private final int code;
-
     MqttCommonReasonCode(final int code) {
         this.code = code;
     }

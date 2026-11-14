@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.packets.publish;
 
 import com.google.common.collect.ImmutableList;
@@ -34,7 +33,9 @@ import util.TestConfigurationBootstrap;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -43,7 +44,6 @@ import static org.junit.Assert.*;
 public class ModifiablePublishPacketImplTest {
 
     private @NotNull FullConfigurationService configurationService;
-
     @Before
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getFullConfigurationService();
@@ -68,11 +68,8 @@ public class ModifiablePublishPacketImplTest {
                 1234L);
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setTopic("modifiedTopic");
-
         assertTrue(modifiablePacket.isModified());
         assertEquals("modifiedTopic", modifiablePacket.getTopic());
     }
@@ -96,11 +93,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setTopic("topic");
-
         assertFalse(modifiablePacket.isModified());
         assertEquals("topic", modifiablePacket.getTopic());
     }
@@ -124,7 +118,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setTopic(null);
     }
 
@@ -147,7 +140,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setTopic("");
     }
 
@@ -170,7 +162,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         configurationService.restrictionsConfiguration().setMaxTopicLength(10);
         modifiablePacket.setTopic("topic123456");
     }
@@ -194,7 +185,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setTopic("topic" + '\u0000');
     }
 
@@ -217,7 +207,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setTopic("topic" + '\u0001');
     }
 
@@ -240,12 +229,9 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         configurationService.securityConfiguration().setValidateUTF8(false);
         modifiablePacket.setTopic("topic" + '\u0001');
-
         assertTrue(modifiablePacket.isModified());
         assertEquals("topic" + '\u0001', modifiablePacket.getTopic());
     }
@@ -269,11 +255,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Qos.EXACTLY_ONCE, modifiablePacket.getOnwardQos());
     }
@@ -297,11 +280,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setQos(Qos.AT_LEAST_ONCE);
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Qos.AT_LEAST_ONCE, modifiablePacket.getOnwardQos());
     }
@@ -325,7 +305,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setQos(null);
     }
 
@@ -348,7 +327,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         configurationService.mqttConfiguration().setMaximumQos(QoS.AT_LEAST_ONCE);
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
     }
@@ -372,11 +350,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of(ByteBuffer.wrap("modifiedPayload".getBytes())), modifiablePacket.getPayload());
     }
@@ -400,11 +375,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setPayload(ByteBuffer.wrap("payload".getBytes()));
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of(ByteBuffer.wrap("payload".getBytes())), modifiablePacket.getPayload());
     }
@@ -428,7 +400,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setPayload(null);
     }
 
@@ -451,13 +422,10 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setRetain(true);
-
         assertTrue(modifiablePacket.isModified());
-        assertEquals(true, modifiablePacket.getRetain());
+        assertTrue(modifiablePacket.getRetain());
     }
 
     @Test
@@ -479,13 +447,10 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setRetain(false);
-
         assertFalse(modifiablePacket.isModified());
-        assertEquals(false, modifiablePacket.getRetain());
+        assertFalse(modifiablePacket.getRetain());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -507,7 +472,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         configurationService.mqttConfiguration().setRetainedMessagesEnabled(false);
         modifiablePacket.setRetain(true);
     }
@@ -531,11 +495,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setMessageExpiryInterval(30);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of(30L), modifiablePacket.getMessageExpiryInterval());
     }
@@ -559,11 +520,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setMessageExpiryInterval(60);
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of(60L), modifiablePacket.getMessageExpiryInterval());
     }
@@ -587,7 +545,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         configurationService.mqttConfiguration().setMaxMessageExpiryInterval(240L);
         modifiablePacket.setMessageExpiryInterval(241);
     }
@@ -611,11 +568,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setPayloadFormatIndicator(PayloadFormatIndicator.UNSPECIFIED);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of(PayloadFormatIndicator.UNSPECIFIED), modifiablePacket.getPayloadFormatIndicator());
     }
@@ -639,11 +593,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setPayloadFormatIndicator(PayloadFormatIndicator.UNSPECIFIED);
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of(PayloadFormatIndicator.UNSPECIFIED), modifiablePacket.getPayloadFormatIndicator());
     }
@@ -667,11 +618,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setPayloadFormatIndicator(null);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.empty(), modifiablePacket.getPayloadFormatIndicator());
     }
@@ -695,11 +643,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setContentType("contentType");
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("contentType"), modifiablePacket.getContentType());
     }
@@ -723,11 +668,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setContentType("contentType");
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of("contentType"), modifiablePacket.getContentType());
     }
@@ -751,11 +693,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setContentType(null);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.empty(), modifiablePacket.getContentType());
     }
@@ -779,7 +718,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setContentType("contentType" + '\u0000');
     }
 
@@ -802,7 +740,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setContentType("contentType" + '\u0001');
     }
 
@@ -825,12 +762,9 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         configurationService.securityConfiguration().setValidateUTF8(false);
         modifiablePacket.setContentType("contentType" + '\u0001');
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("contentType" + '\u0001'), modifiablePacket.getContentType());
     }
@@ -854,11 +788,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setResponseTopic("responseTopic");
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("responseTopic"), modifiablePacket.getResponseTopic());
     }
@@ -882,11 +813,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setResponseTopic("responseTopic");
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of("responseTopic"), modifiablePacket.getResponseTopic());
     }
@@ -910,11 +838,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setResponseTopic(null);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.empty(), modifiablePacket.getResponseTopic());
     }
@@ -938,7 +863,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setResponseTopic("responseTopic" + '\u0000');
     }
 
@@ -961,7 +885,6 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setResponseTopic("responseTopic" + '\u0001');
     }
 
@@ -984,12 +907,9 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         configurationService.securityConfiguration().setValidateUTF8(false);
         modifiablePacket.setResponseTopic("responseTopic" + '\u0001');
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("responseTopic" + '\u0001'), modifiablePacket.getResponseTopic());
     }
@@ -1013,11 +933,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of(ByteBuffer.wrap("correlationData".getBytes())), modifiablePacket.getCorrelationData());
     }
@@ -1041,11 +958,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
-
         assertFalse(modifiablePacket.isModified());
         assertEquals(Optional.of(ByteBuffer.wrap("correlationData".getBytes())), modifiablePacket.getCorrelationData());
     }
@@ -1069,11 +983,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.setCorrelationData(null);
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.empty(), modifiablePacket.getCorrelationData());
     }
@@ -1097,11 +1008,8 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
     }
@@ -1125,9 +1033,7 @@ public class ModifiablePublishPacketImplTest {
                 System.currentTimeMillis());
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         final PublishPacketImpl copy = modifiablePacket.copy();
-
         assertEquals(packet, copy);
     }
 
@@ -1150,7 +1056,6 @@ public class ModifiablePublishPacketImplTest {
                 1234L);
         final ModifiablePublishPacketImpl modifiablePacket =
                 new ModifiablePublishPacketImpl(packet, configurationService);
-
         modifiablePacket.setTopic("modifiedTopic");
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
         modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
@@ -1162,7 +1067,6 @@ public class ModifiablePublishPacketImplTest {
         modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
         final PublishPacketImpl copy = modifiablePacket.copy();
-
         final PublishPacketImpl expectedPacket = new PublishPacketImpl("modifiedTopic",
                 Qos.AT_LEAST_ONCE,
                 Qos.EXACTLY_ONCE,
@@ -1184,7 +1088,11 @@ public class ModifiablePublishPacketImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(ModifiablePublishPacketImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier
+                // thinks
+                // @NotNull
+                // Optional is
+                // @NotNull
                 .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "userProperties")
                 .withIgnoredFields("configurationService", "modified")
                 .suppress(Warning.STRICT_INHERITANCE, Warning.NONFINAL_FIELDS)

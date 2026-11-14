@@ -18,11 +18,14 @@ package com.hivemq.mqtt.topic.tree;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Lukas Brandl
  */
 public class SegmentKeyUtilTest {
+
     @Test
     public void test_segnemt_key_util() {
         assertEquals("topic", SegmentKeyUtil.segmentKey("topic", 1));
@@ -52,14 +55,13 @@ public class SegmentKeyUtilTest {
 
     @Test
     public void test_contains_wildcard() {
-        assertEquals(true, SegmentKeyUtil.containsWildcard("topic/+"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("topic/#"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("+/topic"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("+"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("#"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("/#"));
-        assertEquals(true, SegmentKeyUtil.containsWildcard("/+"));
-
-        assertEquals(false, SegmentKeyUtil.containsWildcard("topic"));
+        assertTrue(SegmentKeyUtil.containsWildcard("topic/+"));
+        assertTrue(SegmentKeyUtil.containsWildcard("topic/#"));
+        assertTrue(SegmentKeyUtil.containsWildcard("+/topic"));
+        assertTrue(SegmentKeyUtil.containsWildcard("+"));
+        assertTrue(SegmentKeyUtil.containsWildcard("#"));
+        assertTrue(SegmentKeyUtil.containsWildcard("/#"));
+        assertTrue(SegmentKeyUtil.containsWildcard("/+"));
+        assertFalse(SegmentKeyUtil.containsWildcard("topic"));
     }
 }

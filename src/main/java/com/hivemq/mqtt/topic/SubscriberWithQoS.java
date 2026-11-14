@@ -37,15 +37,12 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
     private final @Nullable Integer subscriptionIdentifier;
     // The topic filter is only present for shared subscription
     private final @Nullable String topicFilter;
-
     private byte flags;
-
     public SubscriberWithQoS(
             final @NotNull String subscriber,
             final int qos,
             final byte flags,
             final @Nullable Integer subscriptionIdentifier) {
-
         this(subscriber, qos, flags, null, subscriptionIdentifier, null);
     }
 
@@ -56,10 +53,8 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
             final @Nullable String sharedName,
             final @Nullable Integer subscriptionIdentifier,
             final @Nullable String topicFilter) {
-
         checkNotNull(subscriber, "Subscriber must not be null");
         checkArgument((qos <= 2 && qos >= 0), "Quality of Service level must be between 0 and 2");
-
         this.subscriber = subscriber;
         this.qos = qos;
         this.flags = flags;
@@ -68,8 +63,7 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
         this.topicFilter = topicFilter;
     }
 
-    @NotNull
-    public String getSubscriber() {
+    @NotNull public String getSubscriber() {
         return subscriber;
     }
 
@@ -105,29 +99,28 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
         return Bytes.isBitSet(flags, SubscriptionFlag.NO_LOCAL.getFlagIndex());
     }
 
-    @Nullable
-    public String getSharedName() {
+    @Nullable public String getSharedName() {
         return sharedName;
     }
 
-    @Nullable
-    public Integer getSubscriptionIdentifier() {
+    @Nullable public Integer getSubscriptionIdentifier() {
         return subscriptionIdentifier;
     }
 
-    @Nullable
-    public String getTopicFilter() {
+    @Nullable public String getTopicFilter() {
         return topicFilter;
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final SubscriberWithQoS that = (SubscriberWithQoS) o;
-        return qos == that.qos &&
-                flags == that.flags &&
-                Objects.equals(subscriber, that.subscriber) &&
+        return qos == that.qos && flags == that.flags && Objects.equals(subscriber, that.subscriber) &&
                 Objects.equals(sharedName, that.sharedName) &&
                 Objects.equals(subscriptionIdentifier, that.subscriptionIdentifier) &&
                 Objects.equals(topicFilter, that.topicFilter);
@@ -156,12 +149,8 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
         return subscriberCompare;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String toString() {
-        return "SubscriberWithQoS{" +
-                "subscriber='" + subscriber + '\'' +
-                ", qos=" + qos +
-                '}';
+        return "SubscriberWithQoS{" + "subscriber='" + subscriber + '\'' + ", qos=" + qos + '}';
     }
 }

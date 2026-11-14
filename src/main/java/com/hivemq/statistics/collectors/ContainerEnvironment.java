@@ -31,16 +31,13 @@ import java.nio.charset.StandardCharsets;
 public class ContainerEnvironment {
 
     private static final Logger log = LoggerFactory.getLogger(ContainerEnvironment.class);
-
     public String getContainerEnvironment() {
-
         try {
             if (!Platform.isLinux()) {
                 return null;
             }
-
-            //a docker container always has the content "docker" in the cgroup file
-            //see https://stackoverflow.com/questions/23513045/
+            // a docker container always has the content "docker" in the cgroup file
+            // see https://stackoverflow.com/questions/23513045/
             final File cgroupFile = getCgroupFile();
             if (cgroupFile.exists() && cgroupFile.canRead()) {
                 final String content = FileUtils.readFileToString(cgroupFile, StandardCharsets.UTF_8);
@@ -51,16 +48,12 @@ public class ContainerEnvironment {
         } catch (final Exception ex) {
             log.trace("not able to determine if running in container", ex);
         }
-
         return null;
     }
 
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     File getCgroupFile() {
         final long pid = ProcessHandle.current().pid();
         return new File("/proc/" + pid + "/cgroup");
     }
-
-
 }

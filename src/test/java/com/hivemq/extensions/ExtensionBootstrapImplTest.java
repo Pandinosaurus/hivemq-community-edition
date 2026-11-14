@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
 
 import com.google.common.collect.ImmutableList;
@@ -44,7 +43,13 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Christoph Schäbel
@@ -53,20 +58,16 @@ public class ExtensionBootstrapImplTest {
 
     @Rule
     public @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
-
     private final @NotNull ExtensionLoader extensionLoader = mock(ExtensionLoader.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull ShutdownHooks shutdownHooks = mock(ShutdownHooks.class);
     private final @NotNull Authenticators authenticators = mock(Authenticators.class);
     private final @NotNull EmbeddedExtension embeddedExtension = mock(EmbeddedExtension.class);
-
     private @NotNull ExtensionBootstrapImpl pluginBootstrap;
-
     @Before
     public void before() {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
-
         final ExtensionLifecycleHandler extensionLifecycleHandler =
                 new ExtensionLifecycleHandlerImpl(hiveMQExtensions, MoreExecutors.newDirectExecutorService());
         pluginBootstrap = new ExtensionBootstrapImpl(extensionLoader,
@@ -81,40 +82,38 @@ public class ExtensionBootstrapImplTest {
     public void test_startPluginSystem_shutdown_hook_registered() {
         when(extensionLoader.loadExtensions(any(Path.class), anyBoolean())).thenReturn(ImmutableList.of());
         pluginBootstrap.startExtensionSystem(null);
-
         verify(shutdownHooks).add(any(HiveMQShutdownHook.class));
     }
 
     @Test
     public void test_startPluginSystem_with_embeddedExtensions() {
         when(extensionLoader.loadExtensions(any(Path.class), anyBoolean())).thenReturn(ImmutableList.of());
-        when(extensionLoader.loadEmbeddedExtension(any(EmbeddedExtension.class))).thenReturn(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
-                "my-extension",
-                0,
-                new File("/tmp").toPath(),
-                true));
+        when(extensionLoader.loadEmbeddedExtension(any(EmbeddedExtension.class)))
+                .thenReturn(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
+                        "my-extension",
+                        0,
+                        new File("/tmp").toPath(),
+                        true));
         pluginBootstrap.startExtensionSystem(embeddedExtension);
-
         verify(hiveMQExtensions).extensionStart("my-extension");
         verify(shutdownHooks).add(any(HiveMQShutdownHook.class));
     }
 
     @Test
     public void test_startPluginSystem_mixed() {
-        when(extensionLoader.loadExtensions(
-                any(Path.class),
-                anyBoolean())).thenReturn(ImmutableList.of(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
-                "my-extension-1",
-                0,
-                new File("/folder").toPath(),
-                false)));
-        when(extensionLoader.loadEmbeddedExtension(any(EmbeddedExtension.class))).thenReturn(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
-                "my-extension-2",
-                0,
-                new File("/tmp").toPath(),
-                true));
+        when(extensionLoader.loadExtensions(any(Path.class), anyBoolean()))
+                .thenReturn(ImmutableList.of(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
+                        "my-extension-1",
+                        0,
+                        new File("/folder").toPath(),
+                        false)));
+        when(extensionLoader.loadEmbeddedExtension(any(EmbeddedExtension.class)))
+                .thenReturn(new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.ENABLE,
+                        "my-extension-2",
+                        0,
+                        new File("/tmp").toPath(),
+                        true));
         pluginBootstrap.startExtensionSystem(embeddedExtension);
-
         verify(hiveMQExtensions).extensionStart("my-extension-1");
         verify(hiveMQExtensions).extensionStart("my-extension-2");
     }
@@ -122,22 +121,17 @@ public class ExtensionBootstrapImplTest {
     @Test
     public void test_stopPluginSystem_all_enabled_plugins_stopped() {
         final HashMap<String, HiveMQExtension> extensions = Maps.newHashMap();
-
         extensions.put("extension-1", new TestHiveMQExtension("extension-1", temporaryFolder));
         extensions.put("extension-2", new TestHiveMQExtension("extension-2", temporaryFolder));
-
         when(hiveMQExtensions.getEnabledHiveMQExtensions()).thenReturn(extensions);
         pluginBootstrap.stopExtensionSystem();
-
         verify(hiveMQExtensions, times(1)).extensionStop(eq("extension-1"), eq(false));
         verify(hiveMQExtensions, times(1)).extensionStop(eq("extension-2"), eq(false));
     }
-
     private static class TestHiveMQExtension implements HiveMQExtension {
 
         private final @NotNull String pluginId;
         private final @NotNull TemporaryFolder temporaryFolder;
-
         TestHiveMQExtension(final @NotNull String pluginId, final @NotNull TemporaryFolder temporaryFolder) {
             this.pluginId = pluginId;
             this.temporaryFolder = temporaryFolder;
@@ -233,7 +227,8 @@ public class ExtensionBootstrapImplTest {
 
         @Override
         public void extensionStart(
-                final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {
+                final @NotNull ExtensionStartInput input,
+                final @NotNull ExtensionStartOutput output) {
         }
 
         @Override

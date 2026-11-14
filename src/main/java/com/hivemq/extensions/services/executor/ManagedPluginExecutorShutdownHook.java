@@ -24,17 +24,16 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class ManagedPluginExecutorShutdownHook implements HiveMQShutdownHook {
 
     private static final Logger log = LoggerFactory.getLogger(ManagedPluginExecutorShutdownHook.class);
-
     private final @NotNull GlobalManagedExtensionExecutorService scheduledExecutorService;
     private final int timeout;
-
     public ManagedPluginExecutorShutdownHook(
-            final @NotNull GlobalManagedExtensionExecutorService scheduledExecutorService, final int timeout) {
+            final @NotNull GlobalManagedExtensionExecutorService scheduledExecutorService,
+            final int timeout) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.timeout = timeout;
     }
@@ -46,13 +45,12 @@ public class ManagedPluginExecutorShutdownHook implements HiveMQShutdownHook {
 
     @Override
     public @NotNull Priority priority() {
-        //must be lower than extension shut down hook which is VERY_LOW
+        // must be lower than extension shut down hook which is VERY_LOW
         return Priority.DOES_NOT_MATTER;
     }
 
     @Override
     public void run() {
-
         log.debug("Shutting down managed extension executor service");
         scheduledExecutorService.shutdown();
         try {

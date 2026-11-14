@@ -23,7 +23,6 @@ public class TopicSubscribers {
 
     private final @NotNull ImmutableSet<SubscriberWithIdentifiers> subscriber;
     private final @NotNull ImmutableSet<String> sharedSubscriptions;
-
     public TopicSubscribers(
             final @NotNull ImmutableSet<SubscriberWithIdentifiers> subscriber,
             final @NotNull ImmutableSet<String> sharedSubscriptions) {

@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * @author Lukas Brandl
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public interface Authorizers {
 
@@ -37,11 +37,9 @@ public interface Authorizers {
     @NotNull Map<@NotNull String, @NotNull AuthorizerProvider> getAuthorizerProviderMap();
 
     /**
-     * @return true if any {@link AuthorizerProvider} have been
-     * registered, false otherwise.
+     * @return true if any {@link AuthorizerProvider} have been registered, false otherwise.
      */
     boolean areAuthorizersAvailable();
-
 
     void addAuthorizerProvider(final @NotNull AuthorizerProvider authorizerProvider);
 }

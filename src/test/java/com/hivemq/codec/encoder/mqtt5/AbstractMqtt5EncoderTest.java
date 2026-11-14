@@ -17,6 +17,7 @@ package com.hivemq.codec.encoder.mqtt5;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.ProtocolVersion;
@@ -25,6 +26,7 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
+import util.DummyClientConnection;
 import util.encoder.TestMessageEncoder;
 
 import java.util.Arrays;
@@ -34,7 +36,7 @@ import static org.junit.Assert.assertFalse;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class AbstractMqtt5EncoderTest {
 
@@ -42,24 +44,21 @@ public class AbstractMqtt5EncoderTest {
     protected @NotNull EmbeddedChannel channel;
     protected @NotNull ClientConnection clientConnection;
     protected @NotNull TestMessageEncoder testMessageEncoder;
-
     protected void setUp() throws Exception {
         testMessageEncoder = new TestMessageEncoder();
         channel = new EmbeddedChannel(testMessageEncoder);
-        clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         channel.config().setAllocator(new UnpooledByteBufAllocator(false));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setMaxPacketSizeSend((long) MAX_PACKET_SIZE);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setRequestProblemInformation(true);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("clientId");
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
-
+        ClientConnection.of(channel).setMaxPacketSizeSend((long) MAX_PACKET_SIZE);
+        ClientConnection.of(channel).setRequestProblemInformation(true);
+        ClientConnection.of(channel).setClientId("clientId");
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv5);
     }
 
     void encodeTestBufferSize(final byte @NotNull [] expected, final @NotNull MessageWithID message) {
         channel.writeOutbound(message);
         final ByteBuf buf = channel.readOutbound();
-
         try {
             assertEquals(expected.length, buf.readableBytes());
             for (int i = 0; i < expected.length; i++) {
@@ -70,7 +69,6 @@ public class AbstractMqtt5EncoderTest {
             buf.release();
         }
     }
-
     private final @NotNull String user = "user";
     private final @NotNull String property = "property";
     final int userPropertyBytes = 1 // identifier
@@ -78,9 +76,7 @@ public class AbstractMqtt5EncoderTest {
             + 4 // bytes to encode "user"
             + 2 // value length
             + 8; // bytes to encode "property"
-
     private final @NotNull MqttUserProperty userProperty = new MqttUserProperty(user, property);
-
     @NotNull Mqtt5UserProperties getUserProperties(final int totalCount) {
         final ImmutableList.Builder<MqttUserProperty> builder = new ImmutableList.Builder<>();
         for (int i = 0; i < totalCount; i++) {
@@ -96,31 +92,26 @@ public class AbstractMqtt5EncoderTest {
     }
 
     private static int getMaxPropertyLength(final int maxPacketSize) {
-        return maxPacketSize - 1  // type, reserved
-                - 3  // remaining length
-                - 1  // session present
-                - 1  // reason code
-                - 1;  // property length
+        return maxPacketSize - 1 // type, reserved
+                - 3 // remaining length
+                - 1 // session present
+                - 1 // reason code
+                - 1; // property length
     }
-
     class MaximumPacketBuilder {
 
         int maxUserPropertyCount;
         int remainingPropertyBytes;
-
         @NotNull MaximumPacketBuilder build(final int maxPacketSize) {
             // MQTT v5.0 Spec §3.4.11
             final int maxPropertyLength = getMaxPropertyLength(maxPacketSize);
-
             remainingPropertyBytes = maxPropertyLength % userPropertyBytes;
-
             maxUserPropertyCount = maxPropertyLength / userPropertyBytes;
             final ImmutableList.Builder<MqttUserProperty> userPropertiesBuilder = new ImmutableList.Builder<>();
             final MqttUserProperty userProperty = new MqttUserProperty(user, property);
             for (int i = 0; i < maxUserPropertyCount; i++) {
                 userPropertiesBuilder.add(userProperty);
             }
-
             return this;
         }
 

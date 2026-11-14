@@ -24,7 +24,11 @@ import com.hivemq.persistence.local.xodus.bucket.Bucket;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import jetbrains.exodus.ExodusException;
-import jetbrains.exodus.env.*;
+import jetbrains.exodus.env.Environment;
+import jetbrains.exodus.env.EnvironmentConfig;
+import jetbrains.exodus.env.Environments;
+import jetbrains.exodus.env.Store;
+import jetbrains.exodus.env.StoreConfig;
 import jetbrains.exodus.io.FileDataWriter;
 import jetbrains.exodus.log.LogConfig;
 import org.slf4j.Logger;
@@ -39,52 +43,42 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 
 public abstract class XodusLocalPersistence implements LocalPersistence, FilePersistence {
 
-
     private final @NotNull EnvironmentUtil environmentUtil;
     private final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil;
     private final @NotNull PersistenceStartup persistenceStartup;
-    protected final AtomicBoolean stopped = new AtomicBoolean(false);
-
+    protected final @NotNull AtomicBoolean stopped = new AtomicBoolean(false);
     protected @NotNull Bucket[] buckets;
     protected int bucketCount;
     private final boolean enabled;
-
     private final int closeRetries;
     private final int closeRetryInterval;
-
     protected XodusLocalPersistence(
             final @NotNull EnvironmentUtil environmentUtil,
             final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
             final @NotNull PersistenceStartup persistenceStartup,
-            final int internalBucketCount,
+            final int bucketCount,
             final boolean enabled) {
-
         this.environmentUtil = environmentUtil;
         this.localPersistenceFileUtil = localPersistenceFileUtil;
         this.persistenceStartup = persistenceStartup;
-        this.bucketCount = internalBucketCount;
+        this.bucketCount = bucketCount;
         this.buckets = new Bucket[bucketCount];
         this.enabled = enabled;
-
         this.closeRetries = PERSISTENCE_CLOSE_RETRIES.get();
         this.closeRetryInterval = PERSISTENCE_CLOSE_RETRY_INTERVAL_MSEC.get();
     }
 
-    @NotNull
-    protected abstract String getName();
+    protected abstract @NotNull String getName();
 
-    @NotNull
-    protected abstract String getVersion();
+    protected abstract @NotNull String getVersion();
 
     public int getBucketCount() {
         return bucketCount;
     }
 
-    @NotNull
-    protected abstract StoreConfig getStoreConfig();
+    protected abstract @NotNull StoreConfig getStoreConfig();
 
-    @NotNull
-    protected abstract Logger getLogger();
+    protected abstract @NotNull Logger getLogger();
 
     protected void postConstruct() {
         if (enabled) {
@@ -96,87 +90,70 @@ public abstract class XodusLocalPersistence implements LocalPersistence, FilePer
 
     @Override
     public void startExternal() {
-
         final String name = getName();
         final String version = getVersion();
-        final int bucketCount = getBucketCount();
         final StoreConfig storeConfig = getStoreConfig();
         final Logger logger = getLogger();
-
         try {
             final EnvironmentConfig environmentConfig = environmentUtil.createEnvironmentConfig(name);
             final File persistenceFolder = localPersistenceFileUtil.getVersionedLocalPersistenceFolder(name, version);
-
             for (int i = 0; i < bucketCount; i++) {
                 final File persistenceFile = new File(persistenceFolder, name + "_" + i);
                 if (!persistenceFile.exists() && !persistenceFile.mkdirs()) {
                     logger.error("Failed to create directory: {}", persistenceFile);
                     throw new UnrecoverableException();
                 }
-
                 final LogConfig logConfig = new LogConfig();
                 logConfig.setDir(persistenceFile);
                 logConfig.setWriter(new XodusNoLockDataWriter(persistenceFile, logConfig));
-
                 final Environment environment = Environments.newContextualInstance(logConfig, environmentConfig);
-                final Store store = environment.computeInTransaction(txn -> environment.openStore(name, storeConfig, txn));
-
+                final Store store =
+                        environment.computeInTransaction(txn -> environment.openStore(name, storeConfig, txn));
                 buckets[i] = new Bucket(environment, store);
             }
-
         } catch (final ExodusException e) {
-            logger.error("An error occurred while opening the {} persistence. Is another HiveMQ instance running?", name);
+            logger.error("An error occurred while opening the {} persistence. Is another HiveMQ instance running?",
+                    name);
             logger.info("Original Exception:", e);
             throw new UnrecoverableException();
         }
-
         init();
     }
 
     @Override
     public void start() {
-
         final String name = getName();
         final String version = getVersion();
-        final int bucketCount = getBucketCount();
         final StoreConfig storeConfig = getStoreConfig();
         final Logger logger = getLogger();
-
         try {
             final EnvironmentConfig environmentConfig = environmentUtil.createEnvironmentConfig(name);
             final File persistenceFolder = localPersistenceFileUtil.getVersionedLocalPersistenceFolder(name, version);
-
             final CountDownLatch counter = new CountDownLatch(bucketCount);
-
             for (int i = 0; i < bucketCount; i++) {
                 final int finalI = i;
                 persistenceStartup.submitEnvironmentCreate(() -> {
-
                     final File persistenceFile = new File(persistenceFolder, name + "_" + finalI);
                     if (!persistenceFile.exists() && !persistenceFile.mkdirs()) {
                         throw new ExodusException("Failed to create directory: " + persistenceFile);
                     }
-
                     final LogConfig logConfig = new LogConfig();
                     logConfig.setDir(persistenceFile);
                     logConfig.setWriter(new XodusNoLockDataWriter(persistenceFile, logConfig));
-
                     final Environment environment = Environments.newContextualInstance(logConfig, environmentConfig);
-                    final Store store = environment.computeInTransaction(txn -> environment.openStore(name, storeConfig, txn));
-
+                    final Store store =
+                            environment.computeInTransaction(txn -> environment.openStore(name, storeConfig, txn));
                     buckets[finalI] = new Bucket(environment, store);
                     counter.countDown();
                 });
             }
-
             counter.await();
-
         } catch (final ExodusException | InterruptedException e) {
-            logger.error("An error occurred while opening the {} persistence. Is another HiveMQ instance running?", name);
+            logger.error("An error occurred while opening the {} persistence. Is another HiveMQ instance running?",
+                    name);
             logger.info("Original Exception:", e);
             throw new UnrecoverableException();
         }
-
         init();
     }
 
@@ -196,30 +173,27 @@ public abstract class XodusLocalPersistence implements LocalPersistence, FilePer
 
     @Override
     public void closeDB(final int bucketIndex) {
-
         checkBucketIndex(bucketIndex);
-
         final Bucket bucket = buckets[bucketIndex];
         if (bucket == null) {
-            //bucket not initialized
+            // bucket not initialized
             return;
         }
         if (bucket.close()) {
             if (bucket.getEnvironment().isOpen()) {
-                new EnvironmentCloser(getName() + "-closer", bucket.getEnvironment(), closeRetries, closeRetryInterval).close();
+                new EnvironmentCloser(getName() + "-closer", bucket.getEnvironment(), closeRetries, closeRetryInterval)
+                        .close();
             }
         }
     }
 
-    @NotNull
-    public Bucket getBucket(final @NotNull String key) {
+    public @NotNull Bucket getBucket(final @NotNull String key) {
         return buckets[BucketUtils.getBucket(key, bucketCount)];
     }
 
     protected void checkBucketIndex(final int bucketIndex) {
         checkArgument(bucketIndex >= 0 && bucketIndex < buckets.length, "Invalid bucket index: " + bucketIndex);
     }
-
     private static final class XodusNoLockDataWriter extends FileDataWriter {
 
         private XodusNoLockDataWriter(final @NotNull File persistenceFile, final @NotNull LogConfig logConfig) {

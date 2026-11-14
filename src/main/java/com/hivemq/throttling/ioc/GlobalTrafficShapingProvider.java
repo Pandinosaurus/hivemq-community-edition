@@ -15,10 +15,10 @@
  */
 package com.hivemq.throttling.ioc;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.throttling.GlobalTrafficShaperExecutorShutdownHook;
 import com.hivemq.util.ThreadFactoryUtil;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
@@ -42,33 +42,28 @@ import java.util.concurrent.ThreadFactory;
 public class GlobalTrafficShapingProvider implements Provider<GlobalTrafficShapingHandler> {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalTrafficShapingProvider.class);
-
     private final @NotNull ShutdownHooks registry;
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
-
     @Inject
-    GlobalTrafficShapingProvider(final @NotNull ShutdownHooks registry,
-                                 final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
-
+    GlobalTrafficShapingProvider(
+            final @NotNull ShutdownHooks registry,
+            final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
         this.registry = registry;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
     @Override
     public @NotNull GlobalTrafficShapingHandler get() {
-
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("global-traffic-shaper-executor-%d");
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-
-        final GlobalTrafficShaperExecutorShutdownHook shutdownHook = new GlobalTrafficShaperExecutorShutdownHook(scheduledExecutorService);
+        final ScheduledExecutorService scheduledExecutorService =
+                Executors.newSingleThreadScheduledExecutor(threadFactory);
+        final GlobalTrafficShaperExecutorShutdownHook shutdownHook =
+                new GlobalTrafficShaperExecutorShutdownHook(scheduledExecutorService);
         registry.add(shutdownHook);
-
         final long incomingLimit = restrictionsConfigurationService.incomingLimit();
         log.debug("Throttling incoming traffic to {} B/s", incomingLimit);
-
         final long outgoinglimit = InternalConfigurations.OUTGOING_BANDWIDTH_THROTTLING_DEFAULT_BYTES_PER_SEC;
         log.debug("Throttling outgoing traffic to {} B/s", outgoinglimit);
-
         return new GlobalTrafficShapingHandler(scheduledExecutorService, outgoinglimit, incomingLimit, 1000L);
     }
 }

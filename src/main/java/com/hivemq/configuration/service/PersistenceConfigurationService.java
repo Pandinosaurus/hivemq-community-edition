@@ -33,7 +33,6 @@ public interface PersistenceConfigurationService {
          */
         IN_MEMORY;
     }
-
     /**
      * The mode that determines where persistent data is stored.
      *
@@ -42,8 +41,7 @@ public interface PersistenceConfigurationService {
     @NotNull PersistenceMode getMode();
 
     /**
-     * Set the persistence mode.
-     * Changes will be ignored once the persistence is initialized.
+     * Set the persistence mode. Changes will be ignored once the persistence is initialized.
      *
      * @param mode to use for persistent date
      */

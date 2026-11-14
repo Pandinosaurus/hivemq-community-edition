@@ -15,9 +15,9 @@
  */
 package com.hivemq.bootstrap;
 
+import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.configuration.service.entity.Listener;
 import io.netty.channel.ChannelFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -29,10 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class BindInformation {
 
     private final Listener listener;
-
     private final ChannelFuture bindFuture;
-
-
     public BindInformation(@NotNull final Listener listener, @NotNull final ChannelFuture bindFuture) {
         checkNotNull(listener, "Listener must not be null");
         checkNotNull(bindFuture, "Future must not be null");

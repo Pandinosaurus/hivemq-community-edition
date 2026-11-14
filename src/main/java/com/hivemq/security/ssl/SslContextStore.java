@@ -51,12 +51,10 @@ import static com.hivemq.configuration.service.InternalConfigurations.SSL_RELOAD
 public class SslContextStore {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SslContextStore.class);
-
     private final @NotNull ScheduledExecutorService executorService;
     private final @NotNull SslContextFactory sslContextFactory;
     private final @NotNull ConcurrentMap<Tls, SslContext> sslContextMap;
     private final @NotNull ConcurrentMap<Tls, HashCode> checksumMap;
-
     @Inject
     public SslContextStore(
             final @Security @NotNull ScheduledExecutorService executorService,
@@ -90,18 +88,16 @@ public class SslContextStore {
     @VisibleForTesting
     static @NotNull HashCode hashKeystoreAndTruststore(final @NotNull Tls tls) throws IOException {
         try {
-            //noinspection UnstableApiUsage,deprecation
+            // noinspection UnstableApiUsage,deprecation
             return Hashing.md5().hashObject(tls, KeystoreAndTruststoreHashFunnel.INSTANCE);
         } catch (final UncheckedIOException e) {
             throw e.getCause();
         }
     }
-
     @VisibleForTesting
     final class SslContextFirstTimeRunnable implements Runnable {
 
         private final @NotNull Tls tls;
-
         private SslContextFirstTimeRunnable(final @NotNull Tls tls) {
             this.tls = tls;
         }
@@ -112,14 +108,12 @@ public class SslContextStore {
                 try {
                     final HashCode hash = hashKeystoreAndTruststore(tls);
                     checksumMap.put(tls, hash);
-
                 } catch (final Exception e) {
                     log.error("Could not generate initial hash of KeyStore and TrustStore", e);
                     throw new UnrecoverableException();
                 }
-                //only start scheduled execution if first hash went through
-                executorService.scheduleAtFixedRate(
-                        new SslContextScheduledRunnable(tls),
+                // only start scheduled execution if first hash went through
+                executorService.scheduleAtFixedRate(new SslContextScheduledRunnable(tls),
                         SSL_RELOAD_INTERVAL_SEC,
                         SSL_RELOAD_INTERVAL_SEC,
                         TimeUnit.SECONDS);
@@ -131,7 +125,6 @@ public class SslContextStore {
     final class SslContextScheduledRunnable implements Runnable {
 
         private final @NotNull Tls tls;
-
         private SslContextScheduledRunnable(final @NotNull Tls tls) {
             this.tls = tls;
         }
@@ -147,7 +140,6 @@ public class SslContextStore {
                     checksumMap.put(tls, hash);
                     log.info("Successfully updated changed SSL Context");
                 }
-
             } catch (final FileNotFoundException e) {
                 log.warn("Could not find keystore or truststore file", e);
             } catch (final SslException e) {
@@ -160,12 +152,11 @@ public class SslContextStore {
 
     @SuppressWarnings("UnstableApiUsage")
     private enum KeystoreAndTruststoreHashFunnel implements Funnel<Tls> {
-        INSTANCE;
 
+        INSTANCE;
         @Override
         public void funnel(final @NotNull Tls tls, final @NotNull PrimitiveSink sink) {
             funnelFile(tls.getKeystorePath(), sink);
-
             if (StringUtils.isNotBlank(tls.getTruststorePath())) {
                 funnelFile(tls.getTruststorePath(), sink);
             }
@@ -179,5 +170,4 @@ public class SslContextStore {
             }
         }
     }
-
 }

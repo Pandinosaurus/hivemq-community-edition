@@ -38,14 +38,12 @@ public class DisconnectPacketImpl implements DisconnectPacket {
     final long sessionExpiryInterval;
     final @Nullable String serverReference;
     final @NotNull UserPropertiesImpl userProperties;
-
     public DisconnectPacketImpl(
             final @NotNull DisconnectReasonCode reasonCode,
             final @Nullable String reasonString,
             final long sessionExpiryInterval,
             final @Nullable String serverReference,
             final @NotNull UserPropertiesImpl userProperties) {
-
         this.reasonCode = reasonCode;
         this.reasonString = reasonString;
         this.sessionExpiryInterval = sessionExpiryInterval;
@@ -54,8 +52,7 @@ public class DisconnectPacketImpl implements DisconnectPacket {
     }
 
     public DisconnectPacketImpl(final @NotNull DISCONNECT disconnect) {
-        this(
-                disconnect.getReasonCode().toDisconnectReasonCode(),
+        this(disconnect.getReasonCode().toDisconnectReasonCode(),
                 disconnect.getReasonString(),
                 disconnect.getSessionExpiryInterval(),
                 disconnect.getServerReference(),
@@ -97,11 +94,9 @@ public class DisconnectPacketImpl implements DisconnectPacket {
             return false;
         }
         final DisconnectPacketImpl that = (DisconnectPacketImpl) o;
-        return (reasonCode == that.reasonCode) &&
-                Objects.equals(reasonString, that.reasonString) &&
+        return (reasonCode == that.reasonCode) && Objects.equals(reasonString, that.reasonString) &&
                 (sessionExpiryInterval == that.sessionExpiryInterval) &&
-                Objects.equals(serverReference, that.serverReference) &&
-                userProperties.equals(that.userProperties);
+                Objects.equals(serverReference, that.serverReference) && userProperties.equals(that.userProperties);
     }
 
     @Override

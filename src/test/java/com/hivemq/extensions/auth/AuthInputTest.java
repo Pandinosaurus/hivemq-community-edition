@@ -16,6 +16,7 @@
 package com.hivemq.extensions.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.packets.auth.AuthPacket;
 import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
 import com.hivemq.mqtt.message.ProtocolVersion;
@@ -27,12 +28,16 @@ import com.hivemq.util.Bytes;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
+import util.DummyClientConnection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Florian Limpöck
- * @since 4.2.0
+ * @since  4.2.0
  */
 @SuppressWarnings("NullabilityAnnotations")
 public class AuthInputTest {
@@ -42,20 +47,14 @@ public class AuthInputTest {
     private final Mqtt5AuthReasonCode reasonCode = Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION;
     private final Mqtt5UserProperties userProperties = Mqtt5UserProperties.of(new MqttUserProperty("test", "1"));
     private final String reasonString = "testString";
-    private AUTH auth;
     private AuthInput authInput;
-    private ClientConnection clientConnection;
-
     @Before
     public void setUp() {
-
         final EmbeddedChannel channel = new EmbeddedChannel();
-        clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-
-        auth = new AUTH(method, authData, reasonCode, userProperties, reasonString);
-
+        final AUTH auth = new AUTH(method, authData, reasonCode, userProperties, reasonString);
         authInput = new AuthInput("client", channel, auth, false);
     }
 
@@ -67,11 +66,9 @@ public class AuthInputTest {
         assertEquals(AuthReasonCode.CONTINUE_AUTHENTICATION, authPacket.getReasonCode());
         assertEquals(reasonString, authPacket.getReasonString().get());
         assertEquals("1", authPacket.getUserProperties().getFirst("test").get());
-
         assertNotNull(authInput.getClientInformation());
         assertNotNull(authInput.getConnectionInformation());
         assertFalse(authInput.isReAuthentication());
         assertEquals(authInput, authInput.get());
     }
-
 }

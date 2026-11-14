@@ -16,6 +16,7 @@
 package com.hivemq.codec.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connack.CONNACK;
@@ -24,97 +25,86 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
+import util.DummyClientConnection;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class Mqtt3ConnackEncoderTest {
 
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
-
     @Before
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
-        clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
+        clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv3_1);
     }
 
     @Test
     public void test_mqtt311_connack_no_sp() {
-
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-        final CONNACK connack = new CONNACK(Mqtt3ConnAckReturnCode.ACCEPTED, false);
+        final CONNACK connack = CONNACK.builder()
+                .withMqtt3ReturnCode(Mqtt3ConnAckReturnCode.ACCEPTED)
+                .withSessionPresent(false)
+                .build();
         channel.writeOutbound(connack);
-
         final ByteBuf buf = channel.readOutbound();
-
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0000, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
-
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
-
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 
     @Test
     public void test_mqtt311_connack_session_present() {
-
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-
-        final CONNACK connack = new CONNACK(Mqtt3ConnAckReturnCode.ACCEPTED, true);
+        final CONNACK connack =
+                CONNACK.builder().withMqtt3ReturnCode(Mqtt3ConnAckReturnCode.ACCEPTED).withSessionPresent(true).build();
         channel.writeOutbound(connack);
-
         final ByteBuf buf = channel.readOutbound();
-
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0001, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
-
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
-
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 
     @Test
     public void test_mqtt31_connack() {
-
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
-
-        final CONNACK connack = new CONNACK(Mqtt3ConnAckReturnCode.ACCEPTED);
+        final CONNACK connack = CONNACK.builder().withMqtt3ReturnCode(Mqtt3ConnAckReturnCode.ACCEPTED).build();
         channel.writeOutbound(connack);
-
         final ByteBuf buf = channel.readOutbound();
-
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0000, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
-
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
-
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 }

@@ -16,7 +16,6 @@
 package com.hivemq.persistence.payload;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,9 +27,7 @@ public class RemovablePayload {
 
     private final long id;
     private final long timestamp;
-
     final AtomicBoolean inProgress;
-
     public RemovablePayload(final long id, final long timestamp) {
         this.id = id;
         this.timestamp = timestamp;
@@ -47,14 +44,17 @@ public class RemovablePayload {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final RemovablePayload that = (RemovablePayload) o;
-
-        if (id != that.id) return false;
+        if (id != that.id) {
+            return false;
+        }
         return timestamp == that.timestamp;
-
     }
 
     @Override

@@ -18,30 +18,23 @@ package com.hivemq.persistence.payload;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.Bytes;
 
-import static com.hivemq.persistence.payload.PublishPayloadXodusLocalPersistence.*;
+import static com.hivemq.persistence.payload.PublishPayloadXodusLocalPersistence.KeyPair;
 
-/**
- * @author Lukas Brandl
- */
-public class PublishPayloadXodusSerializer {
+final class PublishPayloadXodusSerializer {
 
-    @NotNull
-    public byte[] serializeKey(final long id, final long chunkIndex) {
+    private PublishPayloadXodusSerializer() {
+    }
 
+    public static byte @NotNull [] serializeKey(final long id, final long chunkIndex) {
         final byte[] bytes = new byte[16];
-
         Bytes.copyLongToByteArray(id, bytes, 0);
         Bytes.copyLongToByteArray(chunkIndex, bytes, 8);
-
         return bytes;
     }
 
-    @NotNull
-    public KeyPair deserializeKey(final @NotNull byte[] bytes) {
-
+    public static @NotNull KeyPair deserializeKey(final byte @NotNull [] bytes) {
         final long id = Bytes.readLong(bytes, 0);
         final long chunkIndex = Bytes.readLong(bytes, 8);
-
         return new KeyPair(id, chunkIndex);
     }
 }

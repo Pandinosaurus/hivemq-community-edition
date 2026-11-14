@@ -16,19 +16,19 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.EnvVarUtil;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -43,7 +43,6 @@ import java.util.List;
 public class ConfigFileReader {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigFileReader.class);
-
     private final @NotNull ConfigurationFile configurationFile;
     private final @NotNull EnvVarUtil envVarUtil;
     private final @NotNull ListenerConfigurator listenerConfigurator;
@@ -52,7 +51,6 @@ public class ConfigFileReader {
     private final @NotNull SecurityConfigurator securityConfigurator;
     private final @NotNull UsageStatisticsConfigurator usageStatisticsConfigurator;
     private final @NotNull PersistenceConfigurator persistenceConfigurator;
-
     public ConfigFileReader(
             @NotNull final ConfigurationFile configurationFile,
             @NotNull final RestrictionConfigurator restrictionConfigurator,
@@ -62,7 +60,6 @@ public class ConfigFileReader {
             @NotNull final MqttConfigurator mqttConfigurator,
             @NotNull final ListenerConfigurator listenerConfigurator,
             @NotNull final PersistenceConfigurator persistenceConfigurator) {
-
         this.configurationFile = configurationFile;
         this.envVarUtil = envVarUtil;
         this.listenerConfigurator = listenerConfigurator;
@@ -88,7 +85,9 @@ public class ConfigFileReader {
     @NotNull List<Class<?>> getInheritedEntityClasses() {
         return ImmutableList.of(
                 /* ListenerEntity */
-                TCPListenerEntity.class, WebsocketListenerEntity.class, TlsTCPListenerEntity.class,
+                TCPListenerEntity.class,
+                WebsocketListenerEntity.class,
+                TlsTCPListenerEntity.class,
                 TlsWebsocketListenerEntity.class);
     }
 
@@ -96,25 +95,21 @@ public class ConfigFileReader {
         if (configurationFile.file().isPresent()) {
             final File configFile = configurationFile.file().get();
             log.debug("Reading configuration file {}", configFile);
-
             try {
-                final Class<?>[] classes = ImmutableList.<Class<?>>builder().add(getConfigEntityClass())
+                final Class<?>[] classes = ImmutableList.<Class<?>>builder()
+                        .add(getConfigEntityClass())
                         .addAll(getInheritedEntityClasses())
                         .build()
                         .toArray(new Class<?>[0]);
-
                 final JAXBContext context = JAXBContext.newInstance(classes);
                 final Unmarshaller unmarshaller = context.createUnmarshaller();
-
-                //replace environment variable placeholders
+                // replace environment variable placeholders
                 String configFileContent = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
                 configFileContent = envVarUtil.replaceEnvironmentVariablePlaceholders(configFileContent);
                 final ByteArrayInputStream is =
                         new ByteArrayInputStream(configFileContent.getBytes(StandardCharsets.UTF_8));
                 final StreamSource streamSource = new StreamSource(is);
-
                 setConfiguration(unmarshaller.unmarshal(streamSource, getConfigEntityClass()).getValue());
-
             } catch (final Exception e) {
                 if (e.getCause() instanceof UnrecoverableException) {
                     if (((UnrecoverableException) e.getCause()).isShowException()) {
@@ -123,7 +118,8 @@ public class ConfigFileReader {
                     }
                     System.exit(1);
                 }
-                log.error("Could not read the configuration file {}. Using default config", configFile.getAbsolutePath());
+                log.error("Could not read the configuration file {}. Using default config",
+                        configFile.getAbsolutePath());
                 log.debug("Original error message:", e);
                 setConfiguration(getDefaultConfig());
             }
@@ -140,5 +136,4 @@ public class ConfigFileReader {
         usageStatisticsConfigurator.setUsageStatisticsConfig(config.getUsageStatisticsConfig());
         persistenceConfigurator.setPersistenceConfig(config.getPersistenceConfig());
     }
-
 }

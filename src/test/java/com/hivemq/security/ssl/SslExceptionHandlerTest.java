@@ -15,7 +15,10 @@
  */
 package com.hivemq.security.ssl;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
+import com.hivemq.bootstrap.UndefinedClientConnection;
+import com.hivemq.configuration.service.entity.TcpListener;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
@@ -24,60 +27,51 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.NotSslRecordException;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
  */
 public class SslExceptionHandlerTest {
 
-    @Mock
-    ChannelHandlerContext ctx;
+    private final @NotNull ChannelHandlerContext ctx = mock();
+    private final @NotNull Channel channel = mock();
+    private final @NotNull Throwable throwable = mock();
+    private final @NotNull EventLog eventLog = mock();
 
-    @Mock
-    Channel channel;
-
-    @Mock
-    Throwable throwable;
-
-    @Mock
-    EventLog eventLog;
-
-    SslExceptionHandler sslExceptionHandler;
+    private @NotNull SslExceptionHandler sslExceptionHandler;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         when(ctx.channel()).thenReturn(channel);
-
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
+        final TcpListener listener = mock();
+        final ClientConnectionContext clientConnection = new UndefinedClientConnection(channel, null, listener);
         clientConnection.setClientId("client");
-
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
         when(channel.isActive()).thenReturn(true);
-
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
-
         sslExceptionHandler = new SslExceptionHandler(mqttServerDisconnector);
     }
 
     @Test
-    public void test_ignorable_exception() throws Exception {
+    public void test_ignorable_exception() {
         sslExceptionHandler.exceptionCaught(ctx, new NotSslRecordException());
         verify(channel).close();
         verify(ctx, never()).fireExceptionCaught(any(Throwable.class));
     }
 
     @Test
-    public void test_handshake_exception() throws Exception {
+    public void test_handshake_exception() {
         when(throwable.getCause()).thenReturn(new SSLHandshakeException(""));
         sslExceptionHandler.exceptionCaught(ctx, throwable);
         verify(channel).close();
@@ -85,7 +79,7 @@ public class SslExceptionHandlerTest {
     }
 
     @Test
-    public void test_ssl_exception() throws Exception {
+    public void test_ssl_exception() {
         when(throwable.getCause()).thenReturn(new SSLException(""));
         sslExceptionHandler.exceptionCaught(ctx, throwable);
         verify(channel).close();
@@ -93,10 +87,9 @@ public class SslExceptionHandlerTest {
     }
 
     @Test
-    public void test_any_exception() throws Exception {
+    public void test_any_exception() {
         sslExceptionHandler.exceptionCaught(ctx, throwable);
         verify(channel, never()).close();
         verify(ctx).fireExceptionCaught(any(Throwable.class));
-
     }
 }

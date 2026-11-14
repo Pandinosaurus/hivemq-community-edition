@@ -16,11 +16,10 @@
 package com.hivemq.configuration.entity.listener.tls;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Georg Held
@@ -32,13 +31,10 @@ public class KeystoreEntity {
 
     @XmlElement(name = "path", required = true)
     private @NotNull String path = "";
-
     @XmlElement(name = "password", required = true)
     private @NotNull String password = "";
-
     @XmlElement(name = "private-key-password", required = true)
     private @NotNull String privateKeyPassword = "";
-
     public @NotNull String getPath() {
         return path;
     }
@@ -50,5 +46,4 @@ public class KeystoreEntity {
     public @NotNull String getPrivateKeyPassword() {
         return privateKeyPassword;
     }
-
 }

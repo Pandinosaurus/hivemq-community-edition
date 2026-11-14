@@ -20,15 +20,15 @@ import org.junit.Test;
 
 import java.net.NetworkInterface;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class NetworkInterfaceInformationTest {
 
     private NetworkInterfaceInformation networkInterfaceInformation;
-
     private NetworkInterface networkInterface;
-
     @Before
     public void setUp() throws Exception {
         networkInterface = NetworkInterface.getByName("Does_Not_Exist");
@@ -87,9 +87,7 @@ public class NetworkInterfaceInformationTest {
     @Test
     public void formatMACAddress_whenGivenBytes_thenMACAddressIsCorrectlyFormatted() {
         final byte[] bytes = new byte[]{-56, 42, 20, 83, 98, 102};
-
         final String macString = NetworkInterfaceInformation.formatMACAddress(bytes);
-
         assertEquals("C8-2A-14-53-62-66", macString);
     }
 

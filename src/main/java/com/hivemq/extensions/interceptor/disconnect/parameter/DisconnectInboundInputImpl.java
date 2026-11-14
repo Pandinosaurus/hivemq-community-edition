@@ -33,12 +33,10 @@ public class DisconnectInboundInputImpl implements DisconnectInboundInput, Plugi
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;
     private final @NotNull DisconnectPacketImpl disconnectPacket;
-
     public DisconnectInboundInputImpl(
             final @NotNull ClientInformation clientInformation,
             final @NotNull ConnectionInformation connectionInformation,
             final @NotNull DisconnectPacketImpl disconnectPacket) {
-
         this.clientInformation = clientInformation;
         this.connectionInformation = connectionInformation;
         this.disconnectPacket = disconnectPacket;
@@ -60,7 +58,8 @@ public class DisconnectInboundInputImpl implements DisconnectInboundInput, Plugi
     }
 
     public @NotNull DisconnectInboundInputImpl update(final @NotNull DisconnectInboundOutputImpl output) {
-        return new DisconnectInboundInputImpl(
-                clientInformation, connectionInformation, output.getDisconnectPacket().copy());
+        return new DisconnectInboundInputImpl(clientInformation,
+                connectionInformation,
+                output.getDisconnectPacket().copy());
     }
 }

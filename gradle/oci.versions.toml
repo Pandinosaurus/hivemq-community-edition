@@ -1,0 +1,5 @@
+# https://gallery.ecr.aws/hivemq/library/eclipse-temurin
+[[oci]]
+name = "eclipse-temurin"
+image = "public.ecr.aws/hivemq/library/eclipse-temurin"
+reference = "21-jre-noble@sha256:7efb11b21c0bc203549fb9055abf285ac7b70c96b07a187e261dd14b1afae529"

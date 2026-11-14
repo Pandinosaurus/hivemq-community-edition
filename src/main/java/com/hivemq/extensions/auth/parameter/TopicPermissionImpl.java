@@ -32,15 +32,18 @@ public class TopicPermissionImpl implements InternalTopicPermission {
     private final @NotNull Retain retain;
     private final @NotNull SharedSubscription sharedSubscription;
     private final @NotNull String sharedGroup;
-
     private final @NotNull String[] splitTopic;
     private final boolean containsWildcardCharacter;
     private final boolean isRootWildcard;
     private final boolean endsWithWildcard;
-
-    public TopicPermissionImpl(@NotNull final String topic, @NotNull final PermissionType type, @NotNull final Qos qos,
-                               @NotNull final MqttActivity activity, @NotNull final Retain retain,
-                               @NotNull final SharedSubscription sharedSubscription, @NotNull final String sharedGroup) {
+    public TopicPermissionImpl(
+            @NotNull final String topic,
+            @NotNull final PermissionType type,
+            @NotNull final Qos qos,
+            @NotNull final MqttActivity activity,
+            @NotNull final Retain retain,
+            @NotNull final SharedSubscription sharedSubscription,
+            @NotNull final String sharedGroup) {
         this.topic = topic;
         this.type = type;
         this.qos = qos;
@@ -48,8 +51,7 @@ public class TopicPermissionImpl implements InternalTopicPermission {
         this.retain = retain;
         this.sharedSubscription = sharedSubscription;
         this.sharedGroup = sharedGroup;
-
-        //these are used to speed up the evaluation of permissions
+        // these are used to speed up the evaluation of permissions
         final String strippedPermissionTopic = StringUtils.stripEnd(topic, "/");
         splitTopic = StringUtils.splitPreserveAllTokens(strippedPermissionTopic, "/");
         containsWildcardCharacter = !StringUtils.containsNone(strippedPermissionTopic, "#+");
@@ -57,50 +59,42 @@ public class TopicPermissionImpl implements InternalTopicPermission {
         endsWithWildcard = StringUtils.endsWith(strippedPermissionTopic, "/#");
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String getTopicFilter() {
         return topic;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public PermissionType getType() {
         return type;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Qos getQos() {
         return qos;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public MqttActivity getActivity() {
         return activity;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Retain getPublishRetain() {
         return retain;
     }
 
     @Override
-    @NotNull
-    public SharedSubscription getSharedSubscription() {
+    @NotNull public SharedSubscription getSharedSubscription() {
         return sharedSubscription;
     }
 
     @Override
-    @NotNull
-    public String getSharedGroup() {
+    @NotNull public String getSharedGroup() {
         return sharedGroup;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String[] getSplitTopic() {
         return splitTopic;
     }

@@ -18,13 +18,14 @@ package com.hivemq.persistence;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -32,19 +33,13 @@ import static org.mockito.Mockito.when;
  */
 public class ProducerQueuesImplTest {
 
-    @Mock
-    @NotNull SingleWriterServiceImpl singleWriterServiceImpl;
-
+    private final @NotNull SingleWriterServiceImpl singleWriterServiceImpl = mock();
     @NotNull ProducerQueuesImpl producerQueues;
-
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         when(singleWriterServiceImpl.getPersistenceBucketCount()).thenReturn(64);
         when(singleWriterServiceImpl.getThreadPoolSize()).thenReturn(4);
         when(singleWriterServiceImpl.getGlobalTaskCount()).thenReturn(new AtomicLong());
-
         producerQueues = new ProducerQueuesImpl(singleWriterServiceImpl, 4);
     }
 
@@ -71,12 +66,12 @@ public class ProducerQueuesImplTest {
         assertFalse(producerQueues.queues.isEmpty());
         boolean found = false;
         for (final Queue<ProducerQueuesImpl.TaskWithFuture<?>> queue : producerQueues.queues) {
-            if(!found){
-                if(queue.size() == 1){
+            if (!found) {
+                if (queue.size() == 1) {
                     found = true;
                 }
             } else {
-                if(queue.size() == 1){
+                if (queue.size() == 1) {
                     fail();
                 }
             }

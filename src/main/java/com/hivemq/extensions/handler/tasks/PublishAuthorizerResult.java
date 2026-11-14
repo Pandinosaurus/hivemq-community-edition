@@ -28,33 +28,32 @@ public class PublishAuthorizerResult {
     private final @Nullable AckReasonCode ackReasonCode;
     private final @Nullable String reasonString;
     private final boolean authorizerPresent;
-
-    public PublishAuthorizerResult(@Nullable final AckReasonCode ackReasonCode,
-                                   @Nullable final String reasonString,
-                                   final boolean authorizerPresent,
-                                   @Nullable final DisconnectReasonCode disconnectReasonCode) {
+    public PublishAuthorizerResult(
+            @Nullable final AckReasonCode ackReasonCode,
+            @Nullable final String reasonString,
+            final boolean authorizerPresent,
+            @Nullable final DisconnectReasonCode disconnectReasonCode) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;
         this.authorizerPresent = authorizerPresent;
         this.disconnectReasonCode = disconnectReasonCode;
     }
 
-    public PublishAuthorizerResult(@Nullable final AckReasonCode ackReasonCode,
-                                   @Nullable final String reasonString,
-                                   final boolean authorizerPresent) {
+    public PublishAuthorizerResult(
+            @Nullable final AckReasonCode ackReasonCode,
+            @Nullable final String reasonString,
+            final boolean authorizerPresent) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;
         this.authorizerPresent = authorizerPresent;
         this.disconnectReasonCode = null;
     }
 
-    @Nullable
-    public AckReasonCode getAckReasonCode() {
+    @Nullable public AckReasonCode getAckReasonCode() {
         return ackReasonCode;
     }
 
-    @Nullable
-    public String getReasonString() {
+    @Nullable public String getReasonString() {
         return reasonString;
     }
 
@@ -62,8 +61,7 @@ public class PublishAuthorizerResult {
         return authorizerPresent;
     }
 
-    @Nullable
-    public DisconnectReasonCode getDisconnectReasonCode() {
+    @Nullable public DisconnectReasonCode getDisconnectReasonCode() {
         return disconnectReasonCode;
     }
 }

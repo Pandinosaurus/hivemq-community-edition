@@ -28,7 +28,6 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.ObjectMemoryEstimation;
 
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A MQTT PUBLISH message
  *
- * @author Florian Limpöck
  * @since 4.0.0
  */
 public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLISH, Mqtt5PUBLISH {
@@ -46,70 +44,57 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
     public static final int DEFAULT_NO_TOPIC_ALIAS = -1;
     public static final int NO_PUBLISH_ID_SET = -1;
     private static final int SIZE_NOT_CALCULATED = -1;
-
     public static final long MESSAGE_EXPIRY_INTERVAL_NOT_SET = Long.MAX_VALUE;
     public static final long MESSAGE_EXPIRY_INTERVAL_MAX = UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE;
-
     public static final AtomicLong PUBLISH_COUNTER = new AtomicLong(1);
     protected long timestamp;
-
-    private @Nullable byte[] payload;
+    private byte @Nullable [] payload;
     private boolean duplicateDelivery;
     private final @NotNull String topic;
     private final boolean retain;
-    private final @NotNull QoS qoS;
+    private final @NotNull QoS qos;
     private final @NotNull QoS onwardQos;
-
     private long messageExpiryInterval;
-
     private final long publishId;
     private final @NotNull String hivemqId;
     private final @NotNull String uniqueId;
     private final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator;
     private final @Nullable String contentType;
     private final @Nullable String responseTopic;
-    private final @Nullable byte[] correlationData;
+    private final byte @Nullable [] correlationData;
     private final boolean isNewTopicAlias;
     private final @Nullable ImmutableIntArray subscriptionIdentifiers;
-
-    private final @Nullable PublishPayloadPersistence persistence;
-
     private int sizeInMemory = SIZE_NOT_CALCULATED;
-
-    //MQTT 5
+    // MQTT 5
     PUBLISH(
             final @NotNull String hivemqId,
             final @NotNull String topic,
-            final @Nullable byte[] payload,
+            final byte @Nullable [] payload,
             final @NotNull QoS qos,
             final @NotNull QoS onwardQos,
-            final boolean isRetain,
+            final boolean retain,
             final long messageExpiryInterval,
             final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator,
             final @Nullable String contentType,
             final @Nullable String responseTopic,
-            final @Nullable byte[] correlationData,
+            final byte @Nullable [] correlationData,
             final @NotNull Mqtt5UserProperties userProperties,
             final int packetIdentifier,
-            final boolean isDup,
+            final boolean duplicateDelivery,
             final boolean isNewTopicAlias,
             final @Nullable ImmutableIntArray subscriptionIdentifiers,
-            final @Nullable PublishPayloadPersistence persistence,
             final long timestamp,
             final long publishId) {
-
         super(userProperties);
-
         Preconditions.checkNotNull(hivemqId, "HivemqId may never be null");
         Preconditions.checkNotNull(topic, "Topic may never be null");
         Preconditions.checkNotNull(qos, "Quality of service may never be null");
-
         this.topic = topic;
         this.payload = payload;
-        this.qoS = qos;
+        this.qos = qos;
         this.onwardQos = onwardQos;
-        this.retain = isRetain;
-        this.duplicateDelivery = isDup;
+        this.retain = retain;
+        this.duplicateDelivery = duplicateDelivery;
         this.isNewTopicAlias = isNewTopicAlias;
         this.subscriptionIdentifiers = subscriptionIdentifiers;
         this.messageExpiryInterval = messageExpiryInterval;
@@ -117,85 +102,68 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         this.contentType = contentType;
         this.responseTopic = responseTopic;
         this.correlationData = correlationData;
-
         if (publishId > NO_PUBLISH_ID_SET) {
             this.publishId = publishId;
         } else {
             this.publishId = PUBLISH_COUNTER.getAndIncrement();
         }
         this.hivemqId = hivemqId;
-        this.uniqueId = hivemqId + "_pub_" + this.publishId;
-
+        uniqueId = hivemqId + "_pub_" + this.publishId;
         if (timestamp > -1) {
             this.timestamp = timestamp;
         } else {
             this.timestamp = System.currentTimeMillis();
         }
-
         setPacketIdentifier(packetIdentifier);
-
-        this.persistence = persistence;
     }
 
-    //MQTT 3
+    // MQTT 3
     PUBLISH(
             final @NotNull String hivemqId,
             final @NotNull String topic,
             final @Nullable byte[] payload,
             final @NotNull QoS qos,
             final @NotNull QoS onwardQos,
-            final boolean isRetain,
+            final boolean retain,
             final long messageExpiryInterval,
-            final @Nullable PublishPayloadPersistence publishPayloadPersistence,
             final int packetIdentifier,
-            final boolean isDup,
+            final boolean duplicateDelivery,
             final long publishId,
             final long timestamp) {
-
         super(Mqtt5UserProperties.NO_USER_PROPERTIES);
-
         Preconditions.checkNotNull(hivemqId, "Hivemq Id may never be null");
         Preconditions.checkNotNull(topic, "Topic may never be null");
         Preconditions.checkNotNull(qos, "Quality of service may never be null");
-
         this.hivemqId = hivemqId;
         this.topic = topic;
         this.payload = payload;
-        this.qoS = qos;
+        this.qos = qos;
         this.onwardQos = onwardQos;
-        this.retain = isRetain;
+        this.retain = retain;
         this.messageExpiryInterval = messageExpiryInterval;
-        this.persistence = publishPayloadPersistence;
-        this.duplicateDelivery = isDup;
-
+        this.duplicateDelivery = duplicateDelivery;
         if (publishId > NO_PUBLISH_ID_SET) {
             this.publishId = publishId;
         } else {
             this.publishId = PUBLISH_COUNTER.getAndIncrement();
         }
-        this.uniqueId = hivemqId + "_pub_" + this.publishId;
-
+        uniqueId = hivemqId + "_pub_" + this.publishId;
         if (timestamp > -1) {
             this.timestamp = timestamp;
         } else {
             this.timestamp = System.currentTimeMillis();
         }
-
         setPacketIdentifier(packetIdentifier);
-
-        //MQTT 5 Only
-        this.isNewTopicAlias = false;
-        this.subscriptionIdentifiers = null;
-        this.payloadFormatIndicator = null;
-        this.contentType = null;
-        this.responseTopic = null;
-        this.correlationData = null;
+        // MQTT 5 Only
+        isNewTopicAlias = false;
+        subscriptionIdentifiers = null;
+        payloadFormatIndicator = null;
+        contentType = null;
+        responseTopic = null;
+        correlationData = null;
     }
 
-    public PUBLISH(
-            final @NotNull PUBLISH publish,
-            final @Nullable PublishPayloadPersistence persistence) {
-
+    public PUBLISH(final @NotNull PUBLISH publish) {
         this(publish.getHivemqId(),
                 publish.getTopic(),
                 publish.getPayload(),
@@ -212,7 +180,6 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
                 publish.isDuplicateDelivery(),
                 publish.isNewTopicAlias(),
                 publish.getSubscriptionIdentifiers(),
-                persistence,
                 publish.getTimestamp(),
                 publish.getPublishId());
     }
@@ -248,7 +215,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
     }
 
     @Override
-    public @Nullable byte[] getCorrelationData() {
+    public byte @Nullable [] getCorrelationData() {
         return correlationData;
     }
 
@@ -258,17 +225,13 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
     }
 
     @Override
-    public void dereferencePayload() {
-        this.payload = getPayload();
+    public void setPayload(final byte @Nullable [] payload) {
+        this.payload = payload;
     }
 
     @Override
-    public @Nullable byte[] getPayload() {
-        final byte[] payload = this.payload;
-        if (payload != null) {
-            return payload;
-        }
-        return persistence.get(publishId);
+    public byte @Nullable [] getPayload() {
+        return payload;
     }
 
     @Override
@@ -292,7 +255,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
     @Override
     public @NotNull QoS getQoS() {
-        return qoS;
+        return qos;
     }
 
     public @NotNull QoS getOnwardQoS() {
@@ -318,13 +281,9 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         return timestamp;
     }
 
-    public @Nullable PublishPayloadPersistence getPersistence() {
-        return persistence;
-    }
-
     public long getRemainingExpiry() {
         if (isExpiryDisabled()) {
-            return PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+            return MESSAGE_EXPIRY_INTERVAL_NOT_SET;
         }
         final long waitingSeconds = (System.currentTimeMillis() - timestamp) / 1000;
         return Math.max(0, messageExpiryInterval - waitingSeconds);
@@ -332,10 +291,10 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
     public boolean isExpiryDisabled() {
         return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED) ||
-                (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
+                (messageExpiryInterval == MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 
-    public boolean hasExpired() {
+    public boolean isExpired() {
         return getRemainingExpiry() == 0;
     }
 
@@ -356,24 +315,22 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         return timestamp == publish.timestamp && duplicateDelivery == publish.duplicateDelivery &&
                 retain == publish.retain && messageExpiryInterval == publish.messageExpiryInterval &&
                 publishId == publish.publishId && isNewTopicAlias == publish.isNewTopicAlias &&
-                Arrays.equals(payload, publish.payload) && Objects.equals(topic, publish.topic) && qoS == publish.qoS &&
+                Arrays.equals(payload, publish.payload) && Objects.equals(topic, publish.topic) && qos == publish.qos &&
                 Objects.equals(hivemqId, publish.hivemqId) && Objects.equals(uniqueId, publish.uniqueId) &&
                 payloadFormatIndicator == publish.payloadFormatIndicator &&
                 Objects.equals(contentType, publish.contentType) &&
                 Objects.equals(responseTopic, publish.responseTopic) &&
                 Arrays.equals(correlationData, publish.correlationData) &&
-                Objects.equals(subscriptionIdentifiers, publish.subscriptionIdentifiers) &&
-                Objects.equals(persistence, publish.persistence);
+                Objects.equals(subscriptionIdentifiers, publish.subscriptionIdentifiers);
     }
 
     @Override
     public int hashCode() {
-
         int result = Objects.hash(timestamp,
                 topic,
                 duplicateDelivery,
                 retain,
-                qoS,
+                qos,
                 messageExpiryInterval,
                 publishId,
                 hivemqId,
@@ -382,8 +339,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
                 contentType,
                 responseTopic,
                 isNewTopicAlias,
-                subscriptionIdentifiers,
-                persistence);
+                subscriptionIdentifiers);
         result = 31 * result + Arrays.hashCode(payload);
         result = 31 * result + Arrays.hashCode(correlationData);
         return result;
@@ -425,12 +381,11 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         size += ObjectMemoryEstimation.stringSize(uniqueId);
         size += ObjectMemoryEstimation.stringSize(hivemqId);
         size += ObjectMemoryEstimation.stringSize(contentType);
-
-        size += 24; //User Properties Overhead
+        size += 24; // User Properties Overhead
         final ImmutableList<MqttUserProperty> userProperties = getUserProperties().asList();
         for (int i = 0; i < userProperties.size(); i++) {
             final MqttUserProperty userProperty = userProperties.get(i);
-            size += 24; //UserProperty Object Overhead
+            size += 24; // UserProperty Object Overhead
             size += ObjectMemoryEstimation.stringSize(userProperty.getName());
             size += ObjectMemoryEstimation.stringSize(userProperty.getValue());
         }
@@ -443,7 +398,6 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         size += ObjectMemoryEstimation.enumSize(); // QoS
         size += ObjectMemoryEstimation.enumSize(); // payloadFormatIndicator
         size += ObjectMemoryEstimation.immutableIntArraySize(subscriptionIdentifiers);
-
         sizeInMemory = size;
         return sizeInMemory;
     }

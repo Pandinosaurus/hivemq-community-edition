@@ -29,9 +29,7 @@ import java.util.Queue;
 public class CollectUserEventsHandler<T> extends ChannelInboundHandlerAdapter {
 
     private final Class<T> classToCollect;
-
     private final Queue<T> objects = new ArrayDeque<>();
-
     public CollectUserEventsHandler(@NotNull final Class<T> classToCollect) {
         this.classToCollect = classToCollect;
     }
@@ -44,13 +42,11 @@ public class CollectUserEventsHandler<T> extends ChannelInboundHandlerAdapter {
         super.userEventTriggered(ctx, evt);
     }
 
-    @NotNull
-    public Queue<T> getEvents() {
+    @NotNull public Queue<T> getEvents() {
         return objects;
     }
 
-    @Nullable
-    public T pollEvent() {
+    @Nullable public T pollEvent() {
         return objects.poll();
     }
 }

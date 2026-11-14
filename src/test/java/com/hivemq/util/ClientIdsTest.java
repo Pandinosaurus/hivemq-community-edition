@@ -18,8 +18,8 @@ package com.hivemq.util;
 import com.hivemq.configuration.HivemqId;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -28,18 +28,12 @@ public class ClientIdsTest {
 
     @Test
     public void test_100_000_ids_utf_well_formed_and_length_44() {
-
         final ClientIds clientIds = new ClientIds(new HivemqId());
-
         for (int i = 0; i < 100000; i++) {
-
             final String next = clientIds.generateNext();
-
             assertFalse(Utf8Utils.containsMustNotCharacters(next));
             assertFalse(Utf8Utils.hasControlOrNonCharacter(next));
-            assertEquals(true, next.length() >= 44);
-
+            assertTrue(next.length() >= 44);
         }
-
     }
 }

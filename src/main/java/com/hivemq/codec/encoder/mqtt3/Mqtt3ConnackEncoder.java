@@ -15,7 +15,7 @@
  */
 package com.hivemq.codec.encoder.mqtt3;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.connack.Mqtt3CONNACK;
@@ -32,23 +32,20 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
     private static final byte CONNACK_FLAGS_EMPTY = 0b0000_0000;
     private static final byte CONNACK_FLAGS_SP_SET = 0b0000_0001;
     private static final int ENCODED_CONNACK_SIZE = 4;
-
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
+            final @NotNull ClientConnectionContext clientConnectionContext,
             final @NotNull Mqtt3CONNACK msg,
             final @NotNull ByteBuf out) {
-
         out.writeByte(CONNACK_FIXED_HEADER);
-        //The remaining length is always static for CONNACKs
+        // The remaining length is always static for CONNACKs
         out.writeByte(CONNACK_REMAINING_LENGTH);
-
         final Mqtt3ConnAckReturnCode returnCode = msg.getReturnCode();
-        switch (clientConnection.getProtocolVersion()) {
-            case MQTTv3_1:
+        switch (clientConnectionContext.getProtocolVersion()) {
+            case MQTTv3_1 :
                 out.writeByte(CONNACK_FLAGS_EMPTY);
                 break;
-            case MQTTv3_1_1:
+            case MQTTv3_1_1 :
                 if (returnCode == Mqtt3ConnAckReturnCode.ACCEPTED && msg.isSessionPresent()) {
                     out.writeByte(CONNACK_FLAGS_SP_SET);
                 } else {
@@ -60,7 +57,9 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
     }
 
     @Override
-    public int bufferSize(final @NotNull ClientConnection clientConnection, final @NotNull Mqtt3CONNACK connack) {
+    public int bufferSize(
+            final @NotNull ClientConnectionContext clientConnectionContext,
+            final @NotNull Mqtt3CONNACK connack) {
         return ENCODED_CONNACK_SIZE;
     }
 }

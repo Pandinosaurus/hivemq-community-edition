@@ -28,8 +28,10 @@ public class ChunkResult<V> {
     private final @NotNull Collection<V> results;
     private final @Nullable ChunkCursor cursor;
     private final boolean finished;
-
-    public ChunkResult(final @NotNull Collection<V> results, final @Nullable ChunkCursor cursor, final boolean finished) {
+    public ChunkResult(
+            final @NotNull Collection<V> results,
+            final @Nullable ChunkCursor cursor,
+            final boolean finished) {
         this.results = results;
         this.cursor = cursor;
         this.finished = finished;
@@ -49,10 +51,6 @@ public class ChunkResult<V> {
 
     @Override
     public String toString() {
-        return "ChunkResult{" +
-                "results=" + results +
-                ", cursor=" + cursor +
-                ", finished=" + finished +
-                '}';
+        return "ChunkResult{" + "results=" + results + ", cursor=" + cursor + ", finished=" + finished + '}';
     }
 }

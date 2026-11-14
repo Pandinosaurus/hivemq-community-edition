@@ -40,7 +40,6 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
     private final @NotNull AtomicBoolean decided = new AtomicBoolean(false);
     private boolean authenticatorPresent = false;
     private @NotNull AuthenticationState authenticationState = AuthenticationState.UNDECIDED;
-
     private @Nullable ByteBuffer authenticationData;
     @Nullable String reasonString;
     @Nullable String timeoutReasonString;
@@ -49,14 +48,12 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
     private final @NotNull ModifiableDefaultPermissions defaultPermissions;
     private final @NotNull ModifiableClientSettingsImpl clientSettings;
     private int timeout;
-
     AuthOutput(
             final @NotNull PluginOutPutAsyncer asyncer,
             final boolean validateUTF8,
             final @NotNull ModifiableDefaultPermissions defaultPermissions,
             final @NotNull ModifiableClientSettingsImpl clientSettings,
             final int timeout) {
-
         super(asyncer);
         this.validateUTF8 = validateUTF8;
         this.userProperties = new ModifiableUserPropertiesImpl(ImmutableList.of(), validateUTF8);
@@ -130,7 +127,6 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @Nullable String reasonString) {
-
         final Async<T> async = async(timeout, fallback);
         timeoutReasonString = reasonString;
         return async;

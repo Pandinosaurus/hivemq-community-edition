@@ -30,10 +30,9 @@ public class PubrelInboundOutputImpl extends AbstractSimpleAsyncOutput<PubrelInb
 
     private final @NotNull ModifiablePubrelPacketImpl pubrelPacket;
     private boolean failed = false;
-
     public PubrelInboundOutputImpl(
-            final @NotNull PluginOutPutAsyncer asyncer, final @NotNull ModifiablePubrelPacketImpl pubrelPacket) {
-
+            final @NotNull PluginOutPutAsyncer asyncer,
+            final @NotNull ModifiablePubrelPacketImpl pubrelPacket) {
         super(asyncer);
         this.pubrelPacket = pubrelPacket;
     }

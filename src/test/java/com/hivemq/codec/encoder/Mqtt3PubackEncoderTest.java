@@ -16,12 +16,14 @@
 package com.hivemq.codec.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.mqtt3.Mqtt3PubackEncoder;
 import com.hivemq.mqtt.message.puback.PUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
+import util.DummyClientConnection;
 import util.encoder.TestMessageEncoder;
 
 import static org.junit.Assert.assertEquals;
@@ -31,27 +33,22 @@ public class Mqtt3PubackEncoderTest {
 
     private EmbeddedChannel channel;
     private ClientConnection clientConnection;
-
     @Before
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
-        clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
     }
 
     @Test
     public void test_puback_sent() {
         channel.writeOutbound(new PUBACK(10));
-
         final ByteBuf buf = channel.readOutbound();
-
         final Mqtt3PubackEncoder encoder = new Mqtt3PubackEncoder();
         assertEquals(encoder.bufferSize(clientConnection, new PUBACK(10)), buf.readableBytes());
-
         assertEquals((byte) 0b0100_0000, buf.readByte());
         assertEquals((byte) 0b0000_0010, buf.readByte());
         assertEquals(10, buf.readUnsignedShort());
-
         assertFalse(buf.isReadable());
     }
 }

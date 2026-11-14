@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.executor;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
@@ -25,7 +24,10 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
@@ -34,17 +36,13 @@ public class ManagedPluginExecutorShutdownHookTest {
 
     private final @NotNull GlobalManagedExtensionExecutorService executorService =
             mock(GlobalManagedExtensionExecutorService.class);
-
     @Test
     public void test_run() {
         final ManagedPluginExecutorShutdownHook pluginExecutorShutdownHook =
                 new ManagedPluginExecutorShutdownHook(executorService, 60);
-
         assertEquals("ManagedExtensionExecutorService shutdown", pluginExecutorShutdownHook.name());
         assertEquals(HiveMQShutdownHook.Priority.DOES_NOT_MATTER, pluginExecutorShutdownHook.priority());
-
         pluginExecutorShutdownHook.run();
-
         verify(executorService, times(1)).shutdownNow();
     }
 
@@ -52,12 +50,9 @@ public class ManagedPluginExecutorShutdownHookTest {
     public void test_run_exc() throws Exception {
         final ManagedPluginExecutorShutdownHook pluginExecutorShutdownHook =
                 new ManagedPluginExecutorShutdownHook(executorService, 60);
-
-        when(executorService.awaitTermination(
-                anyLong(),
-                any(TimeUnit.class))).thenThrow(new InterruptedException("test"));
+        when(executorService.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenThrow(new InterruptedException("test"));
         pluginExecutorShutdownHook.run();
-
         verify(executorService, times(1)).shutdownNow();
     }
 }

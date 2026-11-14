@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * @author Florian Limpöck
-*/
+ */
 public interface ClientAuthenticators {
 
     /**
@@ -45,5 +45,4 @@ public interface ClientAuthenticators {
      * @return a map containing all extensions with their registered enhanced authenticators.
      */
     @NotNull Map<String, EnhancedAuthenticator> getAuthenticatorMap();
-
 }

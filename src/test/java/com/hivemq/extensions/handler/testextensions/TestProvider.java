@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler.testextensions;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
-import com.hivemq.extension.sdk.api.events.client.parameters.*;
+import com.hivemq.extension.sdk.api.events.client.parameters.AuthenticationFailedInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.AuthenticationSuccessfulInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.ClientInitiatedDisconnectInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.ClientLifecycleEventListenerProviderInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.ConnectionLostInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.ConnectionStartInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.DisconnectEventInput;
+import com.hivemq.extension.sdk.api.events.client.parameters.ServerInitiatedDisconnectInput;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -35,7 +41,6 @@ public final class TestProvider implements ClientLifecycleEventListenerProvider 
     private final @NotNull CountDownLatch onServerInitiatedDisconnectLatch;
     private final @NotNull CountDownLatch onAuthenticationSuccessfulLatch;
     private final @NotNull CountDownLatch onDisconnectLatch;
-
     public TestProvider(final @NotNull CountDownLatch countDownLatch) {
         this.onMqttConnectionStartLatch = countDownLatch;
         this.onAuthenticationFailedDisconnectLatch = countDownLatch;
@@ -47,8 +52,10 @@ public final class TestProvider implements ClientLifecycleEventListenerProvider 
     }
 
     @Override
-    public @NotNull ClientLifecycleEventListener getClientLifecycleEventListener(final @NotNull ClientLifecycleEventListenerProviderInput input) {
+    public @NotNull ClientLifecycleEventListener getClientLifecycleEventListener(
+            final @NotNull ClientLifecycleEventListenerProviderInput input) {
         return new ClientLifecycleEventListener() {
+
             @Override
             public void onMqttConnectionStart(final @NotNull ConnectionStartInput input) {
                 onMqttConnectionStartLatch.countDown();

@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
 
@@ -28,8 +26,9 @@ public interface ExtensionLifecycleHandler {
     /**
      * Handles extension En-/Disable events and calls the extension's start or stop methods if needed.
      *
-     * @param hiveMQExtensionEvents {@link ImmutableCollection} of {@link HiveMQExtensionEvent}s which should be processed.
+     * @param hiveMQExtensionEvents {@link ImmutableCollection} of {@link HiveMQExtensionEvent}s which should be
+     *                              processed.
      */
-    @NotNull
-    CompletableFuture<Void> handleExtensionEvents(@NotNull ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents);
+    @NotNull CompletableFuture<Void> handleExtensionEvents(
+            @NotNull ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents);
 }

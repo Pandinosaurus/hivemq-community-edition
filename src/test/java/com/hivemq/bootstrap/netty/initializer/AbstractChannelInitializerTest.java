@@ -15,7 +15,8 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
+import com.hivemq.bootstrap.UndefinedClientConnection;
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.FullConfigurationService;
@@ -27,17 +28,17 @@ import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.security.exception.SslException;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.util.Attribute;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import util.TestChannelAttribute;
 
@@ -45,74 +46,57 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
-import static org.junit.Assert.*;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.GLOBAL_THROTTLING_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_DECODER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NEW_CONNECTION_IDLE_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NO_CONNECT_IDLE_EVENT_HANDLER;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AbstractChannelInitializerTest {
 
-    @Mock
-    SocketChannel socketChannel;
-
-    @Mock
-    ChannelDependencies channelDependencies;
-
-    @Mock
-    ChannelPipeline pipeline;
-
-    @Mock
-    Attribute<Listener> attribute;
-
-    @Mock
-    FullConfigurationService configurationService;
-
-    @Mock
-    ShutdownHooks shutdownHooks;
-
-    @Mock
-    MqttConfigurationService mqttConfigurationService;
-
-    @Mock
-    RestrictionsConfigurationService restrictionsConfigurationService;
-
-    @Mock
-    EventLog eventLog;
-
-    private AbstractChannelInitializer abstractChannelInitializer;
-
+    private final @NotNull SocketChannel socketChannel = mock();
+    private final @NotNull ChannelDependencies channelDependencies = mock();
+    private final @NotNull FullConfigurationService configurationService = mock();
+    private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
+    private final @NotNull ChannelPipeline pipeline = mock();
+    private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService =
+            mock(RestrictionsConfigurationService.class);
+    private final @NotNull EventLog eventLog = mock(EventLog.class);
+    private final @NotNull Listener listener = mock(Listener.class);
+    private @NotNull TestAbstractChannelInitializer abstractChannelInitializer;
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
-
-        when(socketChannel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(new ClientConnection(socketChannel, null)));
+        when(socketChannel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(null));
         when(socketChannel.pipeline()).thenReturn(pipeline);
         when(socketChannel.isActive()).thenReturn(true);
-
         when(channelDependencies.getGlobalTrafficShapingHandler())
                 .thenReturn(new GlobalTrafficShapingHandler(Executors.newSingleThreadScheduledExecutor(), 1000L));
-
         when(channelDependencies.getConfigurationService()).thenReturn(configurationService);
-        when(channelDependencies.getShutdownHooks()).thenReturn(shutdownHooks);
+        when(channelDependencies.getShutdownHooks()).thenReturn(mock(ShutdownHooks.class));
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
-
         when(channelDependencies.getRestrictionsConfigurationService()).thenReturn(restrictionsConfigurationService);
-
         when(restrictionsConfigurationService.noConnectIdleTimeout()).thenReturn(500L);
         when(restrictionsConfigurationService.incomingLimit()).thenReturn(0L);
-
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
-
         when(channelDependencies.getMqttServerDisconnector()).thenReturn(mqttServerDisconnector);
-
         abstractChannelInitializer = new TestAbstractChannelInitializer(channelDependencies);
     }
 
     @Test
     public void test_init_channel_no_throttling() throws Exception {
-
         abstractChannelInitializer.initChannel(socketChannel);
-
         verify(pipeline, never()).addLast(eq(GLOBAL_THROTTLING_HANDLER), any(ChannelHandler.class));
         verify(pipeline).addLast(eq(MQTT_MESSAGE_DECODER), any(ChannelHandler.class));
         verify(pipeline).addLast(eq(MQTT_MESSAGE_BARRIER), any(ChannelHandler.class));
@@ -120,67 +104,53 @@ public class AbstractChannelInitializerTest {
 
     @Test
     public void test_init_channel_with_throttling() throws Exception {
-
         when(restrictionsConfigurationService.incomingLimit()).thenReturn(1000L);
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
         when(channelDependencies.getMqttServerDisconnector()).thenReturn(mqttServerDisconnector);
         abstractChannelInitializer = new TestAbstractChannelInitializer(channelDependencies);
-
         abstractChannelInitializer.initChannel(socketChannel);
-
         verify(pipeline).addLast(eq(GLOBAL_THROTTLING_HANDLER), any(ChannelHandler.class));
         verify(pipeline).addLast(eq(MQTT_MESSAGE_DECODER), any(ChannelHandler.class));
     }
 
     @Test
     public void test_no_connect_idle_handler_disabled() throws Exception {
-
         when(restrictionsConfigurationService.noConnectIdleTimeout()).thenReturn(0L);
-
         final ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-
         abstractChannelInitializer.initChannel(socketChannel);
-
         verify(pipeline, atLeastOnce()).addLast(captor.capture(), any(ChannelHandler.class));
-
         assertFalse(captor.getAllValues().contains(NEW_CONNECTION_IDLE_HANDLER));
         assertFalse(captor.getAllValues().contains(NO_CONNECT_IDLE_EVENT_HANDLER));
     }
 
     @Test
     public void test_no_connect_idle_handler_default() throws Exception {
-
         final IdleStateHandler[] idleStateHandler = new IdleStateHandler[1];
-
-        when(pipeline.addAfter(anyString(), anyString(), any(ChannelHandler.class))).thenAnswer((Answer<ChannelPipeline>) invocation -> {
-
-            if (invocation.getArguments()[1].equals(NEW_CONNECTION_IDLE_HANDLER)) {
-                idleStateHandler[0] = (IdleStateHandler) (invocation.getArguments()[2]);
-            }
-            return pipeline;
-        });
-
+        when(pipeline.addAfter(anyString(), anyString(), any(ChannelHandler.class)))
+                .thenAnswer((Answer<ChannelPipeline>) invocation -> {
+                    if (invocation.getArguments()[1].equals(NEW_CONNECTION_IDLE_HANDLER)) {
+                        idleStateHandler[0] = (IdleStateHandler) (invocation.getArguments()[2]);
+                    }
+                    return pipeline;
+                });
         abstractChannelInitializer.initChannel(socketChannel);
-
         assertEquals(500, idleStateHandler[0].getReaderIdleTimeInMillis());
     }
 
     @Test
     public void test_embedded_channel_closed_after_sslException_in_initializer() throws Exception {
         final EmbeddedChannel channel =
-                new EmbeddedChannel(new ExceptionThrowingAbstractChannelInitializer(channelDependencies));
-
+                new EmbeddedChannel(new ExceptionThrowingAbstractChannelInitializer(channelDependencies, listener));
         final CountDownLatch latch = new CountDownLatch(1);
         channel.closeFuture().addListener((ChannelFutureListener) future -> latch.countDown());
-
         assertTrue(latch.await(3, TimeUnit.SECONDS));
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
+    private static class TestAbstractChannelInitializer extends AbstractChannelInitializer {
 
-    private class TestAbstractChannelInitializer extends AbstractChannelInitializer {
-
-        public TestAbstractChannelInitializer(final ChannelDependencies channelDependencies) {
+        public TestAbstractChannelInitializer(final @NotNull ChannelDependencies channelDependencies) {
             super(channelDependencies, new Listener() {
+
                 @Override
                 public int getPort() {
                     return 0;
@@ -188,17 +158,16 @@ public class AbstractChannelInitializerTest {
 
                 @Override
                 public void setPort(final int port) {
-
                 }
 
                 @Override
-                public String getBindAddress() {
-                    return null;
+                public @NotNull String getBindAddress() {
+                    return "";
                 }
 
                 @Override
-                public String readableName() {
-                    return null;
+                public @NotNull String readableName() {
+                    return "";
                 }
 
                 @Override
@@ -210,44 +179,24 @@ public class AbstractChannelInitializerTest {
 
         @Override
         protected void addSpecialHandlers(@NotNull final Channel ch) {
-            //no op, just to test the non abstract stuff
+            // no op, just to test the non abstract stuff
         }
     }
 
-    private class ExceptionThrowingAbstractChannelInitializer extends AbstractChannelInitializer {
+    private static class ExceptionThrowingAbstractChannelInitializer extends AbstractChannelInitializer {
 
-        public ExceptionThrowingAbstractChannelInitializer(final ChannelDependencies channelDependencies) {
-            super(channelDependencies, new Listener() {
-                @Override
-                public int getPort() {
-                    return 0;
-                }
-
-                @Override
-                public void setPort(final int port) {
-
-                }
-
-                @Override
-                public String getBindAddress() {
-                    return null;
-                }
-
-                @Override
-                public String readableName() {
-                    return null;
-                }
-
-                @Override
-                public @NotNull String getName() {
-                    return "listener";
-                }
-            });
+        private final @NotNull Listener listener;
+        public ExceptionThrowingAbstractChannelInitializer(
+                final @NotNull ChannelDependencies channelDependencies,
+                final @NotNull Listener listener) {
+            super(channelDependencies, listener);
+            this.listener = listener;
         }
 
         @Override
-        protected void initChannel(@NotNull final Channel ch) throws Exception {
-            ch.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(ch, null));
+        protected void initChannel(@NotNull final Channel ch) {
+            ch.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME)
+                    .set(new UndefinedClientConnection(ch, null, listener));
             addSpecialHandlers(ch);
         }
 

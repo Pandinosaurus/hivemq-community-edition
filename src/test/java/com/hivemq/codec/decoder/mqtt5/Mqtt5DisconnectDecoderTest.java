@@ -17,6 +17,7 @@ package com.hivemq.codec.decoder.mqtt5;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.configuration.service.FullConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -30,13 +31,16 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import util.DummyClientConnection;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -44,37 +48,32 @@ import static org.mockito.Mockito.when;
  */
 public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
 
-    @Mock
-    private @NotNull MessageDroppedService messageDroppedService;
-
-    @Mock
-    private @NotNull SecurityConfigurationService securityConfigurationService;
-
+    private final @NotNull MessageDroppedService messageDroppedService = mock();
+    private final @NotNull SecurityConfigurationService securityConfigurationService = mock();
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
         when(securityConfigurationService.allowRequestProblemInformation()).thenReturn(true);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientSessionExpiryInterval(100L);
+        ClientConnection.of(channel).setClientSessionExpiryInterval(100L);
     }
 
     @Test
     public void decode_big_packet() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b1110_0000,
-                //   remaining length (165)
+                // remaining length (165)
                 (byte) (128 + 37), 1,
                 // variable header
-                //   reason code (normal disconnection)
+                // reason code (normal disconnection)
                 0x00,
-                //   properties (162)
+                // properties (162)
                 (byte) (128 + 34), 1,
-                //     session expiry interval
+                // session expiry interval
                 0x11, 0, 0, 0, 10,
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
+                // user properties
                 0x26, 0, 5, 't', 'e', 's', 't', '0', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '1', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e', //
@@ -84,20 +83,13 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
                 0x26, 0, 5, 't', 'e', 's', 't', '6', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '7', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '8', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //     server reference
-                0x1C, 0, 9, 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e'
-        };
-
+                // server reference
+                0x1C, 0, 9, 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e'};
         final DISCONNECT disconnect = decode(encoded);
-
         assertEquals(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, disconnect.getReasonCode());
-
         assertEquals(10, disconnect.getSessionExpiryInterval());
-
         assertEquals("success", disconnect.getReasonString());
-
         assertEquals("reference", disconnect.getServerReference());
-
         final ImmutableList<MqttUserProperty> userProperties = disconnect.getUserProperties().asList();
         assertEquals(9, userProperties.size());
         for (int i = 0; i < 9; i++) {
@@ -110,20 +102,20 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_big_packet_than_encode() {
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 (byte) 0b1110_0000,
-                //   remaining length (165)
+                // remaining length (165)
                 (byte) (128 + 32), 1,
                 // variable header
-                //   reason code (normal disconnection)
+                // reason code (normal disconnection)
                 0x00,
-                //   properties (162)
+                // properties (162)
                 (byte) (128 + 29), 1,
-                //     server reference
+                // server reference
                 0x1C, 0, 9, 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e',
-                //     reason string
+                // reason string
                 0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
+                // user properties
                 0x26, 0, 5, 't', 'e', 's', 't', '0', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '1', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e', //
@@ -132,36 +124,25 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
                 0x26, 0, 5, 't', 'e', 's', 't', '5', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '6', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 5, 't', 'e', 's', 't', '7', 0, 5, 'v', 'a', 'l', 'u', 'e', //
-                0x26, 0, 5, 't', 'e', 's', 't', '8', 0, 5, 'v', 'a', 'l', 'u', 'e',
-        };
-
+                0x26, 0, 5, 't', 'e', 's', 't', '8', 0, 5, 'v', 'a', 'l', 'u', 'e',};
         final DISCONNECT disconnect = decode(encoded);
-
         assertEquals(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, disconnect.getReasonCode());
-
         assertEquals(Long.MAX_VALUE, disconnect.getSessionExpiryInterval());
-
         assertEquals("success", disconnect.getReasonString());
-
         assertEquals("reference", disconnect.getServerReference());
-
         final ImmutableList<MqttUserProperty> userProperties = disconnect.getUserProperties().asList();
         assertEquals(9, userProperties.size());
         for (int i = 0; i < 9; i++) {
             assertEquals("test" + i, userProperties.get(i).getName());
             assertEquals("value", userProperties.get(i).getValue());
         }
-
-        //Now Encode
-
+        // Now Encode
         channel = new EmbeddedChannel(new TestMessageEncoder(messageDroppedService, securityConfigurationService));
         channel.config().setAllocator(new UnpooledByteBufAllocator(false));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
-
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(new DummyClientConnection(channel, null));
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv5);
         channel.writeOutbound(disconnect);
         final ByteBuf buf = channel.readOutbound();
-
         try {
             assertEquals(encoded.length, buf.readableBytes());
             for (int i = 0; i < encoded.length; i++) {
@@ -176,18 +157,14 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_minimal_packet() {
         final ByteBuf byteBuf = channel.alloc().buffer();
         // fixed header
-        //   type, flags
+        // type, flags
         byteBuf.writeByte(0b1110_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(0);
-
         channel.writeInbound(byteBuf);
         final DISCONNECT disconnect = channel.readInbound();
-
         assertNotNull(disconnect);
-
         assertEquals(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, disconnect.getReasonCode());
-
         assertEquals(0, disconnect.getUserProperties().asList().size());
         assertNull(disconnect.getServerReference());
         assertNull(disconnect.getReasonString());
@@ -196,22 +173,18 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
     @Test
     public void decode_minimal_packet_with_reason_code() {
         final ByteBuf byteBuf = channel.alloc().buffer();
-        //fixed header
-        //   type, flags
+        // fixed header
+        // type, flags
         byteBuf.writeByte(0b1110_0000);
-        //   remaining length
+        // remaining length
         byteBuf.writeByte(1);
-        //var header
-        //   packet too large reason code
+        // var header
+        // packet too large reason code
         byteBuf.writeByte(0x95);
-
         channel.writeInbound(byteBuf);
         final DISCONNECT disconnect = channel.readInbound();
-
         assertNotNull(disconnect);
-
         assertEquals(Mqtt5DisconnectReasonCode.PACKET_TOO_LARGE, disconnect.getReasonCode());
-
         assertEquals(0, disconnect.getUserProperties().asList().size());
         assertNull(disconnect.getServerReference());
         assertNull(disconnect.getReasonString());
@@ -219,719 +192,522 @@ public class Mqtt5DisconnectDecoderTest extends AbstractMqtt5DecoderTest {
 
     @Test
     public void decode_failed_header_not_valid() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0010,
-                //  remaining length
-                0
-
-        };
-
+                // remaining length
+                0};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("invalid fixed header"));
-
     }
 
     @Test
     public void decode_failed_reason_code() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 1,
-                //var header
-                //  reason code
-                0x50
-
-        };
-
+                // var header
+                // reason code
+                0x50};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("invalid reason code"));
-
     }
 
     @Test
     public void decode_failed_properties_length_negative() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 2,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
-                -1
-
-
-        };
-
+                // properties length
+                -1};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed properties length"));
-
     }
 
     @Test
     public void decode_failed_properties_length_remaining_length_to_short() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 3,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 2,
-                //  session expiry interval
-                0x11
-
-
-        };
-
+                // session expiry interval
+                0x11};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("remaining length too short"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_payload() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 12,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 5,
-                //  session expiry interval
+                // session expiry interval
                 0x11, 0, 0, 0, 100,
                 // payload (not allowed in DISCONNECT)
-                1, 2, 3, 4, 5
-
-
-        };
-
+                1, 2, 3, 4, 5};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("with payload"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_session_expiry_zero_overwrite() {
-
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientSessionExpiryInterval(0L);
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        ClientConnection.of(channel).setClientSessionExpiryInterval(0L);
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 7,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 5,
-                //  session expiry interval
-                0x11, 0, 0, 0, 100,
-
-
-        };
-
+                // session expiry interval
+                0x11, 0, 0, 0, 100,};
         decodeNullExpected(encoded);
-
-        assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("session expiry interval was set to zero"));
-
+        assertTrue(logCapture.getLastCapturedLog()
+                .getFormattedMessage()
+                .contains("session expiry interval was set to zero"));
     }
 
     @Test
     public void decode_disconnect_with_session_expiry_to_large() {
-
         final FullConfigurationService fullConfig = new TestConfigurationBootstrap().getFullConfigurationService();
         fullConfig.mqttConfiguration().setMaxSessionExpiryInterval(80);
-
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        //from connect
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientSessionExpiryInterval(50L);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(new DummyClientConnection(channel, null));
+        // from connect
+        ClientConnection.of(channel).setClientSessionExpiryInterval(50L);
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv5);
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 7,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 5,
-                //  session expiry interval
-                0x11, 0, 0, 0, 100,
-
-
-        };
-
+                // session expiry interval
+                0x11, 0, 0, 0, 100,};
         final DISCONNECT disconnect = decode(encoded);
         assertEquals(80, disconnect.getSessionExpiryInterval());
-
     }
 
     @Test
     public void decode_failed_disconnect_with_session_expiry_moreThanOnce() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 12,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 10,
-                //  session expiry interval
-                0x11, 0, 0, 0, 100,
-                0x11, 0, 0, 0, 100,
-
-
-        };
-
+                // session expiry interval
+                0x11, 0, 0, 0, 100, 0x11, 0, 0, 0, 100,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("included more than once"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_session_expiry_tooShort() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 6,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 4,
-                //  session expiry interval
-                0x11, 0, 0, 100
-
-
-        };
-
+                // session expiry interval
+                0x11, 0, 0, 100};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("remaining length too short"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_server_reference_moreThanOnce() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 14,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 12,
-                //  server reference
-                0x1C, 0, 3, 'r', 'e', 'f',
-                0x1C, 0, 3, 'r', 'e', 'f',
-
-
-        };
-
+                // server reference
+                0x1C, 0, 3, 'r', 'e', 'f', 0x1C, 0, 3, 'r', 'e', 'f',};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("included more than once"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_server_reference_malformedMustNotChar() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 8,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 6,
-                //  server reference
-                0x1C, 0, 3, 'r', 'e', 0,
-
-
-        };
-
+                // server reference
+                0x1C, 0, 3, 'r', 'e', 0,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_server_reference_malformedShouldNotChar() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 8,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 6,
-                //  server reference
-                0x1C, 0, 3, 'r', 'e', 0x7F,
-
-
-        };
-
+                // server reference
+                0x1C, 0, 3, 'r', 'e', 0x7F,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_server_reference_tooShort() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 7,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 5,
-                //  server reference
-                0x1C, 0, 3, 'r', 'e'
-
-
-        };
-
+                // server reference
+                0x1C, 0, 3, 'r', 'e'};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_server_reference_notEnoughBytes() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 4,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 2,
-                //  server reference
-                0x1C, 3
-
-
-        };
-
+                // server reference
+                0x1C, 3};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_reason_string_moreThanOnce() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 20,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 18,
-                //  reason string
-                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 'n',
-                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 'n',
-
-
-        };
-
+                // reason string
+                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 'n', 0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 'n',};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("included more than once"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_reason_string_malformedMustNotChar() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 11,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 9,
-                //  reason string
-                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 0,
-
-
-        };
-
+                // reason string
+                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 0,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_reason_string_malformedShouldNotChar() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 11,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 9,
-                //  reason string
-                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 0x7F,
-
-
-        };
-
+                // reason string
+                0x1F, 0, 6, 'r', 'e', 'a', 's', 'o', 0x7F,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_reason_string_tooShort() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 7,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 5,
-                //  reason string
-                0x1F, 0, 3, 'r', 'e'
-
-
-        };
-
+                // reason string
+                0x1F, 0, 3, 'r', 'e'};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_failed_disconnect_with_reason_string_notEnoughBytes() {
-
-        final byte[] encoded = new byte[]{
-
-                //fixed header
-                //  type, flags
+        final byte[] encoded = {
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 4,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //  properties length
+                // properties length
                 2,
-                //  reason string
-                0x1F, 3
-
-
-        };
-
+                // reason string
+                0x1F, 3};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed UTF-8 string"));
-
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_value_too_short() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 15,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_key_too_short() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 15,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_to_short() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 4,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 2,
-                //   user property
-                0x26, 0,
-
-        };
-
+                // user property
+                0x26, 0,};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_key_contains_must_not() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 16,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_key_contains_should_not() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 16,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_value_contains_must_not() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 16,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_by_property_user_property_value_contains_should_not() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 16,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F
-
-        };
-
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("malformed user property"));
     }
 
     @Test
     public void decode_disconnect_failed_invalid_property_identifier() {
-
         final byte[] encoded = {
-                //fixed header
-                //  type, flags
+                // fixed header
+                // type, flags
                 (byte) 0b1110_0000,
-                //  remaining length
+                // remaining length
                 4,
-                //var header
-                //  reason code
+                // var header
+                // reason code
                 0x00,
-                //   properties
+                // properties
                 2,
-                //   invalid property
-                -1, 100
-
-        };
-
+                // invalid property
+                -1, 100};
         decodeNullExpected(encoded);
-
         assertTrue(logCapture.getLastCapturedLog().getFormattedMessage().contains("invalid property identifier '-1'"));
     }
 
-    @NotNull
-    private DISCONNECT decode(final byte @NotNull [] encoded) {
+    @NotNull private DISCONNECT decode(final byte @NotNull [] encoded) {
         final ByteBuf byteBuf = channel.alloc().buffer();
         byteBuf.writeBytes(encoded);
         channel.writeInbound(byteBuf);
-
         final DISCONNECT disconnect = channel.readInbound();
         assertNotNull(disconnect);
-
         return disconnect;
     }
-
 }

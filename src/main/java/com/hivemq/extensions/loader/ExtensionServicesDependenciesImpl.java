@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.codahale.metrics.MetricRegistry;
@@ -48,14 +47,11 @@ public class ExtensionServicesDependenciesImpl implements ExtensionServicesDepen
     private final @NotNull GlobalManagedExtensionExecutorService globalManagedExtensionExecutorService;
     private final @NotNull PublishService publishService;
     private final @NotNull HiveMQExtensions hiveMQExtensions;
-
     private final @NotNull SecurityRegistry securityRegistry;
     private final @NotNull EventRegistry eventRegistry;
-
     private final @NotNull ClusterService clusterService;
     private final @NotNull GlobalInterceptorRegistry globalInterceptorRegistry;
     private final @NotNull AdminService adminService;
-
     @Inject
     public ExtensionServicesDependenciesImpl(
             final @NotNull MetricRegistry metricRegistry,
@@ -86,11 +82,9 @@ public class ExtensionServicesDependenciesImpl implements ExtensionServicesDepen
         this.adminService = adminService;
     }
 
-    @NotNull
-    public ImmutableMap<String, Object> getDependenciesMap(final @NotNull ClassLoader classLoader) {
+    @NotNull public ImmutableMap<String, Object> getDependenciesMap(final @NotNull ClassLoader classLoader) {
         // classLoader is unused but prepared here for future use
         final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
-
         builder.put(MetricRegistry.class.getCanonicalName(), metricRegistry);
         builder.put(SecurityRegistry.class.getCanonicalName(), securityRegistry);
         builder.put(InitializerRegistry.class.getCanonicalName(), initializerRegistry);
@@ -103,14 +97,12 @@ public class ExtensionServicesDependenciesImpl implements ExtensionServicesDepen
         builder.put(ClusterService.class.getCanonicalName(), clusterService);
         builder.put(GlobalInterceptorRegistry.class.getCanonicalName(), globalInterceptorRegistry);
         builder.put(AdminService.class.getCanonicalName(), adminService);
-
         return builder.build();
     }
 
-    @NotNull
-    private ManagedExecutorServicePerExtension getManagedExecutorService(
-            final @NotNull ClassLoader classLoader) {
-        return new ManagedExecutorServicePerExtension(
-                globalManagedExtensionExecutorService, classLoader, hiveMQExtensions);
+    @NotNull private ManagedExecutorServicePerExtension getManagedExecutorService(final @NotNull ClassLoader classLoader) {
+        return new ManagedExecutorServicePerExtension(globalManagedExtensionExecutorService,
+                classLoader,
+                hiveMQExtensions);
     }
 }

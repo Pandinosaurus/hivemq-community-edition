@@ -15,7 +15,7 @@
  */
 package util.encoder;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
@@ -31,18 +31,14 @@ import java.util.List;
 public class Mqtt3UnsubscribeEncoder extends AbstractVariableHeaderLengthEncoder<UNSUBSCRIBE> {
 
     private static final byte UNSUBSCRIBE_FIXED_HEADER = (byte) 0b1010_0010;
-
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
+            final @NotNull ClientConnectionContext clientConnectionContext,
             final @NotNull UNSUBSCRIBE msg,
             final @NotNull ByteBuf out) {
-
         out.writeByte(UNSUBSCRIBE_FIXED_HEADER);
         createRemainingLength(msg.getRemainingLength(), out);
-
         out.writeShort(msg.getPacketIdentifier());
-
         final List<String> topics = msg.getTopics();
         for (final String topic : topics) {
             Strings.createPrefixedBytesFromString(topic, out);

@@ -25,32 +25,27 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import jetbrains.exodus.ByteIterable;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.nio.charset.StandardCharsets;
 
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.Key;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Lukas Brandl
  */
 public class ClientQueuePersistenceSerializerTest {
 
-    @Mock
-    private PublishPayloadPersistence payloadPersistence;
-
-    private ClientQueuePersistenceSerializer serializer;
-
+    private final ClientQueuePersistenceSerializer serializer = new ClientQueuePersistenceSerializer();
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        serializer = new ClientQueuePersistenceSerializer(payloadPersistence);
         ClientQueuePersistenceSerializer.NEXT_PUBLISH_NUMBER.set(Long.MAX_VALUE / 2);
     }
 
@@ -68,9 +63,8 @@ public class ClientQueuePersistenceSerializerTest {
         final Key key = serializer.deserializeKeyId(serializedKey1);
         final int serializedClientIdLength = "client".getBytes(StandardCharsets.UTF_8).length;
         assertEquals("client", key.getQueueId());
-        assertEquals(false, key.isShared());
+        assertFalse(key.isShared());
         assertEquals(serializedClientIdLength + 1 + 8, serializedKey1.getLength());
-
         final ByteIterable serializedKey2 = serializer.serializeNewPublishKey(new Key("client", false));
         assertTrue(serializedKey1.compareTo(serializedKey2) < 0);
     }
@@ -79,13 +73,11 @@ public class ClientQueuePersistenceSerializerTest {
     public void test_serializeUnknownPubRelKey() {
         final ByteIterable serializedKeyBefore = serializer.serializeNewPublishKey(new Key("client", false));
         final ByteIterable serializedKey1 = serializer.serializeUnknownPubRelKey(new Key("client", false));
-
         final Key key = serializer.deserializeKeyId(serializedKey1);
         final int serializedClientIdLength = "client".getBytes(StandardCharsets.UTF_8).length;
         assertEquals("client", key.getQueueId());
-        assertEquals(false, key.isShared());
+        assertFalse(key.isShared());
         assertEquals(serializedClientIdLength + 1 + 8, serializedKey1.getLength());
-
         assertTrue(serializedKeyBefore.compareTo(serializedKey1) > 0);
     }
 
@@ -118,42 +110,34 @@ public class ClientQueuePersistenceSerializerTest {
                 .withPublishId(123)
                 .withTimestamp(456)
                 .withHivemqId("hivemqId")
-                .withPersistence(payloadPersistence)
                 .withTopic("topic")
                 .withDuplicateDelivery(false)
                 .build();
-
         ByteIterable serializedValue = serializer.serializePublishWithoutPacketId(publish, false);
-
         serializedValue = serializer.serializeAndSetPacketId(serializedValue, publish.getPacketIdentifier());
         final Message messageWithID = serializer.deserializeValue(serializedValue);
-
-        assertEquals(true, messageWithID instanceof PUBLISH);
+        assertTrue(messageWithID instanceof PUBLISH);
         final PUBLISH readPublish = (PUBLISH) messageWithID;
-
         assertEquals(10, readPublish.getPacketIdentifier());
         assertEquals(QoS.AT_LEAST_ONCE, readPublish.getQoS());
         assertEquals(123, readPublish.getPublishId());
         assertEquals(456, readPublish.getTimestamp());
         assertEquals("hivemqId", readPublish.getHivemqId());
         assertEquals(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET, readPublish.getMessageExpiryInterval());
-        assertEquals(false, readPublish.isRetain());
-        assertEquals(false, readPublish.isDuplicateDelivery());
-
+        assertFalse(readPublish.isRetain());
+        assertFalse(readPublish.isDuplicateDelivery());
     }
 
     @Test
     public void test_serialize_mqtt_5_publish() {
-        final Mqtt5UserProperties properties = Mqtt5UserProperties.of(
-                ImmutableList.of(new MqttUserProperty("name1", "value1"), new MqttUserProperty("name2", "value2")));
-
+        final Mqtt5UserProperties properties = Mqtt5UserProperties
+                .of(ImmutableList.of(new MqttUserProperty("name1", "value1"), new MqttUserProperty("name2", "value2")));
         final PUBLISH publish = new PUBLISHFactory.Mqtt5Builder().withPacketIdentifier(10)
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withPublishId(123)
                 .withTimestamp(456)
                 .withHivemqId("hivemqId")
-                .withPersistence(payloadPersistence)
                 .withMessageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX)
                 .withTopic("topic")
                 .withRetain(true)
@@ -165,24 +149,19 @@ public class ClientQueuePersistenceSerializerTest {
                 .withPayloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                 .withSubscriptionIdentifiers(ImmutableIntArray.of(1, 2, 3))
                 .build();
-
         ByteIterable serializedValue = serializer.serializePublishWithoutPacketId(publish, true);
         serializedValue = serializer.serializeAndSetPacketId(serializedValue, publish.getPacketIdentifier());
         final Message messageWithID = serializer.deserializeValue(serializedValue);
-
-        assertEquals(true, messageWithID instanceof PUBLISH);
+        assertTrue(messageWithID instanceof PUBLISH);
         final PUBLISH readPublish = (PUBLISH) messageWithID;
-
         assertEquals(10, readPublish.getPacketIdentifier());
         assertEquals(QoS.AT_LEAST_ONCE, readPublish.getQoS());
         assertEquals(123, readPublish.getPublishId());
         assertEquals(456, readPublish.getTimestamp());
         assertEquals("hivemqId", readPublish.getHivemqId());
         assertEquals(PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX, readPublish.getMessageExpiryInterval());
-        assertEquals(true, readPublish.isRetain());
-        assertEquals(false, readPublish.isDuplicateDelivery());
-
-
+        assertTrue(readPublish.isRetain());
+        assertFalse(readPublish.isDuplicateDelivery());
         assertEquals(2, readPublish.getUserProperties().asList().size());
         assertEquals("name1", readPublish.getUserProperties().asList().get(0).getName());
         assertEquals("value1", readPublish.getUserProperties().asList().get(0).getValue());
@@ -197,37 +176,30 @@ public class ClientQueuePersistenceSerializerTest {
 
     @Test
     public void test_serialize_mqtt_5_publish_null_properties() {
-
         final PUBLISH publish = new PUBLISHFactory.Mqtt5Builder().withPacketIdentifier(10)
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withPublishId(123)
                 .withTimestamp(456)
                 .withHivemqId("hivemqId")
-                .withPersistence(payloadPersistence)
                 .withMessageExpiryInterval(PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX)
                 .withTopic("topic")
                 .withRetain(true)
                 .withDuplicateDelivery(false)
                 .build();
-
         ByteIterable serializedValue = serializer.serializePublishWithoutPacketId(publish, false);
         serializedValue = serializer.serializeAndSetPacketId(serializedValue, publish.getPacketIdentifier());
         final Message messageWithID = serializer.deserializeValue(serializedValue);
-
-        assertEquals(true, messageWithID instanceof PUBLISH);
+        assertTrue(messageWithID instanceof PUBLISH);
         final PUBLISH readPublish = (PUBLISH) messageWithID;
-
         assertEquals(10, readPublish.getPacketIdentifier());
         assertEquals(QoS.AT_LEAST_ONCE, readPublish.getQoS());
         assertEquals(123, readPublish.getPublishId());
         assertEquals(456, readPublish.getTimestamp());
         assertEquals("hivemqId", readPublish.getHivemqId());
         assertEquals(PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX, readPublish.getMessageExpiryInterval());
-        assertEquals(true, readPublish.isRetain());
-        assertEquals(false, readPublish.isDuplicateDelivery());
-
-
+        assertTrue(readPublish.isRetain());
+        assertFalse(readPublish.isDuplicateDelivery());
         assertEquals(0, readPublish.getUserProperties().asList().size());
         assertNull(readPublish.getResponseTopic());
         assertNull(readPublish.getContentType());

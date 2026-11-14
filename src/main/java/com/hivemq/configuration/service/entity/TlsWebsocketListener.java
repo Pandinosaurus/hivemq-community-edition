@@ -32,13 +32,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author Dominik Obermaier
  * @author Christoph Schaebel
- * @since 3.0
+ * @since  3.0
  */
 @Immutable
 public class TlsWebsocketListener extends WebsocketListener implements TlsListener {
 
     private final @NotNull Tls tls;
-
     private TlsWebsocketListener(
             final int port,
             final @NotNull String bindAddress,
@@ -59,7 +58,6 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
     public @NotNull String readableName() {
         return "Websocket Listener with TLS";
     }
-
     /**
      * A builder which allows to conveniently build a listener object with a fluent API
      */
@@ -67,18 +65,15 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
 
         protected @NotNull String path;
         protected @NotNull List<String> subprotocols;
-
         protected @Nullable String name;
         protected @Nullable Integer port;
         protected @Nullable String bindAddress;
         protected boolean allowExtensions;
-
         private @Nullable Tls tls;
-
         public Builder() {
             path = "";
             subprotocols = new ArrayList<>();
-            subprotocols.add("mqtt"); //Add default subprotocol which is required by the MQTT spec
+            subprotocols.add("mqtt"); // Add default subprotocol which is required by the MQTT spec
             allowExtensions = false;
         }
 
@@ -96,8 +91,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets the TLS configuration of the TLS Websocket listener
          *
-         * @param tls the TLS configuration
-         * @return the Builder
+         * @param  tls the TLS configuration
+         * @return     the Builder
          */
         public @NotNull Builder tls(final @NotNull Tls tls) {
             checkNotNull(tls);
@@ -108,8 +103,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets the port of the TLS websocket listener
          *
-         * @param port the port
-         * @return the Builder
+         * @param  port the port
+         * @return      the Builder
          */
         public @NotNull Builder port(final int port) {
             this.port = port;
@@ -119,8 +114,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets the bind address of the TLS websocket listener
          *
-         * @param bindAddress the bind address
-         * @return the Builder
+         * @param  bindAddress the bind address
+         * @return             the Builder
          */
         public @NotNull Builder bindAddress(final @NotNull String bindAddress) {
             checkNotNull(bindAddress);
@@ -131,8 +126,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets the websocket path of the TLS websocket listener
          *
-         * @param path the path
-         * @return the Builder
+         * @param  path the path
+         * @return      the Builder
          */
         public @NotNull Builder path(final @NotNull String path) {
             checkNotNull(path);
@@ -143,8 +138,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets the name of the websocket listener
          *
-         * @param name the name
-         * @return the Builder
+         * @param  name the name
+         * @return      the Builder
          */
         public @NotNull Builder name(final @NotNull String name) {
             checkNotNull(name);
@@ -155,8 +150,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
         /**
          * Sets if websocket extensions should be allowed or not
          *
-         * @param allowExtensions if websocket extensions should be allowed or not
-         * @return the Builder
+         * @param  allowExtensions if websocket extensions should be allowed or not
+         * @return                 the Builder
          */
         public @NotNull Builder allowExtensions(final boolean allowExtensions) {
             this.allowExtensions = allowExtensions;
@@ -168,8 +163,8 @@ public class TlsWebsocketListener extends WebsocketListener implements TlsListen
          * <p>
          * Typically you should use 'mqtt' and/or 'mqttv3.1
          *
-         * @param subprotocols a list of websocket subprotocols
-         * @return the Builder
+         * @param  subprotocols a list of websocket subprotocols
+         * @return              the Builder
          */
         public @NotNull Builder subprotocols(final @NotNull List<String> subprotocols) {
             checkNotNull(subprotocols);

@@ -15,7 +15,7 @@
  */
 package com.hivemq.codec.encoder.mqtt3;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
@@ -29,26 +29,22 @@ public class Mqtt3PubrecEncoder implements MqttEncoder<PUBREC> {
     public static final int ENCODED_PUBREC_SIZE = 4;
     private static final byte PUBREC_FIXED_HEADER = 0b0101_0000;
     private static final byte PUBREC_REMAINING_LENGTH = 0b0000_0010;
-
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
+            final @NotNull ClientConnectionContext clientConnectionContext,
             final @NotNull PUBREC msg,
             final @NotNull ByteBuf out) {
-
         if (msg.getPacketIdentifier() == 0) {
             throw new IllegalArgumentException("Message ID must not be null");
         }
-
         out.writeByte(PUBREC_FIXED_HEADER);
-        //The remaining length is always static for PUBRECs
+        // The remaining length is always static for PUBRECs
         out.writeByte(PUBREC_REMAINING_LENGTH);
-
         out.writeShort(msg.getPacketIdentifier());
     }
 
     @Override
-    public int bufferSize(final @NotNull ClientConnection clientConnection, final @NotNull PUBREC msg) {
+    public int bufferSize(final @NotNull ClientConnectionContext clientConnectionContext, final @NotNull PUBREC msg) {
         return ENCODED_PUBREC_SIZE;
     }
 }

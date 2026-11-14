@@ -15,16 +15,16 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAXIMUM_QOS_DEFAULT;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @XmlRootElement(name = "quality-of-service")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -33,7 +33,6 @@ public class QoSConfigEntity {
 
     @XmlElement(name = "max-qos", defaultValue = "2")
     private int maxQos = MAXIMUM_QOS_DEFAULT.getQosNumber();
-
     public int getMaxQos() {
         return maxQos;
     }

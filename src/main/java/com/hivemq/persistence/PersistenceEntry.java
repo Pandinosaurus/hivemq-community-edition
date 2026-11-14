@@ -27,9 +27,7 @@ public class PersistenceEntry<T extends Sizable> implements Sizable {
 
     private final long timestamp;
     private final @NotNull T object;
-
     private int sizeInMemory = SIZE_NOT_CALCULATED;
-
     public PersistenceEntry(@NotNull final T object, final long timestamp) {
         this.timestamp = timestamp;
         this.object = object;
@@ -39,32 +37,26 @@ public class PersistenceEntry<T extends Sizable> implements Sizable {
         return timestamp;
     }
 
-    @NotNull
-    public T getObject() {
+    @NotNull public T getObject() {
         return object;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String toString() {
         return object.toString();
     }
 
     @Override
     public int getEstimatedSize() {
-
-        if (sizeInMemory != SIZE_NOT_CALCULATED){
+        if (sizeInMemory != SIZE_NOT_CALCULATED) {
             return sizeInMemory;
         }
-
         int size = ObjectMemoryEstimation.objectShellSize();
         size += ObjectMemoryEstimation.longSize(); // timestamp
         size += ObjectMemoryEstimation.intSize(); // sizeInMemory
-
         // contained object
         size += ObjectMemoryEstimation.objectRefSize();
         size += object.getEstimatedSize();
-
         sizeInMemory = size;
         return sizeInMemory;
     }

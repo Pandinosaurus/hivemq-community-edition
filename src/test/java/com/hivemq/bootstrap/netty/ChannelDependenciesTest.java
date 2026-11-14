@@ -32,6 +32,7 @@ import com.hivemq.metrics.handler.GlobalMQTTMessageCounter;
 import com.hivemq.mqtt.handler.InterceptorHandler;
 import com.hivemq.mqtt.handler.auth.AuthHandler;
 import com.hivemq.mqtt.handler.auth.AuthInProgressMessageHandler;
+import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.connect.ConnectHandler;
 import com.hivemq.mqtt.handler.connect.ConnectionLimiterHandler;
 import com.hivemq.mqtt.handler.connect.NoConnectIdleHandler;
@@ -46,119 +47,51 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
-/**
- * @author Florian Limpöck
- * @since 4.1.0
- */
-@SuppressWarnings("NullabilityAnnotations")
 public class ChannelDependenciesTest {
 
-    private ChannelDependencies channelDependencies;
-
-    @Mock
-    private NoConnectIdleHandler noConnectIdleHandler;
-
-    @Mock
-    private ConnectHandler connectHandler;
-
-    @Mock
-    private DisconnectHandler disconnectHandler;
-
-    @Mock
-    private SubscribeHandler subscribeHandler;
-
-    @Mock
-    private UnsubscribeHandler unsubscribeHandler;
-
-    @Mock
-    private ChannelGroup channelGroup;
-
-    @Mock
-    private FullConfigurationService fullConfigurationService;
-
-    @Mock
-    private GlobalTrafficShapingHandler globalTrafficShapingHandler;
-
-    @Mock
-    private MetricsHolder metricsHolder;
-
-    @Mock
-    private ExceptionHandler exceptionHandler;
-
-    @Mock
-    private PingRequestHandler pingRequestHandler;
-
-    @Mock
-    private RestrictionsConfigurationService restrictionsConfigurationService;
-
-    @Mock
-    private MqttConnectDecoder mqttConnectDecoder;
-
-    @Mock
-    private EncoderFactory encoderFactory;
-
-    @Mock
-    private EventLog eventLog;
-
-    @Mock
-    private SslParameterHandler sslParameterHandler;
-
-    @Mock
-    private MqttDecoders mqttDecoders;
-
-    @Mock
-    private AuthHandler authHandler;
-
-    @Mock
-    private PluginInitializerHandler pluginInitializerHandler;
-
-    @Mock
-    private ClientLifecycleEventHandler clientLifecycleEventHandler;
-
-    @Mock
-    private AuthInProgressMessageHandler authInProgressMessageHandler;
-
-    @Mock
-    private MessageExpiryHandler messageExpiryHandler;
-
-    @Mock
-    private IncomingPublishHandler incomingPublishHandler;
-
-    @Mock
-    private IncomingSubscribeHandler incomingSubscribeHandler;
-
-    @Mock
-    private ConnectionLimiterHandler connectionLimiterHandler;
-
-    @Mock
-    private MqttServerDisconnector mqttServerDisconnector;
-
-    @Mock
-    private InterceptorHandler interceptorHandler;
-
-    @Mock
-    private GlobalMQTTMessageCounter globalMQTTMessageCounter;
-
-    @Mock
-    private ShutdownHooks shutdownHooks;
-
+    private final @NotNull NoConnectIdleHandler noConnectIdleHandler = mock();
+    private final @NotNull ConnectHandler connectHandler = mock();
+    private final @NotNull DisconnectHandler disconnectHandler = mock();
+    private final @NotNull SubscribeHandler subscribeHandler = mock();
+    private final @NotNull UnsubscribeHandler unsubscribeHandler = mock();
+    private final @NotNull ChannelGroup channelGroup = mock();
+    private final @NotNull FullConfigurationService fullConfigurationService = mock();
+    private final @NotNull GlobalTrafficShapingHandler globalTrafficShapingHandler = mock();
+    private final @NotNull MetricsHolder metricsHolder = mock();
+    private final @NotNull ExceptionHandler exceptionHandler = mock();
+    private final @NotNull PingRequestHandler pingRequestHandler = mock();
+    private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService = mock();
+    private final @NotNull MqttConnectDecoder mqttConnectDecoder = mock();
+    private final @NotNull MqttConnacker mqttConnacker = mock();
+    private final @NotNull EncoderFactory encoderFactory = mock();
+    private final @NotNull EventLog eventLog = mock();
+    private final @NotNull SslParameterHandler sslParameterHandler = mock();
+    private final @NotNull MqttDecoders mqttDecoders = mock();
+    private final @NotNull AuthHandler authHandler = mock();
+    private final @NotNull PluginInitializerHandler pluginInitializerHandler = mock();
+    private final @NotNull ClientLifecycleEventHandler clientLifecycleEventHandler = mock();
+    private final @NotNull AuthInProgressMessageHandler authInProgressMessageHandler = mock();
+    private final @NotNull MessageExpiryHandler messageExpiryHandler = mock();
+    private final @NotNull IncomingPublishHandler incomingPublishHandler = mock();
+    private final @NotNull IncomingSubscribeHandler incomingSubscribeHandler = mock();
+    private final @NotNull ConnectionLimiterHandler connectionLimiterHandler = mock();
+    private final @NotNull MqttServerDisconnector mqttServerDisconnector = mock();
+    private final @NotNull InterceptorHandler interceptorHandler = mock();
+    private final @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter = mock();
+    private final @NotNull ShutdownHooks shutdownHooks = mock();
+    private @NotNull ChannelDependencies channelDependencies;
     @Before
     public void setUp() throws Exception {
-
-        MockitoAnnotations.initMocks(this);
-
-        channelDependencies = new ChannelDependencies(
-                noConnectIdleHandler,
+        channelDependencies = new ChannelDependencies(noConnectIdleHandler,
                 () -> connectHandler,
                 connectionLimiterHandler,
                 disconnectHandler,
                 () -> subscribeHandler,
-                () -> unsubscribeHandler,
+                unsubscribeHandler,
                 channelGroup,
                 fullConfigurationService,
                 globalTrafficShapingHandler,
@@ -167,6 +100,7 @@ public class ChannelDependenciesTest {
                 pingRequestHandler,
                 restrictionsConfigurationService,
                 mqttConnectDecoder,
+                mqttConnacker,
                 eventLog,
                 sslParameterHandler,
                 mqttDecoders,
@@ -185,8 +119,7 @@ public class ChannelDependenciesTest {
     }
 
     @Test
-    public void test_all_provided() {
-
+    public void getters_returnAllHandlers() {
         assertNotNull(channelDependencies.getNoConnectIdleHandler());
         assertNotNull(channelDependencies.getConnectHandler());
         assertNotNull(channelDependencies.getDisconnectHandler());

@@ -16,8 +16,13 @@
 package com.hivemq.configuration.entity;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlEnum;
+import jakarta.xml.bind.annotation.XmlEnumValue;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * @author Lukas Brandl
@@ -30,15 +35,14 @@ public class PersistenceEntity {
     @XmlEnum
     @XmlType(name = "mode")
     public enum PersistenceMode {
-        @XmlEnumValue("file") FILE,
-        @XmlEnumValue("in-memory") IN_MEMORY
+        @XmlEnumValue("file")
+        FILE,
+        @XmlEnumValue("in-memory")
+        IN_MEMORY
     }
-
     @XmlElement(name = "mode", defaultValue = "file")
     private @NotNull PersistenceEntity.PersistenceMode mode = PersistenceMode.FILE;
-
-    @NotNull
-    public PersistenceMode getMode() {
+    @NotNull public PersistenceMode getMode() {
         return mode;
     }
 }

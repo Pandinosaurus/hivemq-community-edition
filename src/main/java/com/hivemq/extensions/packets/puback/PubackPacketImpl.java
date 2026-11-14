@@ -37,13 +37,11 @@ public class PubackPacketImpl implements PubackPacket {
     final @NotNull AckReasonCode reasonCode;
     final @Nullable String reasonString;
     final @NotNull UserPropertiesImpl userProperties;
-
     public PubackPacketImpl(
             final int packetIdentifier,
             final @NotNull AckReasonCode reasonCode,
             final @Nullable String reasonString,
             final @NotNull UserPropertiesImpl userProperties) {
-
         this.packetIdentifier = packetIdentifier;
         this.reasonCode = reasonCode;
         this.reasonString = reasonString;
@@ -51,8 +49,7 @@ public class PubackPacketImpl implements PubackPacket {
     }
 
     public PubackPacketImpl(final @NotNull PUBACK puback) {
-        this(
-                puback.getPacketIdentifier(),
+        this(puback.getPacketIdentifier(),
                 puback.getReasonCode().toAckReasonCode(),
                 puback.getReasonString(),
                 UserPropertiesImpl.of(puback.getUserProperties().asList()));
@@ -87,10 +84,8 @@ public class PubackPacketImpl implements PubackPacket {
             return false;
         }
         final PubackPacketImpl that = (PubackPacketImpl) o;
-        return (packetIdentifier == that.packetIdentifier) &&
-                (reasonCode == that.reasonCode) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                userProperties.equals(that.userProperties);
+        return (packetIdentifier == that.packetIdentifier) && (reasonCode == that.reasonCode) &&
+                Objects.equals(reasonString, that.reasonString) && userProperties.equals(that.userProperties);
     }
 
     @Override

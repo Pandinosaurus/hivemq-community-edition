@@ -15,7 +15,7 @@
  */
 package com.hivemq.codec.encoder.mqtt3;
 
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.puback.PUBACK;
@@ -29,26 +29,22 @@ public class Mqtt3PubackEncoder implements MqttEncoder<PUBACK> {
     public static final int ENCODED_PUBACK_SIZE = 4;
     private static final byte PUBACK_FIXED_HEADER = 0b0100_0000;
     private static final byte PUBACK_REMAINING_LENGTH = 0b0000_0010;
-
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
+            final @NotNull ClientConnectionContext clientConnectionContext,
             final @NotNull PUBACK msg,
             final @NotNull ByteBuf out) {
-
         if (msg.getPacketIdentifier() == 0) {
             throw new IllegalArgumentException("Message ID must not be null");
         }
-
         out.writeByte(PUBACK_FIXED_HEADER);
-        //The remaining length is always static for PUBACKs
+        // The remaining length is always static for PUBACKs
         out.writeByte(PUBACK_REMAINING_LENGTH);
-
         out.writeShort(msg.getPacketIdentifier());
     }
 
     @Override
-    public int bufferSize(final @NotNull ClientConnection clientConnection, final @NotNull PUBACK msg) {
+    public int bufferSize(final @NotNull ClientConnectionContext clientConnectionContext, final @NotNull PUBACK msg) {
         return ENCODED_PUBACK_SIZE;
     }
 }

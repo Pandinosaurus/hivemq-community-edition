@@ -33,7 +33,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Georg Held
@@ -42,11 +44,9 @@ public class ConnectPacketImplTest {
 
     private @NotNull ConnectPacketImpl connectPacket;
     private @NotNull ConnectPacketImpl emptyPacket;
-
     @Before
     public void setUp() {
-        final CONNECT connect = new CONNECT.Mqtt5Builder()
-                .withClientIdentifier("client")
+        final CONNECT connect = new CONNECT.Mqtt5Builder().withClientIdentifier("client")
                 .withUsername("user")
                 .withPassword("password".getBytes())
                 .withAuthMethod("method")
@@ -65,11 +65,7 @@ public class ConnectPacketImplTest {
                         .build())
                 .withUserProperties(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")))
                 .build();
-
-        final CONNECT empty = new CONNECT.Mqtt5Builder()
-                .withClientIdentifier("client")
-                .build();
-
+        final CONNECT empty = new CONNECT.Mqtt5Builder().withClientIdentifier("client").build();
         connectPacket = new ConnectPacketImpl(connect, System.currentTimeMillis());
         emptyPacket = new ConnectPacketImpl(empty, System.currentTimeMillis());
     }
@@ -81,14 +77,14 @@ public class ConnectPacketImplTest {
 
     @Test(timeout = 5000)
     public void test_user_properties() {
-        assertEquals(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")).asList(), connectPacket.getUserProperties().asList());
+        assertEquals(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")).asList(),
+                connectPacket.getUserProperties().asList());
     }
 
     @Test(timeout = 5000)
     public void test_will_publish() {
         final Optional<WillPublishPacket> willPublish = connectPacket.getWillPublish();
         assertTrue(willPublish.isPresent());
-
         final WillPublishPacket publishPacket = willPublish.get();
         assertEquals("topic", publishPacket.getTopic());
         assertEquals(Qos.AT_LEAST_ONCE, publishPacket.getQos());
@@ -168,7 +164,9 @@ public class ConnectPacketImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(ConnectPacketImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks
+                // @NotNull Optional is
+                // @NotNull
                 .withNonnullFields("mqttVersion", "clientId", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();

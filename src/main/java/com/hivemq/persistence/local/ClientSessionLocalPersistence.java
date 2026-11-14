@@ -38,66 +38,65 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     /**
      * Get a {@link ClientSession} for a specific client id with an expired check.
      *
-     * @param clientId The id associated with the session
-     * @return A {@link ClientSession} object or {@code null} if there is no
-     * session stored for the given id
+     * @param  clientId The id associated with the session
+     * @return          A {@link ClientSession} object or {@code null} if there is no session stored for the given id
      */
     @Nullable ClientSession getSession(@NotNull String clientId);
 
     /**
      * Get a {@link ClientSession} for a specific client id and a bucket index with an expired check.
      *
-     * @param clientId    The id associated with the session
-     * @param bucketIndex The index of the bucket in which the session is stored
-     * @return A {@link ClientSession} object or {@code null} if there is no
-     * session stored for the given id
+     * @param  clientId    The id associated with the session
+     * @param  bucketIndex The index of the bucket in which the session is stored
+     * @return             A {@link ClientSession} object or {@code null} if there is no session stored for the given id
      */
     @Nullable ClientSession getSession(@NotNull String clientId, int bucketIndex);
 
     /**
      * Get a {@link ClientSession} for a specific client id with an optional expired check.
      *
-     * @param clientId     The id associated with the session
-     * @param checkExpired true => return null for expired session, false return tombstones and expired sessions
-     * @return A {@link ClientSession} object or {@code null} if there is no
-     * session stored for the given id
+     * @param  clientId     The id associated with the session
+     * @param  checkExpired true => return null for expired session, false return tombstones and expired sessions
+     * @return              A {@link ClientSession} object or {@code null} if there is no session stored for the given
+     *                      id
      */
     @Nullable ClientSession getSession(@NotNull String clientId, boolean checkExpired);
 
     /**
      * Get a {@link ClientSession} for a specific client id and a bucket index with an expired check.
      *
-     * @param clientId     The id associated with the session
-     * @param bucketIndex  The index of the bucket in which the session is stored
-     * @param checkExpired true => return null for expired session, false return tombstones and expired sessions
-     * @return A {@link ClientSession} object or {@code null} if there is no
-     * session stored for the given id
+     * @param  clientId     The id associated with the session
+     * @param  bucketIndex  The index of the bucket in which the session is stored
+     * @param  checkExpired true => return null for expired session, false return tombstones and expired sessions
+     * @return              A {@link ClientSession} object or {@code null} if there is no session stored for the given
+     *                      id
      */
     @Nullable ClientSession getSession(@NotNull String clientId, int bucketIndex, boolean checkExpired);
 
     /**
      * Get a {@link ClientSession} for a specific client id with an optional expired check.
      *
-     * @param clientId     The id associated with the session
-     * @param checkExpired true => return null for expired session, false return tombstones and expired sessions
-     * @param includeWill  if the will message should be included, the will is set to {@code null}
-     *                     if this parameter is {@code false}.
-     * @return A {@link ClientSession} object or {@code null} if there is no session stored for the given id
+     * @param  clientId     The id associated with the session
+     * @param  checkExpired true => return null for expired session, false return tombstones and expired sessions
+     * @param  includeWill  if the will message should be included, the will is set to {@code null} if this parameter is
+     *                      {@code false}.
+     * @return              A {@link ClientSession} object or {@code null} if there is no session stored for the given
+     *                      id
      */
     @Nullable ClientSession getSession(@NotNull String clientId, boolean checkExpired, boolean includeWill);
 
     /**
-     * @param clientId The id associated with the session
-     * @return The timestamp of the client session (last connected/disconnected) or {@code null} if there is no session
-     * stored for the given id
+     * @param  clientId The id associated with the session
+     * @return          The timestamp of the client session (last connected/disconnected) or {@code null} if there is no
+     *                  session stored for the given id
      */
     @Nullable Long getTimestamp(@NotNull String clientId);
 
     /**
-     * @param clientId    The id associated with the session
-     * @param bucketIndex The index of the bucket in which the session is stored
-     * @return The timestamp of the client session (last connected/disconnected) or null if there is no session stored
-     * for the given id
+     * @param  clientId    The id associated with the session
+     * @param  bucketIndex The index of the bucket in which the session is stored
+     * @return             The timestamp of the client session (last connected/disconnected) or null if there is no
+     *                     session stored for the given id
      */
     @Nullable Long getTimestamp(@NotNull String clientId, int bucketIndex);
 
@@ -115,37 +114,34 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     /**
      * Set a {@link ClientSession} to disconnected.
      *
-     * @param clientId              The id associated with the session.
-     * @param sendWill              The flag to send Will or not.
-     * @param timestamp             The timestamp of the disconnect.
-     * @param bucketIndex           The index of the bucket in which the session is stored.
-     * @param sessionExpiryInterval The session expiry interval.
-     * @return the disconnected {@link ClientSession}.
+     * @param  clientId              The id associated with the session.
+     * @param  sendWill              The flag to send Will or not.
+     * @param  timestamp             The timestamp of the disconnect.
+     * @param  bucketIndex           The index of the bucket in which the session is stored.
+     * @param  sessionExpiryInterval The session expiry interval.
+     * @return                       the disconnected {@link ClientSession}.
      */
     @ExecuteInSingleWriter
     @NotNull ClientSession disconnect(
-            @NotNull String clientId, long timestamp, boolean sendWill, int bucketIndex, long sessionExpiryInterval);
+            @NotNull String clientId,
+            long timestamp,
+            boolean sendWill,
+            int bucketIndex,
+            long sessionExpiryInterval);
 
     /**
      * get all client identifiers of all stored clients form a specific persistence bucket.
      *
-     * @param bucketIndex The index of the bucket in which the client sessions are stored.
-     * @return A set of strings containing all client identifiers found.
+     * @param  bucketIndex The index of the bucket in which the client sessions are stored.
+     * @return             A set of strings containing all client identifiers found.
      */
     @NotNull Set<@NotNull String> getAllClients(int bucketIndex);
 
     /**
-     * Completely remove the session for the client. This will not create a tombstone.
-     */
-    @VisibleForTesting
-    @ExecuteInSingleWriter
-    void removeWithTimestamp(@NotNull String client, int bucketIndex);
-
-    /**
      * Trigger a cleanup for a specific persistence bucket.
      *
-     * @param bucketIndex The index of the bucket in which the client sessions are stored.
-     * @return A set of strings containing all client identifiers which were cleaned up.
+     * @param  bucketIndex The index of the bucket in which the client sessions are stored.
+     * @return             A set of strings containing all client identifiers which were cleaned up.
      */
     @ExecuteInSingleWriter
     @NotNull Set<@NotNull String> cleanUp(int bucketIndex);
@@ -153,8 +149,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     /**
      * get all client identifiers of all stored disconnected clients form a specific persistence bucket.
      *
-     * @param bucketIndex The index of the bucket in which the client sessions are stored.
-     * @return A set of strings containing all client identifiers of the found disconnected client sessions.
+     * @param  bucketIndex The index of the bucket in which the client sessions are stored.
+     * @return             A set of strings containing all client identifiers of the found disconnected client sessions.
      */
     @VisibleForTesting
     @NotNull Set<@NotNull String> getDisconnectedClients(int bucketIndex);
@@ -167,8 +163,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     /**
      * Sets the session expiry interval for a client in seconds.
      *
-     * @param clientId              the client identifier of the client
-     * @param sessionExpiryInterval session expiry interval for a client in seconds
+     * @param  clientId                              the client identifier of the client
+     * @param  sessionExpiryInterval                 session expiry interval for a client in seconds
      * @throws InvalidSessionExpiryIntervalException when interval < 0
      */
     @ExecuteInSingleWriter
@@ -190,11 +186,14 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
      * <p>
      * The session do not include the Will message. It is always set to {@code null} in the returned sessions.
      *
-     * @param bucketIndex  the bucket index
-     * @param lastClientId the last client identifier for this chunk. Pass {@code null} to start at the beginning.
-     * @param maxResults   the max amount of results contained in the chunk.
-     * @return a {@link BucketChunkResult} with the entries and the information if more chunks are available
+     * @param  bucketIndex  the bucket index
+     * @param  lastClientId the last client identifier for this chunk. Pass {@code null} to start at the beginning.
+     * @param  maxResults   the max amount of results contained in the chunk.
+     * @return              a {@link BucketChunkResult} with the entries and the information if more chunks are
+     *                      available
      */
     @NotNull BucketChunkResult<Map<String, ClientSession>> getAllClientsChunk(
-            int bucketIndex, @Nullable String lastClientId, int maxResults);
+            int bucketIndex,
+            @Nullable String lastClientId,
+            int maxResults);
 }

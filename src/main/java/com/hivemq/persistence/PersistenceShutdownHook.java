@@ -45,7 +45,6 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 public class PersistenceShutdownHook implements HiveMQShutdownHook {
 
     private static final Logger log = LoggerFactory.getLogger(PersistenceShutdownHook.class);
-
     private final @NotNull ClientSessionPersistence clientSessionPersistence;
     private final @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
     private final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence;
@@ -56,19 +55,18 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
     private final @NotNull ListeningScheduledExecutorService payloadPersistenceExecutor;
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull PublishPayloadPersistence payloadPersistence;
-
     @Inject
-    PersistenceShutdownHook(final @NotNull ClientSessionPersistence clientSessionPersistence,
-                            final @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence,
-                            final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence,
-                            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
-                            final @NotNull PublishPayloadPersistence payloadPersistence,
-                            final @NotNull ClientQueuePersistence clientQueuePersistence,
-                            final @NotNull @Persistence ListeningExecutorService persistenceExecutorService,
-                            final @NotNull @Persistence ListeningScheduledExecutorService persistenceScheduledExecutorService,
-                            final @NotNull @PayloadPersistence ListeningScheduledExecutorService payloadPersistenceExecutor,
-                            final @NotNull SingleWriterService singleWriterService) {
-
+    PersistenceShutdownHook(
+            final @NotNull ClientSessionPersistence clientSessionPersistence,
+            final @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence,
+            final @NotNull IncomingMessageFlowPersistence incomingMessageFlowPersistence,
+            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
+            final @NotNull PublishPayloadPersistence payloadPersistence,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @NotNull @Persistence ListeningExecutorService persistenceExecutorService,
+            final @NotNull @Persistence ListeningScheduledExecutorService persistenceScheduledExecutorService,
+            final @NotNull @PayloadPersistence ListeningScheduledExecutorService payloadPersistenceExecutor,
+            final @NotNull SingleWriterService singleWriterService) {
         this.clientSessionPersistence = clientSessionPersistence;
         this.clientSessionSubscriptionPersistence = clientSessionSubscriptionPersistence;
         this.incomingMessageFlowPersistence = incomingMessageFlowPersistence;
@@ -93,20 +91,16 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
             log.trace("Shutting down persistent stores");
         }
         payloadPersistenceExecutor.shutdown();
-
         final ImmutableList.Builder<ListenableFuture<Void>> builder = ImmutableList.builder();
-
         incomingMessageFlowPersistence.closeDB();
         builder.add(clientSessionPersistence.closeDB());
         builder.add(clientSessionSubscriptionPersistence.closeDB());
         builder.add(retainedMessagePersistence.closeDB());
         builder.add(clientQueuePersistence.closeDB());
-
-        //We have to use a direct executor service here because the usual persistence executor might already be shut down
+        // We have to use a direct executor service here because the usual persistence executor might already be shut
+        // down
         final ListenableFuture<Void> combinedFuture = FutureUtils.voidFutureFromList(builder.build());
-
         final int shutdownTimeout = PERSISTENCE_SHUTDOWN_TIMEOUT_SEC.get();
-
         try {
             payloadPersistenceExecutor.awaitTermination(shutdownTimeout, TimeUnit.SECONDS);
             combinedFuture.get(shutdownTimeout, TimeUnit.SECONDS);
@@ -120,10 +114,9 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
             log.debug("Original Exception: ", e);
         }
         payloadPersistence.closeDB();
-
-        // All persistence producers are terminated at this point. Make sure all other producers for the single writer service are stopped as well.
+        // All persistence producers are terminated at this point. Make sure all other producers for the single writer
+        // service are stopped as well.
         singleWriterService.stop();
-
         persistenceScheduledExecutorService.shutdownNow();
         persistenceExecutorService.shutdown();
     }

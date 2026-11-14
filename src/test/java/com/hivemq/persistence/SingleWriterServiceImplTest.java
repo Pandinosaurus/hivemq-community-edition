@@ -24,7 +24,12 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,14 +40,12 @@ import static org.junit.Assert.assertTrue;
 public class SingleWriterServiceImplTest {
 
     SingleWriterServiceImpl singleWriterServiceImpl;
-
     @Before
     public void setUp() throws Exception {
         InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.set(4);
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(200);
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
         InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(64);
-
         singleWriterServiceImpl = new SingleWriterServiceImpl();
     }
 
@@ -54,26 +57,20 @@ public class SingleWriterServiceImplTest {
     @Test
     public void test_increment_non_empty_queue_count() throws Exception {
         singleWriterServiceImpl.singleWriterExecutor = new NoOpExecutor();
-
         assertEquals(0, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(0, singleWriterServiceImpl.getRunningThreadsCount().get());
-
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(1, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(1, singleWriterServiceImpl.getRunningThreadsCount().get());
-
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(2, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(2, singleWriterServiceImpl.getRunningThreadsCount().get());
-
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(3, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(3, singleWriterServiceImpl.getRunningThreadsCount().get());
-
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(4, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(4, singleWriterServiceImpl.getRunningThreadsCount().get());
-
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(5, singleWriterServiceImpl.getNonemptyQueueCounter().get());
         assertEquals(4, singleWriterServiceImpl.getRunningThreadsCount().get());
@@ -81,8 +78,6 @@ public class SingleWriterServiceImplTest {
 
     @Test
     public void test_valid_amount_of_queues() throws Exception {
-
-
         assertEquals(1, singleWriterServiceImpl.validAmountOfQueues(1, 64));
         assertEquals(2, singleWriterServiceImpl.validAmountOfQueues(2, 64));
         assertEquals(4, singleWriterServiceImpl.validAmountOfQueues(4, 64));
@@ -96,20 +91,14 @@ public class SingleWriterServiceImplTest {
         singleWriterServiceImpl.stop();
         assertTrue(singleWriterServiceImpl.checkScheduler.isShutdown());
         assertTrue(singleWriterServiceImpl.singleWriterExecutor.isShutdown());
-
-        for (final ExecutorService callbackExecutor : singleWriterServiceImpl.callbackExecutors) {
-            assertTrue(callbackExecutor.isShutdown());
-        }
     }
-
     private static class NoOpExecutor implements ExecutorService {
 
         @Override
         public void shutdown() {
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public List<Runnable> shutdownNow() {
             return null;
         }
@@ -129,41 +118,36 @@ public class SingleWriterServiceImplTest {
             return false;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public <T> Future<T> submit(@NotNull final Callable<T> task) {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public <T> Future<T> submit(@NotNull final Runnable task, final T result) {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public Future<?> submit(@NotNull final Runnable task) {
             return SettableFuture.create();
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public <T> List<Future<T>> invokeAll(@NotNull final Collection<? extends Callable<T>> tasks)
                 throws InterruptedException {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public <T> List<Future<T>> invokeAll(
-                @NotNull final Collection<? extends Callable<T>> tasks, final long timeout,
+                @NotNull final Collection<? extends Callable<T>> tasks,
+                final long timeout,
                 @NotNull final TimeUnit unit) throws InterruptedException {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public <T> T invokeAny(@NotNull final Collection<? extends Callable<T>> tasks)
                 throws InterruptedException, ExecutionException {
             return null;
@@ -171,14 +155,14 @@ public class SingleWriterServiceImplTest {
 
         @Override
         public <T> T invokeAny(
-                @NotNull final Collection<? extends Callable<T>> tasks, final long timeout,
+                @NotNull final Collection<? extends Callable<T>> tasks,
+                final long timeout,
                 @NotNull final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return null;
         }
 
         @Override
         public void execute(@NotNull final Runnable command) {
-
         }
     }
 }

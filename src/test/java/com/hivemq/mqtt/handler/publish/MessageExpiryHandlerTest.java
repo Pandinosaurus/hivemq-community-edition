@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
@@ -30,39 +31,36 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import util.DummyClientConnection;
 import util.LogbackCapturingAppender;
 import util.TestMessageUtil;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.1
+ * @since  4.0.1
  */
 public class MessageExpiryHandlerTest {
 
-    @Mock
-    private ChannelHandlerContext ctx;
-
+    private final @NotNull ChannelHandlerContext ctx = mock();
     private EmbeddedChannel channel;
-
     LogbackCapturingAppender logCapture;
-
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         final MessageExpiryHandler messageExpiryHandler = new MessageExpiryHandler();
         channel = new EmbeddedChannel();
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("ClientId");
+        ClientConnection.of(channel).setClientId("ClientId");
         channel.pipeline().addLast(messageExpiryHandler);
         when(ctx.channel()).thenReturn(channel);
         logCapture = LogbackCapturingAppender.Factory.weaveInto(MessageExpiryHandler.log);
@@ -75,14 +73,12 @@ public class MessageExpiryHandlerTest {
 
     @Test
     public void test_message_expired_qos_0() throws Exception {
-
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_MOST_ONCE);
         publish.setMessageExpiryInterval(1);
-
         Thread.sleep(2000);
-
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -92,21 +88,18 @@ public class MessageExpiryHandlerTest {
             }
         });
         channel.writeOutbound(ctx, publish, channel.newPromise());
-
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0, publish.getMessageExpiryInterval());
     }
 
     @Test
     public void test_message_expired_qos_1() throws Exception {
-
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
         publish.setMessageExpiryInterval(1);
-
         Thread.sleep(2000);
-
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -116,21 +109,18 @@ public class MessageExpiryHandlerTest {
             }
         });
         channel.writeOutbound(ctx, publish, channel.newPromise());
-
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0, publish.getMessageExpiryInterval());
     }
 
     @Test
     public void test_message_expired_qos_2_not_dup() throws Exception {
-
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.EXACTLY_ONCE);
         publish.setMessageExpiryInterval(1);
-
         Thread.sleep(2000);
-
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -140,7 +130,6 @@ public class MessageExpiryHandlerTest {
             }
         });
         channel.writeOutbound(ctx, publish, channel.newPromise());
-
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0, publish.getMessageExpiryInterval());
     }
@@ -150,11 +139,10 @@ public class MessageExpiryHandlerTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.EXACTLY_ONCE);
         publish.setMessageExpiryInterval(1);
         publish.setDuplicateDelivery(true);
-
         Thread.sleep(2000);
-
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -164,7 +152,6 @@ public class MessageExpiryHandlerTest {
             }
         });
         channel.writeOutbound(ctx, publish, channel.newPromise());
-
         assertFalse(droppedEventFiredLatch.await(1, TimeUnit.SECONDS));
         assertEquals(0, publish.getMessageExpiryInterval());
     }
@@ -175,11 +162,10 @@ public class MessageExpiryHandlerTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.EXACTLY_ONCE);
         publish.setMessageExpiryInterval(1);
         publish.setDuplicateDelivery(true);
-
         Thread.sleep(2000);
-
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -189,7 +175,6 @@ public class MessageExpiryHandlerTest {
             }
         });
         channel.writeOutbound(ctx, publish, channel.newPromise());
-
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0, publish.getMessageExpiryInterval());
     }
@@ -197,12 +182,12 @@ public class MessageExpiryHandlerTest {
     @Test
     public void test_pubrel_expired() throws InterruptedException {
         InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED = true;
-
         final PUBREL pubrel = new PUBREL(1);
         pubrel.setMessageExpiryInterval(0L);
         pubrel.setPublishTimestamp(System.currentTimeMillis());
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -211,11 +196,9 @@ public class MessageExpiryHandlerTest {
                 }
             }
         });
-
         channel.writeOutbound(pubrel);
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0L, pubrel.getMessageExpiryInterval().longValue());
-
     }
 
     @Test
@@ -225,8 +208,8 @@ public class MessageExpiryHandlerTest {
         pubrel.setMessageExpiryInterval(0L);
         pubrel.setPublishTimestamp(System.currentTimeMillis());
         final CountDownLatch droppedEventFiredLatch = new CountDownLatch(1);
-
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+
             @Override
             public void userEventTriggered(final ChannelHandlerContext ctx, @NotNull final Object evt)
                     throws Exception {
@@ -235,7 +218,6 @@ public class MessageExpiryHandlerTest {
                 }
             }
         });
-
         channel.writeOutbound(pubrel);
         assertFalse(droppedEventFiredLatch.await(50, TimeUnit.MILLISECONDS));
         assertEquals(0L, pubrel.getMessageExpiryInterval().longValue());

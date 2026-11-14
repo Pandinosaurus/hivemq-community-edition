@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.security.ssl;
 
 import com.hivemq.bootstrap.ioc.lazysingleton.LazySingleton;
@@ -35,8 +34,8 @@ public class SslContextFactory {
     /**
      * Creates a new {@link SslContext} according to the information stored in the {@link Tls} object
      *
-     * @param tls the Tls object with the information for the Tls connection
-     * @return the {@link SslContext}
+     * @param  tls          the Tls object with the information for the Tls connection
+     * @return              the {@link SslContext}
      * @throws SslException thrown if the SslContext could not be created
      */
     public @NotNull SslContext createSslContext(final @NotNull Tls tls) {
@@ -45,19 +44,16 @@ public class SslContextFactory {
                     .sslProvider(SslProvider.JDK)
                     .trustManager(SslUtil.getTrustManagerFactory(tls))
                     .clientAuth(toClientAuth(tls.getClientAuthMode()));
-
             if (!tls.getProtocols().isEmpty()) {
                 builder.protocols(tls.getProtocols());
             }
-
-            //set chosen cipher suites if available or the default one
+            // set chosen cipher suites if available or the default one
             final List<String> cipherSuites = tls.getCipherSuites();
             if (cipherSuites != null && !cipherSuites.isEmpty()) {
                 builder.ciphers(cipherSuites, SupportedCipherSuiteFilter.INSTANCE);
             } else {
                 builder.ciphers(null, SupportedCipherSuiteFilter.INSTANCE);
             }
-
             return builder.build();
         } catch (final SSLException e) {
             throw new SslException("Not able to create SSL server context", e);
@@ -66,14 +62,13 @@ public class SslContextFactory {
 
     private static @NotNull ClientAuth toClientAuth(final @NotNull Tls.ClientAuthMode clientAuthMode) {
         switch (clientAuthMode) {
-            case NONE:
+            case NONE :
                 return ClientAuth.NONE;
-            case OPTIONAL:
+            case OPTIONAL :
                 return ClientAuth.OPTIONAL;
-            case REQUIRED:
+            case REQUIRED :
                 return ClientAuth.REQUIRE;
         }
-
         throw new SslException("Invalid auth mode: " + clientAuthMode);
     }
 }

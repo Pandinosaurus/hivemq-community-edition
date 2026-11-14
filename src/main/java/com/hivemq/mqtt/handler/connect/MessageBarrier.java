@@ -16,19 +16,28 @@
 package com.hivemq.mqtt.handler.connect;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.connect.CONNECT;
+import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Optional;
+import java.util.Queue;
 
 /**
  * A message barrier which blocks (or queues) messages if they are sent before the connection was approved
@@ -36,38 +45,31 @@ import java.util.*;
 public class MessageBarrier extends ChannelDuplexHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MessageBarrier.class);
-
     private static final ChannelFutureListener ENABLE_AUTO_READ_LISTENER = future -> {
         if (future.isSuccess()) {
             resumeRead(future.channel());
         }
     };
-
     private final @NotNull MqttServerDisconnector serverDisconnector;
     private final @NotNull Queue<Message> messageQueue = new LinkedList<>();
-
     private boolean connectReceived;
     private boolean connackSent;
-
     public MessageBarrier(final @NotNull MqttServerDisconnector serverDisconnector) {
         this.serverDisconnector = serverDisconnector;
     }
 
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) {
-
         if (msg instanceof Message) {
             if (msg instanceof CONNECT) {
                 connectReceived = true;
-                suspendRead(ctx.channel());
             } else if (!connectReceived) {
                 serverDisconnector.logAndClose(ctx.channel(),
                         "A client (IP: {}) sent other message before CONNECT. Disconnecting client.",
                         "Sent other message before CONNECT");
                 return;
-            } else if (msg instanceof AUTH) {
+            } else if (!(msg instanceof AUTH) && !(msg instanceof DISCONNECT) && !connackSent) {
                 suspendRead(ctx.channel());
-            } else if (!connackSent) {
                 messageQueue.add((Message) msg);
                 return;
             }
@@ -80,7 +82,6 @@ public class MessageBarrier extends ChannelDuplexHandler {
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull Object msg,
             final @NotNull ChannelPromise promise) {
-
         if ((msg instanceof CONNACK) && (((CONNACK) msg).getReasonCode() == Mqtt5ConnAckReasonCode.SUCCESS)) {
             promise.addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
@@ -104,13 +105,10 @@ public class MessageBarrier extends ChannelDuplexHandler {
 
     private static void suspendRead(final @NotNull Channel channel) {
         if (log.isTraceEnabled()) {
-            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            final Optional<String> channelIP = (clientConnection == null)
-                    ? Optional.empty()
-                    : clientConnection.getChannelIP();
-
+            final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(channel);
+            final Optional<String> channelIP = clientConnectionContext.getChannelIP();
             log.trace("Suspending read operations for MQTT client with id {} and IP {}",
-                    clientConnection.getClientId(),
+                    clientConnectionContext.getClientId(),
                     channelIP.orElse("UNKNOWN"));
         }
         channel.config().setAutoRead(false);
@@ -118,13 +116,10 @@ public class MessageBarrier extends ChannelDuplexHandler {
 
     private static void resumeRead(final @NotNull Channel channel) {
         if (log.isTraceEnabled()) {
-            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            final Optional<String> channelIP = (clientConnection == null)
-                    ? Optional.empty()
-                    : clientConnection.getChannelIP();
-
+            final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(channel);
+            final Optional<String> channelIP = clientConnectionContext.getChannelIP();
             log.trace("Restarting read operations for MQTT client with id {} and IP {}",
-                    clientConnection.getClientId(),
+                    clientConnectionContext.getClientId(),
                     channelIP.orElse("UNKNOWN"));
         }
         channel.config().setAutoRead(true);

@@ -17,10 +17,12 @@ package com.hivemq.codec.decoder.mqtt311;
 
 import com.google.common.primitives.Bytes;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.decoder.mqtt3.Mqtt311ConnectDecoder;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.FullConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
@@ -34,49 +36,42 @@ import io.netty.channel.ChannelFuture;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import util.DummyClientConnection;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class Mqtt311ConnectDecoderTest {
 
-    @Mock
-    Channel channel;
-
-    @Mock
-    private FullConfigurationService fullConfiguration;
-
-    @Mock
-    private SecurityConfigurationService securityConfigurationService;
-
-    @Mock
-    private MqttConnacker connacker;
-
+    private final @NotNull Channel channel = mock();
+    private final @NotNull FullConfigurationService fullConfiguration = mock();
+    private final @NotNull SecurityConfigurationService securityConfigurationService = mock();
+    private final @NotNull MqttConnacker connacker = mock();
     private Mqtt311ConnectDecoder decoder;
-
     private static final byte fixedHeader = 0b0001_0000;
     private HivemqId hiveMQId;
     private ClientConnection clientConnection;
-
     @Before
     public void setUp() throws Exception {
-
-        MockitoAnnotations.initMocks(this);
-
-        clientConnection = new ClientConnection(channel, null);
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
-
+        clientConnection = new DummyClientConnection(channel, null);
+        when(channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
         when(fullConfiguration.securityConfiguration()).thenReturn(securityConfigurationService);
         when(securityConfigurationService.validateUTF8()).thenReturn(true);
-
         hiveMQId = new HivemqId();
         decoder = new Mqtt311ConnectDecoder(connacker,
                 new ClientIds(hiveMQId),
@@ -87,25 +82,21 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_no_will_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(true, connectPacket.isCleanStart());
-        assertEquals(null, connectPacket.getWillPublish());
-
+        assertTrue(connectPacket.isCleanStart());
+        assertNull(connectPacket.getWillPublish());
         assertNull(connectPacket.getPassword());
         assertNull(connectPacket.getUsername());
     }
@@ -113,26 +104,22 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_no_will_no_user_no_pw_no_clean_session() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(null, connectPacket.getWillPublish());
-
+        assertNull(connectPacket.getWillPublish());
         assertNull(connectPacket.getPassword());
         assertNull(connectPacket.getUsername());
     }
@@ -140,28 +127,24 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_no_will_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1000_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(8);
         buf.writeBytes("username".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(null, connectPacket.getWillPublish());
-
+        assertNull(connectPacket.getWillPublish());
         assertEquals("username", connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
     }
@@ -169,30 +152,26 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_no_will_user_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(8);
         buf.writeBytes("username".getBytes(UTF_8));
         buf.writeShort(8);
         buf.writeBytes("password".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(null, connectPacket.getWillPublish());
-
+        assertNull(connectPacket.getWillPublish());
         assertEquals("username", connectPacket.getUsername());
         assertArrayEquals("password".getBytes(UTF_8), connectPacket.getPassword());
     }
@@ -200,14 +179,13 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_will_user_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
@@ -218,16 +196,13 @@ public class Mqtt311ConnectDecoderTest {
         buf.writeBytes("username".getBytes(UTF_8));
         buf.writeShort(8);
         buf.writeBytes("password".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(false, connectPacket.getWillPublish().isRetain());
-
+        assertFalse(connectPacket.getWillPublish().isRetain());
         assertEquals("username", connectPacket.getUsername());
         assertArrayEquals("password".getBytes(UTF_8), connectPacket.getPassword());
         assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
@@ -238,30 +213,26 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_will_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(false, connectPacket.getWillPublish().isRetain());
-
+        assertFalse(connectPacket.getWillPublish().isRetain());
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
         assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
@@ -272,54 +243,48 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_will_no_user_no_pw_zero_length_topic() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(0);
         buf.writeBytes("".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
-        verify(connacker).connackError(any(Channel.class), isNull(), anyString(), eq(Mqtt5ConnAckReasonCode.MALFORMED_PACKET), anyString());
+        verify(connacker).connackError(any(
+                Channel.class), isNull(), anyString(), eq(Mqtt5ConnAckReasonCode.MALFORMED_PACKET), anyString());
     }
 
     @Test
     public void test_decode_will_qos2_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0001_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(false, connectPacket.getWillPublish().isRetain());
-
+        assertFalse(connectPacket.getWillPublish().isRetain());
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
         assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
@@ -330,30 +295,26 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_will_qos1_retain_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals("clientId", connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(false, connectPacket.isCleanStart());
+        assertFalse(connectPacket.isCleanStart());
         assertEquals(SESSION_EXPIRY_MAX, connectPacket.getSessionExpiryInterval());
-        assertEquals(true, connectPacket.getWillPublish().isRetain());
-
+        assertTrue(connectPacket.getWillPublish().isRetain());
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
         assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
@@ -364,29 +325,25 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_decode_65535_bytes() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeByte(0b1111_1111);
         buf.writeByte(0b1111_1111);
         final String randomClientId = RandomStringUtils.randomAlphanumeric(65535);
         buf.writeBytes(randomClientId.getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertEquals(ProtocolVersion.MQTTv3_1_1, connectPacket.getProtocolVersion());
         assertEquals(randomClientId, connectPacket.getClientIdentifier());
         assertEquals(14, connectPacket.getKeepAlive());
-        assertEquals(true, connectPacket.isCleanStart());
-        //clean session
+        assertTrue(connectPacket.isCleanStart());
+        // clean session
         assertEquals(0, connectPacket.getSessionExpiryInterval());
-        assertEquals(null, connectPacket.getWillPublish());
-
+        assertNull(connectPacket.getWillPublish());
         assertNull(connectPacket.getPassword());
         assertNull(connectPacket.getUsername());
     }
@@ -394,140 +351,116 @@ public class Mqtt311ConnectDecoderTest {
     @Test
     public void test_empty_client_id_set_to_random() {
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(0);
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertTrue(connectPacket.getClientIdentifier().length() > 9);
         assertEquals("hmq_" + hiveMQId.get(), connectPacket.getClientIdentifier().substring(0, 9));
     }
 
     @Test
     public void test_wrong_client_id_length() {
-
         final ChannelFuture cf = mock(ChannelFuture.class);
-
         when(channel.writeAndFlush(any())).thenReturn(cf);
-
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(1000);
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_client_id_contains_control_character() {
-
         final ByteBuf buf = Unpooled.buffer();
         final String clientId = "clientId" + '\u0013';
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(9);
         buf.writeBytes(clientId.getBytes(UTF_8));
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_client_id_contains_non_character() {
-
         final ByteBuf buf = Unpooled.buffer();
         final String clientId = "clientId" + '\uFFFF';
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(9);
         buf.writeBytes(clientId.getBytes(UTF_8));
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_client_id_contains_bad_utf8_character() {
-
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
         final byte[] clientId = Bytes.concat("clientId".getBytes(), bytes);
-
         final ByteBuf buf = Unpooled.buffer();
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(10);
         buf.writeBytes(clientId);
         buf.writeShort(9);
         buf.writeBytes("willTopic".getBytes(UTF_8));
         buf.writeShort(11);
         buf.writeBytes("willPayload".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_decode_bad_will_topic() {
-
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
         final byte[] willtopic = Bytes.concat("willTopic".getBytes(), bytes);
-
         final ByteBuf buf = Unpooled.buffer();
-
         buf.writeBytes(new byte[]{0, 4});
         buf.writeBytes("MQTT".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(11);
@@ -538,9 +471,7 @@ public class Mqtt311ConnectDecoderTest {
         buf.writeBytes("username".getBytes(UTF_8));
         buf.writeShort(8);
         buf.writeBytes("password".getBytes(UTF_8));
-
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
-
         assertNull(connectPacket);
         assertFalse(channel.isActive());
     }

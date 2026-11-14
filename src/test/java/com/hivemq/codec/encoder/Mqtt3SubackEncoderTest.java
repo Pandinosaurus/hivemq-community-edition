@@ -16,6 +16,7 @@
 package com.hivemq.codec.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -26,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
+import util.DummyClientConnection;
 import util.encoder.TestMessageEncoder;
 
 import java.nio.channels.ClosedChannelException;
@@ -33,46 +35,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.*;
-import static org.junit.Assert.*;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.GRANTED_QOS_0;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.GRANTED_QOS_1;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.GRANTED_QOS_2;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class Mqtt3SubackEncoderTest {
 
     private @NotNull EmbeddedChannel channel;
-
     @Before
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
     }
 
     @Test
-    public void test_mqtt_3_1_return_codes() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_mqtt_3_1_return_codes() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         final SUBACK suback = new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2));
         channel.writeOutbound(suback);
-
         final ByteBuf buf = channel.readOutbound();
-
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(5, buf.readByte());    //Two for message ID and three for the payload
-
+        assertEquals(5, buf.readByte()); // Two for message ID and three for the payload
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_1.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_2.getCode(), buf.readByte());
-
         assertFalse(buf.isReadable());
-
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
     @Test
-    public void test_mqtt_3_1_return_codes_huge_size() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_mqtt_3_1_return_codes_huge_size() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         final List<Mqtt5SubAckReasonCode> objects = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
@@ -80,9 +82,7 @@ public class Mqtt3SubackEncoderTest {
         }
         final SUBACK suback = new SUBACK(10, objects);
         channel.writeOutbound(suback);
-
         final ByteBuf buf = channel.readOutbound();
-
         assertEquals((byte) 0b1001_0000, buf.readByte());
         buf.readByte();
         buf.readByte();
@@ -90,69 +90,63 @@ public class Mqtt3SubackEncoderTest {
         for (int i = 0; i < 1000; i++) {
             assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
         }
-
         assertFalse(buf.isReadable());
-
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
     @Test
-    public void test_mqtt_3_1_1_return_codes() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_mqtt_3_1_1_return_codes() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-        final SUBACK suback = new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR));
+        final SUBACK suback =
+                new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR));
         channel.writeOutbound(suback);
-
         final ByteBuf buf = channel.readOutbound();
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(6, buf.readByte());    //Two for message ID and four for the payload
-
+        assertEquals(6, buf.readByte()); // Two for message ID and four for the payload
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_1.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_2.getCode(), buf.readByte());
         assertEquals((byte) UNSPECIFIED_ERROR.getCode(), buf.readByte());
-
         assertFalse(buf.isReadable());
-
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
     @Test
-    public void test_mqtt_5_suback_for_mqtt_3() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_mqtt_5_suback_for_mqtt_3() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-        final SUBACK suback = new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR), "reason-string", Mqtt5UserProperties.of(MqttUserProperty.of("user", "prop")));
+        final SUBACK suback = new SUBACK(10,
+                newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR),
+                "reason-string",
+                Mqtt5UserProperties.of(MqttUserProperty.of("user", "prop")));
         channel.writeOutbound(suback);
-
         final ByteBuf buf = channel.readOutbound();
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(6, buf.readByte());    //Two for message ID and four for the payload
-
+        assertEquals(6, buf.readByte()); // Two for message ID and four for the payload
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_1.getCode(), buf.readByte());
         assertEquals(GRANTED_QOS_2.getCode(), buf.readByte());
         assertEquals((byte) UNSPECIFIED_ERROR.getCode(), buf.readByte());
-
         assertFalse(buf.isReadable());
-
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
     @Test
-    public void test_invalid_mqtt_3_1_client_failure_code() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_invalid_mqtt_3_1_client_failure_code() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         try {
             channel.writeOutbound(new SUBACK(10, UNSPECIFIED_ERROR));
-            //This is ugly but in the meantime the channel could be closed
+            // This is ugly but in the meantime the channel could be closed
         } catch (final Exception e) {
             if (!(e instanceof ClosedChannelException)) {
                 throw e;
@@ -162,13 +156,13 @@ public class Mqtt3SubackEncoderTest {
     }
 
     @Test
-    public void test_invalid_send_wrong_byte() throws Exception {
-        final ClientConnection clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+    public void test_invalid_send_wrong_byte() {
+        final ClientConnection clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         try {
-            channel.writeOutbound(new SUBACK(10, Mqtt5SubAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR));
-            //This is ugly but in the meantime the channel could be closed
+            channel.writeOutbound(new SUBACK(10, IMPLEMENTATION_SPECIFIC_ERROR));
+            // This is ugly but in the meantime the channel could be closed
         } catch (final Exception e) {
             if (!(e instanceof ClosedChannelException)) {
                 throw e;

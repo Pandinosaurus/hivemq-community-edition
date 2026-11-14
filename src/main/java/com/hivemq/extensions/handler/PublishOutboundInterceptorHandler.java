@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
@@ -59,13 +58,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PublishOutboundInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PublishOutboundInterceptorHandler.class);
-
     private final @NotNull PluginOutPutAsyncer asyncer;
     private final @NotNull FullConfigurationService configurationService;
     private final @NotNull PluginTaskExecutorService pluginTaskExecutorService;
     private final @NotNull HiveMQExtensions hiveMQExtensions;
     private final @NotNull MessageDroppedService messageDroppedService;
-
     @Inject
     public PublishOutboundInterceptorHandler(
             final @NotNull PluginOutPutAsyncer asyncer,
@@ -73,7 +70,6 @@ public class PublishOutboundInterceptorHandler {
             final @NotNull PluginTaskExecutorService pluginTaskExecutorService,
             final @NotNull HiveMQExtensions hiveMQExtensions,
             final @NotNull MessageDroppedService messageDroppedService) {
-
         this.asyncer = asyncer;
         this.configurationService = configurationService;
         this.pluginTaskExecutorService = pluginTaskExecutorService;
@@ -85,14 +81,12 @@ public class PublishOutboundInterceptorHandler {
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PUBLISH publish,
             final @NotNull ChannelPromise promise) {
-
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection = ClientConnection.of(channel);
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
         }
-
         final ClientContextImpl clientContext = clientConnection.getExtensionClientContext();
         if (clientContext == null) {
             ctx.write(publish, promise);
@@ -103,19 +97,15 @@ public class PublishOutboundInterceptorHandler {
             ctx.write(publish, promise);
             return;
         }
-
         final ClientInformation clientInfo = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         final ConnectionInformation connectionInfo = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
-
         final PublishPacketImpl packet = new PublishPacketImpl(publish);
         final PublishOutboundInputImpl input = new PublishOutboundInputImpl(clientInfo, connectionInfo, packet);
         final ExtensionParameterHolder<PublishOutboundInputImpl> inputHolder = new ExtensionParameterHolder<>(input);
-
         final ModifiableOutboundPublishImpl modifiablePacket =
                 new ModifiableOutboundPublishImpl(packet, configurationService);
         final PublishOutboundOutputImpl output = new PublishOutboundOutputImpl(asyncer, modifiablePacket);
         final ExtensionParameterHolder<PublishOutboundOutputImpl> outputHolder = new ExtensionParameterHolder<>(output);
-
         final PublishOutboundInterceptorContext context = new PublishOutboundInterceptorContext(clientId,
                 interceptors.size(),
                 ctx,
@@ -124,22 +114,18 @@ public class PublishOutboundInterceptorHandler {
                 inputHolder,
                 outputHolder,
                 messageDroppedService);
-
         for (final PublishOutboundInterceptor interceptor : interceptors) {
-
             final HiveMQExtension extension =
                     hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
             }
-
             final PublishOutboundInterceptorTask task =
                     new PublishOutboundInterceptorTask(interceptor, extension.getId());
             pluginTaskExecutorService.handlePluginInOutTaskExecution(context, inputHolder, outputHolder, task);
         }
     }
-
     static class PublishOutboundInterceptorContext extends PluginInOutTaskContext<PublishOutboundOutputImpl>
             implements Runnable {
 
@@ -151,7 +137,6 @@ public class PublishOutboundInterceptorHandler {
         private final @NotNull ExtensionParameterHolder<PublishOutboundInputImpl> inputHolder;
         private final @NotNull ExtensionParameterHolder<PublishOutboundOutputImpl> outputHolder;
         private final @NotNull MessageDroppedService messageDroppedService;
-
         PublishOutboundInterceptorContext(
                 final @NotNull String identifier,
                 final int interceptorCount,
@@ -161,7 +146,6 @@ public class PublishOutboundInterceptorHandler {
                 final @NotNull ExtensionParameterHolder<PublishOutboundInputImpl> inputHolder,
                 final @NotNull ExtensionParameterHolder<PublishOutboundOutputImpl> outputHolder,
                 final @NotNull MessageDroppedService messageDroppedService) {
-
             super(identifier);
             this.interceptorCount = interceptorCount;
             this.messageDroppedService = messageDroppedService;
@@ -201,9 +185,8 @@ public class PublishOutboundInterceptorHandler {
         @Override
         public void run() {
             if (outputHolder.get().isPreventDelivery()) {
-                messageDroppedService.extensionPrevented(getIdentifier(),
-                        publish.getTopic(),
-                        publish.getQoS().getQosNumber());
+                messageDroppedService
+                        .extensionPrevented(getIdentifier(), publish.getTopic(), publish.getQoS().getQosNumber());
                 promise.setSuccess();
                 ctx.fireUserEventTriggered(new PublishDroppedEvent(publish));
             } else {
@@ -218,18 +201,17 @@ public class PublishOutboundInterceptorHandler {
 
         private final @NotNull PublishOutboundInterceptor interceptor;
         private final @NotNull String extensionId;
-
         private PublishOutboundInterceptorTask(
-                final @NotNull PublishOutboundInterceptor interceptor, final @NotNull String extensionId) {
-
+                final @NotNull PublishOutboundInterceptor interceptor,
+                final @NotNull String extensionId) {
             this.interceptor = interceptor;
             this.extensionId = extensionId;
         }
 
         @Override
         public @NotNull PublishOutboundOutputImpl apply(
-                final @NotNull PublishOutboundInputImpl input, final @NotNull PublishOutboundOutputImpl output) {
-
+                final @NotNull PublishOutboundInputImpl input,
+                final @NotNull PublishOutboundOutputImpl output) {
             if (output.isPreventDelivery()) {
                 // it's already prevented so no further interceptors must be called.
                 return output;
@@ -237,9 +219,11 @@ public class PublishOutboundInterceptorHandler {
             try {
                 interceptor.onOutboundPublish(input, output);
             } catch (final Throwable e) {
-                log.warn("Uncaught exception was thrown from extension with id \"{}\" on outbound PUBLISH interception. " +
+                log.warn(
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound PUBLISH interception. " +
                                 "Extensions are responsible for their own exception handling.",
-                        extensionId, e);
+                        extensionId,
+                        e);
                 output.forciblyPreventPublishDelivery();
                 Exceptions.rethrowError(e);
             }

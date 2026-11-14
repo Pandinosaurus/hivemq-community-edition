@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author Florian Limpöck
@@ -28,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 public class EnvironmentUtilTest {
 
     private EnvironmentUtil environmentUtil;
-
     @Before
     public void setUp() throws Exception {
         environmentUtil = new EnvironmentUtil();
@@ -41,19 +41,16 @@ public class EnvironmentUtilTest {
 
     @Test
     public void test_create_environment_config() throws Exception {
-
         final EnvironmentConfig envConfig = environmentUtil.createEnvironmentConfig("name");
-
-        assertEquals(false, envConfig.isManagementEnabled());
-        assertEquals(false, envConfig.getGcRenameFiles());
+        assertFalse(envConfig.isManagementEnabled());
+        assertFalse(envConfig.getGcRenameFiles());
         assertEquals(60000, envConfig.getGcFilesDeletionDelay());
         assertEquals(30000, envConfig.getGcRunPeriod());
         assertEquals(1, envConfig.getGcFilesInterval());
         assertEquals(2, envConfig.getGcFileMinAge());
         assertEquals(1000, envConfig.getLogSyncPeriod());
-        assertEquals(false, envConfig.getLogDurableWrite());
+        assertFalse(envConfig.getLogDurableWrite());
         assertEquals(25, envConfig.getMemoryUsagePercentage());
         assertEquals(InternalConfigurations.XODUS_LOG_CACHE_USE_NIO, envConfig.getLogCacheUseNio());
     }
-
 }

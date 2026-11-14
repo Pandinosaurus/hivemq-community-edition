@@ -15,31 +15,45 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.INCOMING_BANDWIDTH_THROTTLING_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.INCOMING_BANDWIDTH_THROTTLING_MINIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CLIENT_ID_LENGTH_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CLIENT_ID_LENGTH_MAXIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CLIENT_ID_LENGTH_MINIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CONNECTIONS_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_CONNECTIONS_MINIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_TOPIC_LENGTH_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_TOPIC_LENGTH_MAXIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.MAX_TOPIC_LENGTH_MINIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.NO_CONNECT_IDLE_TIMEOUT_DEFAULT;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.NO_CONNECT_IDLE_TIMEOUT_MINIMUM;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.UNLIMITED_CONNECTIONS;
 
 public class RestrictionConfigurator {
 
     private static final Logger log = LoggerFactory.getLogger(RestrictionConfigurator.class);
-
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
-
     public RestrictionConfigurator(@NotNull final RestrictionsConfigurationService restrictionsConfigurationService) {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
-
     void setRestrictionsConfig(@NotNull final RestrictionsEntity restrictionsEntity) {
-        restrictionsConfigurationService.setMaxConnections(validateMaxConnections(restrictionsEntity.getMaxConnections()));
-        restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(restrictionsEntity.getMaxClientIdLength()));
-        restrictionsConfigurationService.setNoConnectIdleTimeout(validateNoConnectIdleTimeout(restrictionsEntity.getNoConnectIdleTimeout()));
-        restrictionsConfigurationService.setIncomingLimit(validateIncomingLimit(restrictionsEntity.getIncomingBandwidthThrottling()));
-        restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(restrictionsEntity.getMaxTopicLength()));
+        restrictionsConfigurationService
+                .setMaxConnections(validateMaxConnections(restrictionsEntity.getMaxConnections()));
+        restrictionsConfigurationService
+                .setMaxClientIdLength(validateMaxClientIdLength(restrictionsEntity.getMaxClientIdLength()));
+        restrictionsConfigurationService
+                .setNoConnectIdleTimeout(validateNoConnectIdleTimeout(restrictionsEntity.getNoConnectIdleTimeout()));
+        restrictionsConfigurationService
+                .setIncomingLimit(validateIncomingLimit(restrictionsEntity.getIncomingBandwidthThrottling()));
+        restrictionsConfigurationService
+                .setMaxTopicLength(validateMaxTopicLength(restrictionsEntity.getMaxTopicLength()));
     }
 
     private long validateMaxConnections(final long maxConnections) {
@@ -73,7 +87,10 @@ public class RestrictionConfigurator {
         if (maxTopicLength < MAX_TOPIC_LENGTH_MINIMUM || maxTopicLength > MAX_TOPIC_LENGTH_MAXIMUM) {
             log.warn(
                     "The configured max-topic-length ({}) must be in the range {} - {}. The default value ({}) is used instead.",
-                    maxTopicLength, MAX_TOPIC_LENGTH_MINIMUM, MAX_TOPIC_LENGTH_MAXIMUM, MAX_TOPIC_LENGTH_DEFAULT);
+                    maxTopicLength,
+                    MAX_TOPIC_LENGTH_MINIMUM,
+                    MAX_TOPIC_LENGTH_MAXIMUM,
+                    MAX_TOPIC_LENGTH_DEFAULT);
             return MAX_TOPIC_LENGTH_DEFAULT;
         }
         return maxTopicLength;
@@ -101,7 +118,4 @@ public class RestrictionConfigurator {
         }
         return incomingLimit;
     }
-
-
-
 }

@@ -27,45 +27,36 @@ import io.netty.channel.Channel;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class InitializerInputImpl implements InitializerInput, PluginTaskInput {
 
-    @NotNull
-    private final ServerInformation serverInformation;
-
-    @NotNull
-    private final ConnectionInformation connectionInformation;
-
-    @NotNull
-    private final ClientInformation clientInformation;
-
-    public InitializerInputImpl(final @NotNull ServerInformation serverInformation,
-                                final @NotNull Channel channel,
-                                final @NotNull String clientId) {
+    @NotNull private final ServerInformation serverInformation;
+    @NotNull private final ConnectionInformation connectionInformation;
+    @NotNull private final ClientInformation clientInformation;
+    public InitializerInputImpl(
+            final @NotNull ServerInformation serverInformation,
+            final @NotNull Channel channel,
+            final @NotNull String clientId) {
         Preconditions.checkNotNull(channel, "channel must never be null");
         Preconditions.checkNotNull(clientId, "client id must never be null");
         Preconditions.checkNotNull(serverInformation, "server information must never be null");
-
         this.clientInformation = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         this.connectionInformation = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
         this.serverInformation = serverInformation;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public ServerInformation getServerInformation() {
         return serverInformation;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public ConnectionInformation getConnectionInformation() {
         return connectionInformation;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public ClientInformation getClientInformation() {
         return clientInformation;
     }

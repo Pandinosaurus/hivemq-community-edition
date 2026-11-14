@@ -21,60 +21,52 @@ import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @SuppressWarnings("deprecation")
 public class TestTopicPermissionsUtil {
 
     public static TopicPermission getTopicPermission() {
-        return new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getFullConfigurationService()).topicFilter("#").build();
+        return new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getFullConfigurationService())
+                .topicFilter("#")
+                .build();
     }
-
-
     @SuppressWarnings("NullabilityAnnotations")
     public static class TestTopicPermission implements TopicPermission {
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public String getTopicFilter() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public PermissionType getType() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public Qos getQos() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public MqttActivity getActivity() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public Retain getPublishRetain() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public SharedSubscription getSharedSubscription() {
             return null;
         }
 
-        @NotNull
-        @Override
+        @NotNull @Override
         public String getSharedGroup() {
             return null;
         }
     }
-
 }

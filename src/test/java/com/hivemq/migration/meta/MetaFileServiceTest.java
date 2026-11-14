@@ -16,18 +16,21 @@
 package com.hivemq.migration.meta;
 
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -38,56 +41,40 @@ public class MetaFileServiceTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @Mock
-    private SystemInformation systemInformation;
-
+    private final @NotNull SystemInformation systemInformation = mock();
     private File dataFolder;
-
     @Before
     public void before() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         dataFolder = temporaryFolder.newFolder();
         when(systemInformation.getDataFolder()).thenReturn(dataFolder);
     }
 
     @Test
     public void test_read_file_data_folder_not_present() throws Exception {
-
         when(systemInformation.getDataFolder()).thenReturn(new File(RandomStringUtils.random(123)));
-
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
-        assertEquals(false, metaFile.isDataFolderPresent());
+        assertFalse(metaFile.isDataFolderPresent());
     }
 
     @Test
     public void test_read_file_persistence_folder_not_present() throws Exception {
-
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
-        assertEquals(true, metaFile.isDataFolderPresent());
-        assertEquals(false, metaFile.isPersistenceFolderPresent());
+        assertTrue(metaFile.isDataFolderPresent());
+        assertFalse(metaFile.isPersistenceFolderPresent());
     }
 
     @Test
     public void test_read_file_meta_file_not_present() throws Exception {
-
         new File(dataFolder, LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME).mkdir();
-
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
-        assertEquals(true, metaFile.isDataFolderPresent());
-        assertEquals(true, metaFile.isPersistenceFolderPresent());
-        assertEquals(false, metaFile.isMetaFilePresent());
+        assertTrue(metaFile.isDataFolderPresent());
+        assertTrue(metaFile.isPersistenceFolderPresent());
+        assertFalse(metaFile.isMetaFilePresent());
     }
 
     @Test
     public void test_read_write_meta_file() throws Exception {
-
         new File(dataFolder, LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME).mkdir();
-
         final MetaInformation metaInformation = new MetaInformation();
         metaInformation.setHivemqVersion("1.2.3");
         metaInformation.setSubscriptionPersistenceVersion("1.2.0");
@@ -97,11 +84,8 @@ public class MetaFileServiceTest {
         metaInformation.setPublishPayloadPersistenceVersion("6.3.33");
         metaInformation.setPublishPayloadPersistenceType(PersistenceType.FILE);
         metaInformation.setRetainedMessagesPersistenceType(PersistenceType.FILE_NATIVE);
-
         MetaFileService.writeMetaFile(systemInformation, metaInformation);
-
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
         assertTrue(metaFile.isDataFolderPresent());
         assertTrue(metaFile.isPersistenceFolderPresent());
         assertTrue(metaFile.isMetaFilePresent());
@@ -115,18 +99,12 @@ public class MetaFileServiceTest {
         assertEquals(PersistenceType.FILE_NATIVE, metaFile.getRetainedMessagesPersistenceType());
     }
 
-
     @Test
     public void test_read_write_meta_all_null() throws Exception {
-
         new File(dataFolder, LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME).mkdir();
-
         final MetaInformation metaInformation = new MetaInformation();
-
         MetaFileService.writeMetaFile(systemInformation, metaInformation);
-
         final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
         assertTrue(metaFile.isDataFolderPresent());
         assertTrue(metaFile.isPersistenceFolderPresent());
         assertTrue(metaFile.isMetaFilePresent());
@@ -139,5 +117,4 @@ public class MetaFileServiceTest {
         assertNull(metaFile.getRetainedMessagesPersistenceType());
         assertNull(metaFile.getPublishPayloadPersistenceType());
     }
-
 }

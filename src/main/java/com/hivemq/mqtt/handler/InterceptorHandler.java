@@ -16,7 +16,18 @@
 package com.hivemq.mqtt.handler;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.handler.*;
+import com.hivemq.extensions.handler.ConnackOutboundInterceptorHandler;
+import com.hivemq.extensions.handler.ConnectInboundInterceptorHandler;
+import com.hivemq.extensions.handler.DisconnectInterceptorHandler;
+import com.hivemq.extensions.handler.PingInterceptorHandler;
+import com.hivemq.extensions.handler.PubackInterceptorHandler;
+import com.hivemq.extensions.handler.PubcompInterceptorHandler;
+import com.hivemq.extensions.handler.PublishOutboundInterceptorHandler;
+import com.hivemq.extensions.handler.PubrecInterceptorHandler;
+import com.hivemq.extensions.handler.PubrelInterceptorHandler;
+import com.hivemq.extensions.handler.SubackOutboundInterceptorHandler;
+import com.hivemq.extensions.handler.UnsubackOutboundInterceptorHandler;
+import com.hivemq.extensions.handler.UnsubscribeInboundInterceptorHandler;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.PINGRESP;
 import com.hivemq.mqtt.message.connack.CONNACK;
@@ -30,7 +41,10 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
-import io.netty.channel.*;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -45,19 +59,15 @@ public class InterceptorHandler extends ChannelDuplexHandler {
     private final @NotNull ConnectInboundInterceptorHandler connectInboundInterceptorHandler;
     private final @NotNull ConnackOutboundInterceptorHandler connackOutboundInterceptorHandler;
     private final @NotNull PublishOutboundInterceptorHandler publishOutboundInterceptorHandler;
-
     private final @NotNull PubackInterceptorHandler pubackInterceptorHandler;
     private final @NotNull PubrecInterceptorHandler pubrecInterceptorHandler;
     private final @NotNull PubrelInterceptorHandler pubrelInterceptorHandler;
     private final @NotNull PubcompInterceptorHandler pubcompInterceptorHandler;
-
     private final @NotNull SubackOutboundInterceptorHandler subackOutboundInterceptorHandler;
     private final @NotNull UnsubscribeInboundInterceptorHandler unsubscribeInboundInterceptorHandler;
     private final @NotNull UnsubackOutboundInterceptorHandler unsubackOutboundInterceptorHandler;
     private final @NotNull PingInterceptorHandler pingInterceptorHandler;
     private final @NotNull DisconnectInterceptorHandler disconnectInterceptorHandler;
-
-
     @Inject
     public InterceptorHandler(
             final @NotNull ConnectInboundInterceptorHandler connectInboundInterceptorHandler,
@@ -88,9 +98,9 @@ public class InterceptorHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) {
-        //the order is important: it has to be ordered by the expected frequency to avoid instance of checks
+        // the order is important: it has to be ordered by the expected frequency to avoid instance of checks
         if (msg instanceof PUBLISH) {
-            //shortcut for publish
+            // shortcut for publish
             ctx.fireChannelRead(msg);
         } else if (msg instanceof PUBACK) {
             pubackInterceptorHandler.handleInboundPuback(ctx, (PUBACK) msg);
@@ -118,7 +128,7 @@ public class InterceptorHandler extends ChannelDuplexHandler {
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull Object msg,
             final @NotNull ChannelPromise promise) {
-        //the order is important: it has to be ordered by the expected frequency to avoid instance of checks
+        // the order is important: it has to be ordered by the expected frequency to avoid instance of checks
         if (msg instanceof PUBLISH) {
             publishOutboundInterceptorHandler.handleOutboundPublish(ctx, (PUBLISH) msg, promise);
         } else if (msg instanceof PUBACK) {
@@ -143,5 +153,4 @@ public class InterceptorHandler extends ChannelDuplexHandler {
             ctx.write(msg, promise);
         }
     }
-
 }

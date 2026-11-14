@@ -29,7 +29,10 @@ public class DisconnectPacketImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(DisconnectPacketImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier
+                // thinks @NotNull
+                // Optional is
+                // @NotNull
                 .withNonnullFields("reasonCode", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();

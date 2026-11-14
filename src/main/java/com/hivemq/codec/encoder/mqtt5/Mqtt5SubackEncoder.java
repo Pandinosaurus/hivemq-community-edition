@@ -36,7 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Mqtt5SubackEncoder extends Mqtt5MessageWithReasonStringEncoder<SUBACK> {
 
     private static final int FIXED_HEADER = MessageType.SUBACK.ordinal() << 4;
-
     public Mqtt5SubackEncoder(
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull SecurityConfigurationService securityConfigurationService) {

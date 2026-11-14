@@ -16,14 +16,13 @@
 package com.hivemq.configuration.entity.security;
 
 import com.hivemq.configuration.entity.EnabledEntity;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Waldemar Ruck
- * @since 4.0
+ * @since  4.0
  */
 @XmlRootElement(name = "allow-request-problem-information")
 @XmlAccessorType(XmlAccessType.NONE)

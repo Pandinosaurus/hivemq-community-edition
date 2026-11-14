@@ -16,8 +16,23 @@
 package com.hivemq.codec.decoder;
 
 import com.hivemq.bootstrap.ioc.lazysingleton.LazySingleton;
-import com.hivemq.codec.decoder.mqtt3.*;
-import com.hivemq.codec.decoder.mqtt5.*;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3DisconnectDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3PubackDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3PubcompDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3PublishDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3PubrecDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3PubrelDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3SubscribeDecoder;
+import com.hivemq.codec.decoder.mqtt3.Mqtt3UnsubscribeDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5AuthDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5DisconnectDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5PubackDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5PubcompDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5PublishDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5PubrecDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5PubrelDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5SubscribeDecoder;
+import com.hivemq.codec.decoder.mqtt5.Mqtt5UnsubscribeDecoder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageType;
@@ -34,7 +49,6 @@ public class MqttDecoders {
 
     private final @Nullable MqttDecoder @NotNull [] mqtt3Decoder;
     private final @Nullable MqttDecoder @NotNull [] mqtt5Decoder;
-
     @Inject
     public MqttDecoders(
             final @NotNull Mqtt3PublishDecoder mqtt3PublishDecoder,
@@ -55,10 +69,8 @@ public class MqttDecoders {
             final @NotNull Mqtt5PubcompDecoder mqtt5PubcompDecoder,
             final @NotNull Mqtt5AuthDecoder mqtt5AuthDecoder,
             final @NotNull Mqtt5UnsubscribeDecoder mqtt5UnsubscribeDecoder) {
-
         mqtt3Decoder = new MqttDecoder[16];
         mqtt5Decoder = new MqttDecoder[16];
-
         mqtt3Decoder[MessageType.PUBLISH.getType()] = mqtt3PublishDecoder;
         mqtt3Decoder[MessageType.PUBACK.getType()] = mqtt3PubackDecoder;
         mqtt3Decoder[MessageType.PUBREC.getType()] = mqtt3PubrecDecoder;
@@ -68,7 +80,6 @@ public class MqttDecoders {
         mqtt3Decoder[MessageType.UNSUBSCRIBE.getType()] = mqtt3UnsubscribeDecoder;
         mqtt3Decoder[MessageType.PINGREQ.getType()] = mqttPingreqDecoder;
         mqtt3Decoder[MessageType.DISCONNECT.getType()] = mqtt3DisconnectDecoder;
-
         mqtt5Decoder[MessageType.PUBLISH.getType()] = mqtt5PublishDecoder;
         mqtt5Decoder[MessageType.PUBACK.getType()] = mqtt5PubackDecoder;
         mqtt5Decoder[MessageType.PUBREC.getType()] = mqtt5PubrecDecoder;

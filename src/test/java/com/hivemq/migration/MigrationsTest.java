@@ -71,7 +71,8 @@ public class MigrationsTest {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
         systemInformation.setHivemqVersion("4.3.0");
-        final File persistenceFolder = new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
+        final File persistenceFolder =
+                new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
         persistenceFolder.mkdir();
         new File(persistenceFolder, PublishPayloadLocalPersistence.PERSISTENCE_NAME).mkdir();
         assertEquals(1, Migrations.checkForTypeMigration(systemInformation).size());
@@ -82,7 +83,8 @@ public class MigrationsTest {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
         systemInformation.setHivemqVersion("4.3.0");
-        final File persistenceFolder = new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
+        final File persistenceFolder =
+                new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
         persistenceFolder.mkdir();
         new File(persistenceFolder, RetainedMessageLocalPersistence.PERSISTENCE_NAME).mkdir();
         assertEquals(1, Migrations.checkForTypeMigration(systemInformation).size());
@@ -93,7 +95,8 @@ public class MigrationsTest {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
         systemInformation.setHivemqVersion("4.3.0");
-        final File persistenceFolder = new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
+        final File persistenceFolder =
+                new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
         persistenceFolder.mkdir();
         new File(persistenceFolder, RetainedMessageLocalPersistence.PERSISTENCE_NAME).mkdir();
         new File(persistenceFolder, PublishPayloadLocalPersistence.PERSISTENCE_NAME).mkdir();
@@ -105,14 +108,13 @@ public class MigrationsTest {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
         systemInformation.setHivemqVersion("4.3.0");
-
         final MetaInformation metaInformation = new MetaInformation();
         metaInformation.setHivemqVersion("4.3.0");
         metaInformation.setPublishPayloadPersistenceType(PersistenceType.FILE);
         metaInformation.setRetainedMessagesPersistenceType(PersistenceType.FILE);
-
         MetaFileService.writeMetaFile(systemInformation, metaInformation);
-        final File persistenceFolder = new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
+        final File persistenceFolder =
+                new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
         persistenceFolder.mkdir();
         new File(persistenceFolder, RetainedMessageLocalPersistence.PERSISTENCE_NAME).mkdir();
         new File(persistenceFolder, PublishPayloadLocalPersistence.PERSISTENCE_NAME).mkdir();
@@ -124,14 +126,13 @@ public class MigrationsTest {
         final SystemInformationImpl systemInformation = new SystemInformationImpl();
         systemInformation.init();
         systemInformation.setHivemqVersion("4.3.0");
-
         final MetaInformation metaInformation = new MetaInformation();
         metaInformation.setHivemqVersion("4.3.0");
         metaInformation.setPublishPayloadPersistenceType(PersistenceType.FILE_NATIVE);
         metaInformation.setRetainedMessagesPersistenceType(PersistenceType.FILE_NATIVE);
-
         MetaFileService.writeMetaFile(systemInformation, metaInformation);
-        final File persistenceFolder = new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
+        final File persistenceFolder =
+                new File(systemInformation.getDataFolder(), LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME);
         persistenceFolder.mkdir();
         new File(persistenceFolder, RetainedMessageLocalPersistence.PERSISTENCE_NAME).mkdir();
         new File(persistenceFolder, PublishPayloadLocalPersistence.PERSISTENCE_NAME).mkdir();

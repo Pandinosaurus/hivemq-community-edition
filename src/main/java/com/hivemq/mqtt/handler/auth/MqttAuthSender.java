@@ -16,7 +16,7 @@
 package com.hivemq.mqtt.handler.auth;
 
 import com.google.inject.Inject;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.logging.EventLog;
@@ -38,7 +38,6 @@ import java.nio.ByteBuffer;
 public class MqttAuthSender {
 
     private final @NotNull EventLog eventLog;
-
     @Inject
     public MqttAuthSender(final @NotNull EventLog eventLog) {
         this.eventLog = eventLog;
@@ -50,14 +49,8 @@ public class MqttAuthSender {
             final @NotNull Mqtt5AuthReasonCode reasonCode,
             final @NotNull Mqtt5UserProperties userProperties,
             final @Nullable String reasonString) {
-
-        final AUTH auth = new AUTH(
-                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthMethod(),
-                Bytes.fromReadOnlyBuffer(authData),
-                reasonCode,
-                userProperties,
-                reasonString);
-
+        final AUTH auth = new AUTH(ClientConnectionContext.of(channel)
+                .getAuthMethod(), Bytes.fromReadOnlyBuffer(authData), reasonCode, userProperties, reasonString);
         logAuth(channel, reasonCode, false);
         return channel.writeAndFlush(auth);
     }
@@ -66,7 +59,6 @@ public class MqttAuthSender {
             final @NotNull Channel channel,
             final @NotNull Mqtt5AuthReasonCode reasonCode,
             final boolean received) {
-
         eventLog.clientAuthentication(channel, reasonCode, received);
     }
 }

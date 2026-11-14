@@ -15,18 +15,16 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.configuration.entity.UsageStatisticsEntity;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.statistics.UsageStatisticsConfig;
 
 public class UsageStatisticsConfigurator {
 
     private final @NotNull UsageStatisticsConfig usageStatisticsConfig;
-
     public UsageStatisticsConfigurator(@NotNull final UsageStatisticsConfig usageStatisticsConfig) {
         this.usageStatisticsConfig = usageStatisticsConfig;
     }
-
 
     void setUsageStatisticsConfig(@NotNull final UsageStatisticsEntity config) {
         usageStatisticsConfig.setEnabled(config.isEnabled());

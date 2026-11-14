@@ -37,17 +37,16 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     private @Nullable AckReasonCode ackReasonCode;
     private @Nullable String reasonString;
     private @NotNull DisconnectReasonCode disconnectReasonCode = DisconnectReasonCode.NOT_AUTHORIZED;
-
     private @NotNull AuthorizationState authorizationState = AuthorizationState.UNDECIDED;
-
     private final @NotNull AtomicBoolean completed = new AtomicBoolean(false);
     private final @NotNull AtomicBoolean authorizerPresent = new AtomicBoolean(false);
-
-
     public enum AuthorizationState {
-        SUCCESS, CONTINUE, FAIL, DISCONNECT, UNDECIDED
+        SUCCESS,
+        CONTINUE,
+        FAIL,
+        DISCONNECT,
+        UNDECIDED
     }
-
     public PublishAuthorizerOutputImpl(@NotNull final PluginOutPutAsyncer asyncer) {
         super(asyncer);
     }
@@ -75,11 +74,9 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     public void failAuthorization(final @NotNull AckReasonCode reasonCode) {
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
-        if (reasonCode == AckReasonCode.SUCCESS ||
-                reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
+        if (reasonCode == AckReasonCode.SUCCESS || reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
             throw new IllegalArgumentException("Fail must use an Ack Error code");
         }
-
         this.ackReasonCode = reasonCode;
         authorizationState = AuthorizationState.FAIL;
     }
@@ -89,11 +86,9 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
         Preconditions.checkNotNull(reasonString, "reason string must never be null");
-        if (reasonCode == AckReasonCode.SUCCESS ||
-                reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
+        if (reasonCode == AckReasonCode.SUCCESS || reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
             throw new IllegalArgumentException("Fail must use an Ack Error code");
         }
-
         this.ackReasonCode = reasonCode;
         this.reasonString = reasonString;
         authorizationState = AuthorizationState.FAIL;
@@ -127,8 +122,9 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     @Override
     public void nextExtensionOrDefault() {
         if (completed.get()) {
-            throw new UnsupportedOperationException("nextExtensionOrDefault must not be called if authorizeSuccessfully, " +
-                    "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
+            throw new UnsupportedOperationException(
+                    "nextExtensionOrDefault must not be called if authorizeSuccessfully, " +
+                            "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
         }
         authorizationState = AuthorizationState.CONTINUE;
     }
@@ -156,14 +152,12 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
         return completed.get();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public PublishAuthorizerOutputImpl get() {
         return this;
     }
 
-    @Nullable
-    public AckReasonCode getAckReasonCode() {
+    @Nullable public AckReasonCode getAckReasonCode() {
         return ackReasonCode;
     }
 

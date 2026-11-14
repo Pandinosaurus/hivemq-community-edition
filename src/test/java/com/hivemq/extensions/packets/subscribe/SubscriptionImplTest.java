@@ -28,7 +28,9 @@ public class SubscriptionImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(SubscriptionImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks
+                // @NotNull Optional is
+                // @NotNull
                 .withNonnullFields("topicFilter", "qos", "retainHandling")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();

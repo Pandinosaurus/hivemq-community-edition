@@ -23,48 +23,39 @@ import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SingletonModuleTest {
 
     @Test
-    public void test_standard_guice_module_executed_twice() throws Exception {
+    public void test_standard_guice_module_executed_twice() {
         final StandardModuleWithConfiguredMethod module1 = new StandardModuleWithConfiguredMethod();
         final StandardModuleWithConfiguredMethod module2 = new StandardModuleWithConfiguredMethod();
-
         Guice.createInjector(module1, module2);
-
         assertTrue(module1.accessed && module2.accessed);
     }
 
     @Test
-    public void test_singleton_module_configured_executed_once() throws Exception {
+    public void test_singleton_module_configured_executed_once() {
         final SingletonModuleWithConfiguredMethod module1 = new SingletonModuleWithConfiguredMethod();
         final SingletonModuleWithConfiguredMethod module2 = new SingletonModuleWithConfiguredMethod();
-
         Guice.createInjector(module1, module2);
-
         assertTrue(module1.accessed ^ module2.accessed);
     }
 
     @Test
-    public void test_singleton_provider_module_configured_executed_once() throws Exception {
+    public void test_singleton_provider_module_configured_executed_once() {
         final SingletonProviderModuleWithConfiguredMethod module1 = new SingletonProviderModuleWithConfiguredMethod();
         final SingletonProviderModuleWithConfiguredMethod module2 = new SingletonProviderModuleWithConfiguredMethod();
-
         final Injector injector = Guice.createInjector(module1, module2);
         injector.getInstance(String.class);
         injector.getInstance(String.class);
-
         assertTrue(module1.accessed ^ module2.accessed);
         assertTrue(module1.provided ^ module2.provided);
     }
 
-
     @Test
-    public void test_instantiate_on_startup() throws Exception {
-
+    public void test_instantiate_on_startup() {
         @SuppressWarnings("unchecked")
         class EagerModule extends SingletonModule {
 
@@ -77,23 +68,15 @@ public class SingletonModuleTest {
                 instantiateOnStartup(OnStartup.class);
             }
         }
-
         final EagerModule eagerModule = new EagerModule();
-
         Guice.createInjector(eagerModule);
-
-
-        assertEquals(true, OnStartup.executed.get());
+        assertTrue(OnStartup.executed.get());
         assertTrue(eagerModule.toString().contains("key=class"));
-
-
     }
-
     @SuppressWarnings("unchecked")
     private static class SingletonModuleWithConfiguredMethod extends SingletonModule {
 
         public boolean accessed = false;
-
         public SingletonModuleWithConfiguredMethod() {
             super(SingletonModuleWithConfiguredMethod.class);
         }
@@ -109,7 +92,6 @@ public class SingletonModuleTest {
 
         public boolean accessed = false;
         public boolean provided = false;
-
         public SingletonProviderModuleWithConfiguredMethod() {
             super(SingletonModuleWithConfiguredMethod.class);
         }
@@ -129,7 +111,6 @@ public class SingletonModuleTest {
     private static class StandardModuleWithConfiguredMethod extends AbstractModule {
 
         public boolean accessed = false;
-
         @Override
         protected void configure() {
             accessed = true;
@@ -139,7 +120,6 @@ public class SingletonModuleTest {
     private static class OnStartup {
 
         final public static AtomicBoolean executed = new AtomicBoolean(false);
-
         public OnStartup() {
             executed.set(true);
         }

@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * @author Lukas Brandl
  * @author Silvio Giebl
- * @since 4.2.0
+ * @since  4.2.0
  */
 @ThreadSafe
 public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish {
@@ -59,14 +59,11 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     private @NotNull ImmutableIntArray subscriptionIdentifiers;
     private final @NotNull ModifiableUserPropertiesImpl userProperties;
     private final long timestamp;
-
     private final @NotNull FullConfigurationService configurationService;
     private boolean modified = false;
-
     public ModifiableOutboundPublishImpl(
             final @NotNull PublishPacketImpl packet,
             final @NotNull FullConfigurationService configurationService) {
-
         topic = packet.topic;
         qos = packet.qos;
         onwardQos = packet.onwardQos;
@@ -80,10 +77,9 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
         responseTopic = packet.responseTopic;
         correlationData = packet.correlationData;
         subscriptionIdentifiers = packet.subscriptionIdentifiers;
-        userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+        userProperties = new ModifiableUserPropertiesImpl(packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         timestamp = packet.timestamp;
-
         this.configurationService = configurationService;
     }
 
@@ -95,20 +91,16 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     @Override
     public void setTopic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
-        checkArgument(
-                topic.length() <= configurationService.restrictionsConfiguration().maxTopicLength(),
+        checkArgument(topic.length() <= configurationService.restrictionsConfiguration().maxTopicLength(),
                 "Topic filter length must not exceed '" +
                         configurationService.restrictionsConfiguration().maxTopicLength() + "' characters, but has '" +
                         topic.length() + "' characters");
-
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");
         }
-
         if (!PluginBuilderUtil.isValidUtf8String(topic, configurationService.securityConfiguration().validateUTF8())) {
             throw new IllegalArgumentException("The topic (" + topic + ") is UTF-8 malformed");
         }
-
         if (topic.equals(this.topic)) {
             return;
         }
@@ -167,8 +159,8 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
 
     @Override
     public void setMessageExpiryInterval(final long messageExpiryInterval) {
-        PluginBuilderUtil.checkMessageExpiryInterval(
-                messageExpiryInterval, configurationService.mqttConfiguration().maxMessageExpiryInterval());
+        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval,
+                configurationService.mqttConfiguration().maxMessageExpiryInterval());
         if (this.messageExpiryInterval == messageExpiryInterval) {
             return;
         }
@@ -212,8 +204,8 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
 
     @Override
     public void setResponseTopic(final @Nullable String responseTopic) {
-        PluginBuilderUtil.checkResponseTopic(
-                responseTopic, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkResponseTopic(responseTopic,
+                configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.responseTopic, responseTopic)) {
             return;
         }
@@ -269,9 +261,21 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     }
 
     public @NotNull PublishPacketImpl copy() {
-        return new PublishPacketImpl(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties.copy(), timestamp);
+        return new PublishPacketImpl(topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties.copy(),
+                timestamp);
     }
 
     public @NotNull ModifiableOutboundPublishImpl update(final @NotNull PublishPacketImpl packet) {

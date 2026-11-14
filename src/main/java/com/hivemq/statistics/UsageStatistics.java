@@ -37,13 +37,11 @@ import java.util.concurrent.TimeUnit;
 public class UsageStatistics {
 
     private static final Logger log = LoggerFactory.getLogger(UsageStatistics.class);
-
     private final @NotNull UsageStatisticsCollector statisticsCollector;
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull UsageStatisticsSender statisticsSender;
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull FullConfigurationService configurationService;
-
     @Inject
     public UsageStatistics(
             final @NotNull UsageStatisticsCollector statisticsCollector,
@@ -54,13 +52,11 @@ public class UsageStatistics {
         this.statisticsCollector = statisticsCollector;
         this.systemInformation = systemInformation;
         this.statisticsSender = statisticsSender;
-
         this.configurationService = configurationService;
-
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("usage-statistics-%d");
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
-
         shutdownHooks.add(new HiveMQShutdownHook() {
+
             @Override
             public @NotNull String name() {
                 return "Usage statistics shutdown";
@@ -74,44 +70,37 @@ public class UsageStatistics {
     }
 
     public void start() {
-
         if (!configurationService.usageStatisticsConfiguration().isEnabled()) {
             return;
         }
-
         final String hiveMQVersion = systemInformation.getHiveMQVersion();
-
-        //Do not capture statistics for snapshots
+        // Do not capture statistics for snapshots
         if (hiveMQVersion.equals("Development Snapshot") || hiveMQVersion.endsWith("SNAPSHOT")) {
             return;
         }
-
-        //schedule first task
-        scheduledExecutorService.execute(new SendStatisticsTask(statisticsSender, statisticsCollector,
-                scheduledExecutorService, "startup"));
+        // schedule first task
+        scheduledExecutorService.execute(
+                new SendStatisticsTask(statisticsSender, statisticsCollector, scheduledExecutorService, "startup"));
     }
 
     public void stop() {
         scheduledExecutorService.shutdownNow();
     }
-
     private static class SendStatisticsTask implements Runnable {
 
         private final @NotNull UsageStatisticsSender statisticsSender;
         private final @NotNull UsageStatisticsCollector statisticsCollector;
         private final @NotNull ScheduledExecutorService scheduledExecutorService;
         private final @NotNull String statisticType;
-
-
-        private SendStatisticsTask(final @NotNull UsageStatisticsSender statisticsSender,
-                                   final @NotNull UsageStatisticsCollector statisticsCollector,
-                                   final @NotNull ScheduledExecutorService scheduledExecutorService,
-                                   final @NotNull String statisticType) {
+        private SendStatisticsTask(
+                final @NotNull UsageStatisticsSender statisticsSender,
+                final @NotNull UsageStatisticsCollector statisticsCollector,
+                final @NotNull ScheduledExecutorService scheduledExecutorService,
+                final @NotNull String statisticType) {
             this.statisticsSender = statisticsSender;
             this.statisticsCollector = statisticsCollector;
             this.scheduledExecutorService = scheduledExecutorService;
             this.statisticType = statisticType;
-
         }
 
         @Override
@@ -122,9 +111,11 @@ public class UsageStatistics {
                 log.debug("Not able to send anonymous user statistics, reason: {}", e.getMessage());
                 log.trace("original exception", e);
             } finally {
-                //reschedule
-                scheduledExecutorService.schedule(new SendStatisticsTask(statisticsSender, statisticsCollector,
-                        scheduledExecutorService, "runtime"), InternalConfigurations.USAGE_STATISTICS_SEND_INTERVAL_MINUTES, TimeUnit.MINUTES);
+                // reschedule
+                scheduledExecutorService.schedule(new SendStatisticsTask(statisticsSender,
+                        statisticsCollector,
+                        scheduledExecutorService,
+                        "runtime"), InternalConfigurations.USAGE_STATISTICS_SEND_INTERVAL_MINUTES, TimeUnit.MINUTES);
             }
         }
     }

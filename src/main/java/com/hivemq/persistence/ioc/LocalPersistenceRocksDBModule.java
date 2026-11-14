@@ -36,7 +36,6 @@ class LocalPersistenceRocksDBModule extends SingletonModule<Class<LocalPersisten
     private final Injector persistenceInjector;
     private final PersistenceType payloadPersistenceType;
     private final PersistenceType retainedPersistenceType;
-
     LocalPersistenceRocksDBModule(@NotNull final Injector persistenceInjector) {
         super(LocalPersistenceRocksDBModule.class);
         this.persistenceInjector = persistenceInjector;
@@ -47,20 +46,21 @@ class LocalPersistenceRocksDBModule extends SingletonModule<Class<LocalPersisten
     @Override
     protected void configure() {
         if (retainedPersistenceType == PersistenceType.FILE_NATIVE) {
-            bindLocalPersistence(
-                    RetainedMessageLocalPersistence.class, RetainedMessageRocksDBLocalPersistence.class, null);
+            bindLocalPersistence(RetainedMessageLocalPersistence.class,
+                    RetainedMessageRocksDBLocalPersistence.class,
+                    null);
         }
-
         if (payloadPersistenceType == PersistenceType.FILE_NATIVE) {
-            bindLocalPersistence(
-                    PublishPayloadLocalPersistence.class, PublishPayloadRocksDBLocalPersistence.class, null);
+            bindLocalPersistence(PublishPayloadLocalPersistence.class,
+                    PublishPayloadRocksDBLocalPersistence.class,
+                    null);
         }
     }
 
     private void bindLocalPersistence(
-            final @NotNull Class localPersistenceClass, final @NotNull Class filePersistenceClass,
+            final @NotNull Class localPersistenceClass,
+            final @NotNull Class filePersistenceClass,
             final @Nullable Class localPersistenceProviderClass) {
-
         final Object instance = persistenceInjector.getInstance(filePersistenceClass);
         if (instance != null) {
             bind(filePersistenceClass).toInstance(instance);

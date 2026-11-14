@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.configuration.service.FullConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.publish.PublishOutboundInterceptor;
@@ -45,11 +45,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import util.CollectUserEventsHandler;
+import util.DummyClientConnection;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,24 +61,20 @@ public class PublishOutboundInterceptorHandlerTest {
 
     @Rule
     public final @NotNull TemporaryFolder temporaryFolder = new TemporaryFolder();
-
     private final @NotNull PluginOutPutAsyncer asyncer = mock(PluginOutPutAsyncer.class);
     private final @NotNull HiveMQExtensions hiveMQExtensions = mock(HiveMQExtensions.class);
     private final @NotNull MessageDroppedService messageDroppedService = mock(MessageDroppedService.class);
     private final @NotNull ClientContextImpl clientContext = mock(ClientContextImpl.class);
     private final @NotNull PluginTaskExecutorService pluginTaskExecutorService = mock(PluginTaskExecutorService.class);
-
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
     private @NotNull PublishOutboundInterceptorHandler handler;
-
     @Before
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
-        clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("test_client");
-
+        clientConnection = new DummyClientConnection(channel, mock(PublishFlushHandler.class));
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        ClientConnection.of(channel).setClientId("test_client");
         final FullConfigurationService configurationService =
                 new TestConfigurationBootstrap().getFullConfigurationService();
         handler = new PublishOutboundInterceptorHandler(asyncer,
@@ -83,6 +83,7 @@ public class PublishOutboundInterceptorHandlerTest {
                 hiveMQExtensions,
                 messageDroppedService);
         channel.pipeline().addLast("test", new ChannelOutboundHandlerAdapter() {
+
             @Override
             public void write(
                     final @NotNull ChannelHandlerContext ctx,
@@ -106,7 +107,7 @@ public class PublishOutboundInterceptorHandlerTest {
 
     @Test(timeout = 5_000)
     public void test_client_id_null() {
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId(null);
+        ClientConnection.of(channel).setClientId(null);
         channel.writeOutbound(TestMessageUtil.createFullMqtt5Publish());
         final PUBLISH publish = channel.readOutbound();
         assertNull(publish);
@@ -121,12 +122,10 @@ public class PublishOutboundInterceptorHandlerTest {
 
     @Test(timeout = 5_000)
     public void test_extension_null() throws Exception {
-        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
-                TestInterceptor.class);
+        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil
+                .loadInstance(temporaryFolder.getRoot().toPath(), TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
-
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
+        ClientConnection.of(channel).setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
         channel.writeOutbound(TestMessageUtil.createFullMqtt5Publish());
         final PUBLISH publish = channel.readOutbound();
@@ -135,24 +134,18 @@ public class PublishOutboundInterceptorHandlerTest {
 
     @Test(timeout = 5_000)
     public void test_extension_prevented() throws Exception {
-        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.getRoot().toPath(),
-                TestInterceptor.class);
+        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil
+                .loadInstance(temporaryFolder.getRoot().toPath(), TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
-
         final CollectUserEventsHandler<PublishDroppedEvent> events =
                 new CollectUserEventsHandler<>(PublishDroppedEvent.class);
         channel.pipeline().addLast(events);
-
         final ModifiableOutboundPublishImpl publishPacket = mock(ModifiableOutboundPublishImpl.class);
         final PublishOutboundInputImpl input = mock(PublishOutboundInputImpl.class);
         final PublishOutboundOutputImpl output = new PublishOutboundOutputImpl(asyncer, publishPacket);
         output.preventPublishDelivery();
-
         final ChannelHandlerContext ctx = channel.pipeline().context("test");
-
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish();
-
         final ChannelPromise promise = channel.newPromise();
         final PublishOutboundInterceptorHandler.PublishOutboundInterceptorContext context =
                 new PublishOutboundInterceptorHandler.PublishOutboundInterceptorContext("client",
@@ -163,9 +156,7 @@ public class PublishOutboundInterceptorHandlerTest {
                         new ExtensionParameterHolder<>(input),
                         new ExtensionParameterHolder<>(output),
                         mock(MessageDroppedService.class));
-
         context.run();
-
         PublishDroppedEvent publishDroppedEvent = events.pollEvent();
         while (publishDroppedEvent == null) {
             Thread.sleep(1);
@@ -174,14 +165,12 @@ public class PublishOutboundInterceptorHandlerTest {
         assertNotNull(publishDroppedEvent);
         assertTrue(promise.isSuccess());
     }
-
     public static class TestInterceptor implements PublishOutboundInterceptor {
 
         @Override
         public void onOutboundPublish(
                 final @NotNull PublishOutboundInput publishOutboundInput,
                 final @NotNull PublishOutboundOutput publishOutboundOutput) {
-
         }
     }
 }

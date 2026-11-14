@@ -15,13 +15,23 @@
  */
 package com.hivemq.configuration.entity;
 
+import com.hivemq.configuration.entity.mqtt.KeepAliveConfigEntity;
+import com.hivemq.configuration.entity.mqtt.MessageExpiryConfigEntity;
+import com.hivemq.configuration.entity.mqtt.PacketsConfigEntity;
+import com.hivemq.configuration.entity.mqtt.QoSConfigEntity;
+import com.hivemq.configuration.entity.mqtt.QueuedMessagesConfigEntity;
+import com.hivemq.configuration.entity.mqtt.ReceiveMaximumConfigEntity;
+import com.hivemq.configuration.entity.mqtt.RetainedMessagesConfigEntity;
+import com.hivemq.configuration.entity.mqtt.SessionExpiryConfigEntity;
+import com.hivemq.configuration.entity.mqtt.SharedSubscriptionsConfigEntity;
+import com.hivemq.configuration.entity.mqtt.SubscriptionIdentifierConfigEntity;
+import com.hivemq.configuration.entity.mqtt.TopicAliasConfigEntity;
+import com.hivemq.configuration.entity.mqtt.WildcardSubscriptionsConfigEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.configuration.entity.mqtt.*;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Dominik Obermaier
@@ -33,40 +43,31 @@ public class MqttConfigEntity {
 
     @XmlElementRef(required = false)
     private @NotNull QueuedMessagesConfigEntity queuedMessagesConfigEntity = new QueuedMessagesConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull RetainedMessagesConfigEntity retainedMessagesConfigEntity = new RetainedMessagesConfigEntity();
-
     @XmlElementRef(required = false)
-    private @NotNull WildcardSubscriptionsConfigEntity wildcardSubscriptionsConfigEntity = new WildcardSubscriptionsConfigEntity();
-
+    private @NotNull WildcardSubscriptionsConfigEntity wildcardSubscriptionsConfigEntity =
+            new WildcardSubscriptionsConfigEntity();
     @XmlElementRef(required = false)
     private @NotNull QoSConfigEntity qoSConfigEntity = new QoSConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull TopicAliasConfigEntity topicAliasConfigEntity = new TopicAliasConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull MessageExpiryConfigEntity messageExpiryConfigEntity = new MessageExpiryConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull SessionExpiryConfigEntity sessionExpiryConfigEntity = new SessionExpiryConfigEntity();
-
     @XmlElementRef(required = false)
-    private @NotNull SubscriptionIdentifierConfigEntity subscriptionIdentifierConfigEntity = new SubscriptionIdentifierConfigEntity();
-
+    private @NotNull SubscriptionIdentifierConfigEntity subscriptionIdentifierConfigEntity =
+            new SubscriptionIdentifierConfigEntity();
     @XmlElementRef(required = false)
-    private @NotNull SharedSubscriptionsConfigEntity sharedSubscriptionsConfigEntity = new SharedSubscriptionsConfigEntity();
-
+    private @NotNull SharedSubscriptionsConfigEntity sharedSubscriptionsConfigEntity =
+            new SharedSubscriptionsConfigEntity();
     @XmlElementRef(required = false)
     private @NotNull KeepAliveConfigEntity keepAliveConfigEntity = new KeepAliveConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull PacketsConfigEntity packetsConfigEntity = new PacketsConfigEntity();
-
     @XmlElementRef(required = false)
     private @NotNull ReceiveMaximumConfigEntity receiveMaximumConfigEntity = new ReceiveMaximumConfigEntity();
-
     public @NotNull KeepAliveConfigEntity getKeepAliveConfigEntity() {
         return keepAliveConfigEntity;
     }

@@ -15,8 +15,8 @@
  */
 package com.hivemq.persistence.qos;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.bootstrap.ioc.lazysingleton.LazySingleton;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 
@@ -28,11 +28,9 @@ import javax.inject.Inject;
 @LazySingleton
 public class IncomingMessageFlowPersistenceImpl implements IncomingMessageFlowPersistence {
 
-
     private final @NotNull IncomingMessageFlowLocalPersistence localPersistence;
-
     @Inject
-    IncomingMessageFlowPersistenceImpl(final @NotNull IncomingMessageFlowLocalPersistence localPersistence) {
+    public IncomingMessageFlowPersistenceImpl(final @NotNull IncomingMessageFlowLocalPersistence localPersistence) {
         this.localPersistence = localPersistence;
     }
 

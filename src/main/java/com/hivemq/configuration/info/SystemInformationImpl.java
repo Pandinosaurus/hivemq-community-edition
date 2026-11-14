@@ -39,7 +39,6 @@ public class SystemInformationImpl implements SystemInformation {
 
     private static final Logger log = LoggerFactory.getLogger(SystemInformationImpl.class);
     public static final String DEVELOPMENT_VERSION = "Development Snapshot";
-
     private @NotNull File homeFolder;
     private @NotNull File configFolder;
     private @NotNull File logFolder;
@@ -49,9 +48,7 @@ public class SystemInformationImpl implements SystemInformation {
     private final long runningSince;
     private final boolean embedded;
     private final int processorCount;
-
     private final boolean usePathOfRunningJar;
-
     public SystemInformationImpl() {
         this(false);
     }
@@ -81,7 +78,6 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     private int getPhysicalProcessorCount() {
-
         final int runtimeProcessorCount = Runtime.getRuntime().availableProcessors();
         int physicalProcessorCount;
         try {
@@ -94,55 +90,33 @@ public class SystemInformationImpl implements SystemInformation {
             }
             physicalProcessorCount = runtimeProcessorCount;
         }
-
         return Math.min(physicalProcessorCount, runtimeProcessorCount);
     }
 
     private void setFolders() {
         setHomeFolder();
-        configFolder = Objects.requireNonNullElseGet(
-                configFolder,
-                () -> setUpHiveMQFolder(
-                        SystemProperties.CONFIG_FOLDER,
+        configFolder = Objects.requireNonNullElseGet(configFolder,
+                () -> setUpHiveMQFolder(SystemProperties.CONFIG_FOLDER,
                         EnvironmentVariables.CONFIG_FOLDER,
                         "conf",
-                        false
-                )
-        );
-
+                        false));
         logFolder = setUpHiveMQFolder(SystemProperties.LOG_FOLDER, EnvironmentVariables.LOG_FOLDER, "log", !embedded);
         // Set log folder property for logger-xml-config
         System.setProperty(SystemProperties.LOG_FOLDER, logFolder.getAbsolutePath());
-
-        dataFolder = Objects.requireNonNullElseGet(
-                dataFolder,
-                () -> setUpHiveMQFolder(
-                        SystemProperties.DATA_FOLDER,
-                        EnvironmentVariables.DATA_FOLDER,
-                        "data",
-                        true
-                )
-        );
-
-        pluginFolder = Objects.requireNonNullElseGet(
-                pluginFolder,
-                () -> setUpHiveMQFolder(
-                        SystemProperties.EXTENSIONS_FOLDER,
+        dataFolder = Objects.requireNonNullElseGet(dataFolder,
+                () -> setUpHiveMQFolder(SystemProperties.DATA_FOLDER, EnvironmentVariables.DATA_FOLDER, "data", true));
+        pluginFolder = Objects.requireNonNullElseGet(pluginFolder,
+                () -> setUpHiveMQFolder(SystemProperties.EXTENSIONS_FOLDER,
                         EnvironmentVariables.EXTENSION_FOLDER,
                         "extensions",
-                        !embedded
-                )
-        );
+                        !embedded));
     }
 
     private void setHivemqVersion() {
-
         hivemqVersion = ManifestUtils.getValueFromManifest(HiveMQServer.class, "HiveMQ-Version");
-
         if (hivemqVersion == null || hivemqVersion.length() < 1) {
             hivemqVersion = DEVELOPMENT_VERSION;
         }
-
         log.info("HiveMQ version: {}", hivemqVersion);
     }
 
@@ -188,8 +162,8 @@ public class SystemInformationImpl implements SystemInformation {
     /**
      * Tries to find a file in the given absolute path or relative to the HiveMQ home folder
      *
-     * @param fileLocation the absolute or relative path
-     * @return a file
+     * @param  fileLocation the absolute or relative path
+     * @return              a file
      */
     private @NotNull File findAbsoluteAndRelative(final String fileLocation) {
         final File file = new File(fileLocation);
@@ -212,31 +186,30 @@ public class SystemInformationImpl implements SystemInformation {
         } else {
             folder = findAbsoluteAndRelative(defaultFolder);
         }
-
         if (createFolderIfNotExists && !folder.exists()) {
             final boolean mkdirsResult = folder.mkdirs();
             if (!mkdirsResult) {
                 log.warn("Not able to create folder {}, HiveMQ will behave unexpectedly!", folder);
             }
         }
-
         return folder;
     }
 
     /**
      * Returns the value of the system property or environment variable prioritising the system property.
      *
-     * @param propertyName the name of the system property
-     * @param variableName the name of the environment variable
-     * @return value of the system property, if not present value of the environment variable, if not present null
+     * @param  propertyName the name of the system property
+     * @param  variableName the name of the environment variable
+     * @return              value of the system property, if not present value of the environment variable, if not
+     *                      present null
      */
     private @Nullable String getSystemPropertyOrEnvironmentVariable(
-            final String propertyName, final String variableName) {
+            final String propertyName,
+            final String variableName) {
         final String systemProperty = System.getProperty(propertyName);
         if (systemProperty != null) {
             return systemProperty;
         }
-
         final String environmentVariable = System.getenv().get(variableName);
         return environmentVariable;
     }
@@ -244,14 +217,11 @@ public class SystemInformationImpl implements SystemInformation {
     private void setHomeFolder() {
         final String home =
                 getSystemPropertyOrEnvironmentVariable(SystemProperties.HIVEMQ_HOME, EnvironmentVariables.HIVEMQ_HOME);
-
         if (home != null) {
             homeFolder = findAbsoluteAndRelative(home);
             log.info("HiveMQ home directory: {}", homeFolder.getAbsolutePath());
-
-            //setting system property to support the deprecated PathUtils in the SPI
+            // setting system property to support the deprecated PathUtils in the SPI
             System.setProperty(SystemProperties.HIVEMQ_HOME, homeFolder.getAbsolutePath());
-
         } else if (usePathOfRunningJar) {
             usePathOfRunningJarAsHomeFolder();
         } else {

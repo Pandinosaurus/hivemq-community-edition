@@ -16,8 +16,8 @@
 package com.hivemq.persistence;
 
 import com.google.inject.Inject;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
@@ -31,10 +31,10 @@ public class PersistenceShutdownHookInstaller {
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull PersistenceShutdownHook persistenceShutdownHook;
     private final @NotNull PersistenceStartup persistenceStartup;
-
     @Inject
     public PersistenceShutdownHookInstaller(
-            final @NotNull ShutdownHooks shutdownHooks, final @NotNull PersistenceShutdownHook persistenceShutdownHook,
+            final @NotNull ShutdownHooks shutdownHooks,
+            final @NotNull PersistenceShutdownHook persistenceShutdownHook,
             final @NotNull PersistenceStartup persistenceStartup) {
         this.shutdownHooks = shutdownHooks;
         this.persistenceShutdownHook = persistenceShutdownHook;
@@ -46,5 +46,4 @@ public class PersistenceShutdownHookInstaller {
         shutdownHooks.remove(persistenceStartup);
         shutdownHooks.add(persistenceShutdownHook);
     }
-
 }

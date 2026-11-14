@@ -21,7 +21,17 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Singleton;
 
-import static com.hivemq.metrics.HiveMQMetrics.*;
+import static com.hivemq.metrics.HiveMQMetrics.CONNECTIONS_CLOSED_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.DROPPED_MESSAGE_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.INCOMING_CONNECT_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.INCOMING_MESSAGE_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.INCOMING_PUBLISH_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.MQTT_CONNECTION_NOT_WRITABLE_CURRENT;
+import static com.hivemq.metrics.HiveMQMetrics.OUTGOING_MESSAGE_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.OUTGOING_PUBLISH_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.SUBSCRIPTIONS_CURRENT;
+import static com.hivemq.metrics.HiveMQMetrics.WILL_MESSAGE_COUNT;
+import static com.hivemq.metrics.HiveMQMetrics.WILL_MESSAGE_PUBLISHED_COUNT_TOTAL;
 
 /**
  * @author Christoph Schäbel
@@ -30,46 +40,28 @@ import static com.hivemq.metrics.HiveMQMetrics.*;
 public class MetricsHolder {
 
     private final @NotNull MetricRegistry metricRegistry;
-
     private final @NotNull Counter incomingMessageCounter;
     private final @NotNull Counter outgoingMessageCounter;
-
     private final @NotNull Counter incomingConnectCounter;
-
     private final @NotNull Counter incomingPublishCounter;
     private final @NotNull Counter outgoingPublishCounter;
-
     private final @NotNull Counter droppedMessageCounter;
-
     private final @NotNull Counter subscriptionCounter;
-
     private final @NotNull Counter closedConnectionsCounter;
-
     private final @NotNull Counter channelNotWritableCounter;
-
     private final @NotNull Counter storedWillMessagesCount;
     private final @NotNull Counter publishedWillMessagesCount;
-
     public MetricsHolder(final @NotNull MetricRegistry metricRegistry) {
-
         this.metricRegistry = metricRegistry;
-
         incomingMessageCounter = metricRegistry.counter(INCOMING_MESSAGE_COUNT.name());
         outgoingMessageCounter = metricRegistry.counter(OUTGOING_MESSAGE_COUNT.name());
-
         incomingConnectCounter = metricRegistry.counter(INCOMING_CONNECT_COUNT.name());
-
         incomingPublishCounter = metricRegistry.counter(INCOMING_PUBLISH_COUNT.name());
         outgoingPublishCounter = metricRegistry.counter(OUTGOING_PUBLISH_COUNT.name());
-
         droppedMessageCounter = metricRegistry.counter(DROPPED_MESSAGE_COUNT.name());
-
         closedConnectionsCounter = metricRegistry.counter(CONNECTIONS_CLOSED_COUNT.name());
-
         subscriptionCounter = metricRegistry.counter(SUBSCRIPTIONS_CURRENT.name());
-
         channelNotWritableCounter = metricRegistry.counter(MQTT_CONNECTION_NOT_WRITABLE_CURRENT.name());
-
         storedWillMessagesCount = metricRegistry.counter(WILL_MESSAGE_COUNT.name());
         publishedWillMessagesCount = metricRegistry.counter(WILL_MESSAGE_PUBLISHED_COUNT_TOTAL.name());
     }

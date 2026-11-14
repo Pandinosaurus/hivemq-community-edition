@@ -33,7 +33,7 @@ import java.util.Optional;
 /**
  * @author Florian Limpöck
  * @author Silvio Giebl
- * @since 4.0.0
+ * @since  4.0.0
  */
 @Immutable
 public class PublishPacketImpl implements PublishPacket {
@@ -53,7 +53,6 @@ public class PublishPacketImpl implements PublishPacket {
     final @NotNull ImmutableIntArray subscriptionIdentifiers;
     final @NotNull UserPropertiesImpl userProperties;
     final long timestamp;
-
     public PublishPacketImpl(
             final @NotNull String topic,
             final @NotNull Qos qos,
@@ -70,7 +69,6 @@ public class PublishPacketImpl implements PublishPacket {
             final @NotNull ImmutableIntArray subscriptionIdentifiers,
             final @NotNull UserPropertiesImpl userProperties,
             final long timestamp) {
-
         this.topic = topic;
         this.qos = qos;
         this.onwardQos = onwardQos;
@@ -89,8 +87,7 @@ public class PublishPacketImpl implements PublishPacket {
     }
 
     public PublishPacketImpl(final @NotNull PUBLISH publish) {
-        this(
-                publish.getTopic(),
+        this(publish.getTopic(),
                 publish.getQoS().toQos(),
                 publish.getOnwardQoS().toQos(),
                 publish.getPacketIdentifier(),
@@ -196,22 +193,14 @@ public class PublishPacketImpl implements PublishPacket {
             return false;
         }
         final PublishPacketImpl that = (PublishPacketImpl) o;
-        return that.canEqual(this) &&
-                topic.equals(that.topic) &&
-                (qos == that.qos) &&
-                (onwardQos == that.onwardQos) &&
-                (packetId == that.packetId) &&
-                (dupFlag == that.dupFlag) &&
-                Objects.equals(payload, that.payload) &&
-                (retain == that.retain) &&
-                (messageExpiryInterval == that.messageExpiryInterval) &&
+        return that.canEqual(this) && topic.equals(that.topic) && (qos == that.qos) && (onwardQos == that.onwardQos) &&
+                (packetId == that.packetId) && (dupFlag == that.dupFlag) && Objects.equals(payload, that.payload) &&
+                (retain == that.retain) && (messageExpiryInterval == that.messageExpiryInterval) &&
                 (payloadFormatIndicator == that.payloadFormatIndicator) &&
-                Objects.equals(contentType, that.contentType) &&
-                Objects.equals(responseTopic, that.responseTopic) &&
+                Objects.equals(contentType, that.contentType) && Objects.equals(responseTopic, that.responseTopic) &&
                 Objects.equals(correlationData, that.correlationData) &&
                 subscriptionIdentifiers.equals(that.subscriptionIdentifiers) &&
-                userProperties.equals(that.userProperties) &&
-                timestamp == that.timestamp;
+                userProperties.equals(that.userProperties) && timestamp == that.timestamp;
     }
 
     protected boolean canEqual(final @Nullable Object o) {
@@ -220,8 +209,20 @@ public class PublishPacketImpl implements PublishPacket {
 
     @Override
     public int hashCode() {
-        return Objects.hash(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties, timestamp);
+        return Objects.hash(topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties,
+                timestamp);
     }
 }

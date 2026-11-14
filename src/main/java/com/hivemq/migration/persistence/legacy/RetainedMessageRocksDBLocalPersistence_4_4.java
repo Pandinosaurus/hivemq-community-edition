@@ -26,10 +26,8 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import com.hivemq.util.ThreadPreConditions;
 import jetbrains.exodus.ExodusException;
-import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksIterator;
-import org.rocksdb.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,29 +36,28 @@ import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.migration.persistence.legacy.serializer.RetainedMessageDeserializer_4_4.*;
+import static com.hivemq.migration.persistence.legacy.serializer.RetainedMessageDeserializer_4_4.deserializeKey;
+import static com.hivemq.migration.persistence.legacy.serializer.RetainedMessageDeserializer_4_4.deserializeValue;
+import static com.hivemq.migration.persistence.legacy.serializer.RetainedMessageDeserializer_4_4.serializeKey;
+import static com.hivemq.migration.persistence.legacy.serializer.RetainedMessageDeserializer_4_4.serializeValue;
 import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
 
 /**
- * @author Florian Limpöck
  * @since 4.5.0
  */
 @LazySingleton
 public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(RetainedMessageRocksDBLocalPersistence_4_4.class);
-
     public static final String PERSISTENCE_NAME = "retained_messages";
     public static final String PERSISTENCE_VERSION = "040000_R";
-
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull AtomicLong retainMessageCounter = new AtomicLong(0);
-
     @Inject
-    public RetainedMessageRocksDBLocalPersistence_4_4(final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
-                                                      final @NotNull PublishPayloadPersistence payloadPersistence,
-                                                      final @NotNull PersistenceStartup persistenceStartup) {
-
+    public RetainedMessageRocksDBLocalPersistence_4_4(
+            final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
+            final @NotNull PublishPayloadPersistence payloadPersistence,
+            final @NotNull PersistenceStartup persistenceStartup) {
         super(localPersistenceFileUtil,
                 persistenceStartup,
                 InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get(),
@@ -68,25 +65,20 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
                 InternalConfigurations.RETAINED_MESSAGE_BLOCK_CACHE_SIZE_PORTION,
                 InternalConfigurations.RETAINED_MESSAGE_BLOCK_SIZE_BYTES,
                 false);
-
         this.payloadPersistence = payloadPersistence;
-        final int bucketCount = getBucketCount();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected String getName() {
         return PERSISTENCE_NAME;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected String getVersion() {
         return PERSISTENCE_VERSION;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     protected Logger getLogger() {
         return log;
     }
@@ -98,7 +90,6 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
 
     @Override
     public void init() {
-
         try {
             for (final RocksDB bucket : buckets) {
                 try (final RocksIterator iterator = bucket.newIterator()) {
@@ -109,7 +100,6 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
                     }
                 }
             }
-
         } catch (final ExodusException e) {
             log.error("An error occurred while preparing the Retained Message persistence.");
             log.debug("Original Exception:", e);
@@ -117,13 +107,14 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
         }
     }
 
-    public void put(@NotNull final RetainedMessage retainedMessage, @NotNull final String topic, final int bucketIndex) {
+    public void put(
+            @NotNull final RetainedMessage retainedMessage,
+            @NotNull final String topic,
+            final int bucketIndex) {
         checkNotNull(topic, "Topic must not be null");
         checkNotNull(retainedMessage, "Retained message must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
-
         final RocksDB bucket = buckets[bucketIndex];
-
         try {
             final byte[] serializedTopic = serializeKey(topic);
             final byte[] valueAsBytes = bucket.get(serializedTopic);
@@ -136,7 +127,7 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
             } else {
                 log.trace("Creating new retained message for topic {}", topic);
                 bucket.put(serializedTopic, serializeValue(retainedMessage));
-                //persist needs increment.
+                // persist needs increment.
                 retainMessageCounter.incrementAndGet();
             }
         } catch (final Exception e) {
@@ -162,5 +153,4 @@ public class RetainedMessageRocksDBLocalPersistence_4_4 extends RocksDBLocalPers
             }
         }
     }
-
 }

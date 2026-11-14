@@ -26,7 +26,14 @@ import util.RandomPortGenerator;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 /**
  * @author Christoph Schäbel
@@ -34,19 +41,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 public class UsageStatisticsSenderImplTest {
 
     private final int port = RandomPortGenerator.get();
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(port);
-
     private UsageStatisticsSender sender;
-
-
     @Before
     public void before() {
         sender = new UsageStatisticsSenderImpl() {
 
-            @NotNull
-            @Override
+            @NotNull @Override
             String getUrl() {
                 return "http://localhost:" + port + "/api/test";
             }
@@ -55,39 +57,21 @@ public class UsageStatisticsSenderImplTest {
 
     @Test
     public void test_send_success() {
-
-        stubFor(post(urlEqualTo("/api/test"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody("OK")));
-
+        stubFor(post(urlEqualTo("/api/test")).willReturn(aResponse().withStatus(200).withBody("OK")));
         sender.sendStatistics("payload");
-
-        final String digest = BaseEncoding.base64().encode(Hashing.sha256().
-                hashString("payload", StandardCharsets.UTF_8).asBytes());
-
-        verify(postRequestedFor(urlMatching("/api/test"))
-                .withRequestBody(matching("payload"))
+        final String digest =
+                BaseEncoding.base64().encode(Hashing.sha256().hashString("payload", StandardCharsets.UTF_8).asBytes());
+        verify(postRequestedFor(urlMatching("/api/test")).withRequestBody(matching("payload"))
                 .withHeader("Content-Type", matching("application/json"))
                 .withHeader("hmq-digest", matching(digest)));
-
     }
 
     @Test
     public void test_send_fail() {
-
-        stubFor(post(urlEqualTo("/api/test"))
-                .willReturn(aResponse()
-                        .withStatus(403)
-                        .withBody("NOT OK")));
-
+        stubFor(post(urlEqualTo("/api/test")).willReturn(aResponse().withStatus(403).withBody("NOT OK")));
         sender.sendStatistics("payload");
-
-        final String digest = BaseEncoding.base64().encode(Hashing.sha256().
-                hashString("payload", StandardCharsets.UTF_8).asBytes());
-
-        //we don't expect any exceptions
+        final String digest =
+                BaseEncoding.base64().encode(Hashing.sha256().hashString("payload", StandardCharsets.UTF_8).asBytes());
+        // we don't expect any exceptions
     }
-
-
 }

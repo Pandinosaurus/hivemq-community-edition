@@ -29,7 +29,9 @@ public class UnsubackPacketImplTest {
     @Test
     public void equals() {
         EqualsVerifier.forClass(UnsubackPacketImpl.class)
-                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
+                .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks
+                // @NotNull Optional is
+                // @NotNull
                 .withNonnullFields("reasonCodes", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();

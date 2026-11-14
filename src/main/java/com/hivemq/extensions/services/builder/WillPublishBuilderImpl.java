@@ -51,49 +51,24 @@ import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NO
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class WillPublishBuilderImpl implements WillPublishBuilder {
 
-    @NotNull
-    private Qos qos = Qos.AT_MOST_ONCE;
-
+    @NotNull private Qos qos = Qos.AT_MOST_ONCE;
     private boolean retain = false;
-
     private long willDelay = WILL_DELAY_INTERVAL_DEFAULT;
-
-    @Nullable
-    private String topic;
-
-    @Nullable
-    private PayloadFormatIndicator payloadFormatIndicator;
-
+    @Nullable private String topic;
+    @Nullable private PayloadFormatIndicator payloadFormatIndicator;
     private long messageExpiryInterval = MESSAGE_EXPIRY_INTERVAL_NOT_SET;
-
-    @Nullable
-    private String responseTopic;
-
-    @Nullable
-    private ByteBuffer correlationData;
-
-    @Nullable
-    private String contentType;
-
-    @Nullable
-    private ByteBuffer payload;
-
-    @NotNull
-    private final ImmutableList.Builder<MqttUserProperty> userPropertyBuilder = ImmutableList.builder();
-
-    @NotNull
-    private final MqttConfigurationService mqttConfigurationService;
-
-    @NotNull
-    private final RestrictionsConfigurationService restrictionsConfig;
-
-    @NotNull
-    private final SecurityConfigurationService securityConfigurationService;
-
+    @Nullable private String responseTopic;
+    @Nullable private ByteBuffer correlationData;
+    @Nullable private String contentType;
+    @Nullable private ByteBuffer payload;
+    @NotNull private final ImmutableList.Builder<MqttUserProperty> userPropertyBuilder = ImmutableList.builder();
+    @NotNull private final MqttConfigurationService mqttConfigurationService;
+    @NotNull private final RestrictionsConfigurationService restrictionsConfig;
+    @NotNull private final SecurityConfigurationService securityConfigurationService;
     @Inject
     public WillPublishBuilderImpl(final @NotNull FullConfigurationService fullConfigurationService) {
         this.mqttConfigurationService = fullConfigurationService.mqttConfiguration();
@@ -103,62 +78,73 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
 
     @Override
     public @NotNull WillPublishBuilder fromPublish(final @NotNull PublishPacket publishPacket) {
-
         Preconditions.checkNotNull(publishPacket, "publish must not be null");
-
         if (!(publishPacket instanceof PublishPacketImpl)) {
             throw new DoNotImplementException(PublishPacket.class.getSimpleName());
         }
-
-        return fromComplete(publishPacket.getQos(), publishPacket.getRetain(), publishPacket.getTopic(),
-                publishPacket.getPayloadFormatIndicator(), publishPacket.getMessageExpiryInterval(),
-                publishPacket.getResponseTopic(), publishPacket.getCorrelationData(), publishPacket.getContentType(),
-                publishPacket.getPayload(), publishPacket.getUserProperties(), WILL_DELAY_INTERVAL_DEFAULT);
+        return fromComplete(publishPacket.getQos(),
+                publishPacket.getRetain(),
+                publishPacket.getTopic(),
+                publishPacket.getPayloadFormatIndicator(),
+                publishPacket.getMessageExpiryInterval(),
+                publishPacket.getResponseTopic(),
+                publishPacket.getCorrelationData(),
+                publishPacket.getContentType(),
+                publishPacket.getPayload(),
+                publishPacket.getUserProperties(),
+                WILL_DELAY_INTERVAL_DEFAULT);
     }
 
     @Override
     public @NotNull WillPublishBuilder fromPublish(final @NotNull Publish publish) {
-
         Preconditions.checkNotNull(publish, "publish must not be null");
-
         if (!(publish instanceof PublishImpl)) {
             throw new DoNotImplementException(Publish.class.getSimpleName());
         }
-
-        return fromComplete(publish.getQos(), publish.getRetain(), publish.getTopic(),
-                publish.getPayloadFormatIndicator(), publish.getMessageExpiryInterval(),
-                publish.getResponseTopic(), publish.getCorrelationData(), publish.getContentType(),
-                publish.getPayload(), publish.getUserProperties(), WILL_DELAY_INTERVAL_DEFAULT);
+        return fromComplete(publish.getQos(),
+                publish.getRetain(),
+                publish.getTopic(),
+                publish.getPayloadFormatIndicator(),
+                publish.getMessageExpiryInterval(),
+                publish.getResponseTopic(),
+                publish.getCorrelationData(),
+                publish.getContentType(),
+                publish.getPayload(),
+                publish.getUserProperties(),
+                WILL_DELAY_INTERVAL_DEFAULT);
     }
 
     @Override
     public @NotNull WillPublishBuilder fromWillPublish(final @NotNull WillPublishPacket willPublish) {
-
         Preconditions.checkNotNull(willPublish, "publish must not be null");
-
         if (!(willPublish instanceof WillPublishPacketImpl)) {
             throw new DoNotImplementException(WillPublishPacket.class.getSimpleName());
         }
-
-        return fromComplete(willPublish.getQos(), willPublish.getRetain(), willPublish.getTopic(),
-                willPublish.getPayloadFormatIndicator(), willPublish.getMessageExpiryInterval(),
-                willPublish.getResponseTopic(), willPublish.getCorrelationData(), willPublish.getContentType(),
-                willPublish.getPayload(), willPublish.getUserProperties(), willPublish.getWillDelay());
+        return fromComplete(willPublish.getQos(),
+                willPublish.getRetain(),
+                willPublish.getTopic(),
+                willPublish.getPayloadFormatIndicator(),
+                willPublish.getMessageExpiryInterval(),
+                willPublish.getResponseTopic(),
+                willPublish.getCorrelationData(),
+                willPublish.getContentType(),
+                willPublish.getPayload(),
+                willPublish.getUserProperties(),
+                willPublish.getWillDelay());
     }
 
-
-    @NotNull
-    private WillPublishBuilder fromComplete(final @NotNull Qos qos,
-                                            final boolean retain,
-                                            final @NotNull String topic,
-                                            final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
-                                            final @NotNull Optional<Long> messageExpiryInterval,
-                                            final @NotNull Optional<String> responseTopic,
-                                            final @NotNull Optional<ByteBuffer> correlationData,
-                                            final @NotNull Optional<String> contentType,
-                                            final @NotNull Optional<ByteBuffer> payload,
-                                            final @NotNull UserProperties userProperties,
-                                            final long willDelay) {
+    @NotNull private WillPublishBuilder fromComplete(
+            final @NotNull Qos qos,
+            final boolean retain,
+            final @NotNull String topic,
+            final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
+            final @NotNull Optional<Long> messageExpiryInterval,
+            final @NotNull Optional<String> responseTopic,
+            final @NotNull Optional<ByteBuffer> correlationData,
+            final @NotNull Optional<String> contentType,
+            final @NotNull Optional<ByteBuffer> payload,
+            final @NotNull UserProperties userProperties,
+            final long willDelay) {
         this.qos = qos;
         this.retain = retain;
         this.topic = topic;
@@ -194,29 +180,30 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
     @Override
     public @NotNull WillPublishBuilder topic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
-        checkArgument(topic.length() <= restrictionsConfig.maxTopicLength(), "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() + "' characters, but has '" + topic.length() + "' characters");
-
+        checkArgument(topic.length() <= restrictionsConfig.maxTopicLength(),
+                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() +
+                        "' characters, but has '" + topic.length() + "' characters");
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");
         }
-
         if (!PluginBuilderUtil.isValidUtf8String(topic, securityConfigurationService.validateUTF8())) {
             throw new IllegalArgumentException("The topic (" + topic + ") is UTF-8 malformed");
         }
-
         this.topic = topic;
         return this;
     }
 
     @Override
-    public @NotNull WillPublishBuilder payloadFormatIndicator(final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
+    public @NotNull WillPublishBuilder payloadFormatIndicator(
+            final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
         this.payloadFormatIndicator = payloadFormatIndicator;
         return this;
     }
 
     @Override
     public @NotNull WillPublishBuilder messageExpiryInterval(final long messageExpiryInterval) {
-        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval, mqttConfigurationService.maxMessageExpiryInterval());
+        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval,
+                mqttConfigurationService.maxMessageExpiryInterval());
         this.messageExpiryInterval = messageExpiryInterval;
         return this;
     }
@@ -264,16 +251,22 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
 
     @Override
     public @NotNull WillPublishPacket build() {
-
         Preconditions.checkNotNull(topic, "Topic must never be null");
         Preconditions.checkNotNull(payload, "Payload must never be null");
-
         if (messageExpiryInterval == MESSAGE_EXPIRY_INTERVAL_NOT_SET) {
             messageExpiryInterval = mqttConfigurationService.maxMessageExpiryInterval();
         }
-
-        return new WillPublishPacketImpl(topic, qos, payload, retain, messageExpiryInterval, payloadFormatIndicator,
-                contentType, responseTopic, correlationData, UserPropertiesImpl.of(userPropertyBuilder.build()),
-                willDelay, System.currentTimeMillis());
+        return new WillPublishPacketImpl(topic,
+                qos,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                UserPropertiesImpl.of(userPropertyBuilder.build()),
+                willDelay,
+                System.currentTimeMillis());
     }
 }

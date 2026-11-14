@@ -38,20 +38,16 @@ public class ModifiablePubrecPacketImpl implements ModifiablePubrecPacket {
     private @NotNull AckReasonCode reasonCode;
     private @Nullable String reasonString;
     private final @NotNull ModifiableUserPropertiesImpl userProperties;
-
     private final @NotNull FullConfigurationService configurationService;
     private boolean modified = false;
-
     public ModifiablePubrecPacketImpl(
             final @NotNull PubrecPacketImpl packet,
             final @NotNull FullConfigurationService configurationService) {
-
         packetIdentifier = packet.packetIdentifier;
         reasonCode = packet.reasonCode;
         reasonString = packet.reasonString;
-        userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
-
+        userProperties = new ModifiableUserPropertiesImpl(packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         this.configurationService = configurationService;
     }
 
@@ -74,8 +70,8 @@ public class ModifiablePubrecPacketImpl implements ModifiablePubrecPacket {
         final Mqtt5PubRecReasonCode newReasonCode = Mqtt5PubRecReasonCode.from(reasonCode);
         final Mqtt5PubRecReasonCode oldReasonCode = Mqtt5PubRecReasonCode.from(this.reasonCode);
         final boolean switched = newReasonCode.isError() != oldReasonCode.isError();
-        Preconditions.checkState(
-                !switched, "Reason code must not switch from successful to unsuccessful or vice versa");
+        Preconditions.checkState(!switched,
+                "Reason code must not switch from successful to unsuccessful or vice versa");
         this.reasonCode = reasonCode;
         modified = true;
     }

@@ -36,15 +36,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Singleton
 public class AuthorizersImpl implements Authorizers {
 
-    @NotNull
-    private final Map<@NotNull String, @NotNull AuthorizerProvider> authorizerProviderMap;
-
-    @NotNull
-    private final ReadWriteLock readWriteLock;
-
-    @NotNull
-    private final HiveMQExtensions hiveMQExtensions;
-
+    @NotNull private final Map<@NotNull String, @NotNull AuthorizerProvider> authorizerProviderMap;
+    @NotNull private final ReadWriteLock readWriteLock;
+    @NotNull private final HiveMQExtensions hiveMQExtensions;
     @Inject
     public AuthorizersImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
@@ -54,29 +48,21 @@ public class AuthorizersImpl implements Authorizers {
 
     @Override
     public void addAuthorizerProvider(@NotNull final AuthorizerProvider authorizerProvider) {
-
         final Lock writeLock = readWriteLock.writeLock();
-
         writeLock.lock();
-
         try {
             final ClassLoader pluginClassloader = authorizerProvider.getClass().getClassLoader();
-
             final HiveMQExtension plugin = hiveMQExtensions.getExtensionForClassloader(pluginClassloader);
-
             if (plugin != null) {
                 authorizerProviderMap.put(plugin.getId(), authorizerProvider);
             }
-
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    @NotNull
-    public Map<@NotNull String, @NotNull AuthorizerProvider> getAuthorizerProviderMap() {
-
+    @NotNull public Map<@NotNull String, @NotNull AuthorizerProvider> getAuthorizerProviderMap() {
         final Lock readLock = readWriteLock.readLock();
         readLock.lock();
         try {

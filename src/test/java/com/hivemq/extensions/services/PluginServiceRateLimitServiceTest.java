@@ -15,11 +15,8 @@
  */
 package com.hivemq.extensions.services;
 
-
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,30 +26,21 @@ import static org.junit.Assert.assertTrue;
  */
 public class PluginServiceRateLimitServiceTest {
 
-    private PluginServiceRateLimitService pluginServiceRateLimitService;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        pluginServiceRateLimitService = new PluginServiceRateLimitService();
-    }
-
     @Test
     public void test_no_limit() {
+        final PluginServiceRateLimitService pluginServiceRateLimitService = new PluginServiceRateLimitService();
         assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
     }
 
     @Test
     public void test_limit() {
         InternalConfigurations.EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC.set(10);
-
-        pluginServiceRateLimitService = new PluginServiceRateLimitService();
-
-        //use up the current second
+        final PluginServiceRateLimitService pluginServiceRateLimitService = new PluginServiceRateLimitService();
+        // use up the current second
         for (int i = 0; i < 10; i++) {
             assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
         }
-        //use up the 10s reserve
+        // use up the 10s reserve
         for (int i = 0; i < 10; i++) {
             assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
         }
@@ -62,14 +50,10 @@ public class PluginServiceRateLimitServiceTest {
     @Test
     public void test_limit_not_exceeded() {
         InternalConfigurations.EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC.set(2);
-
-        pluginServiceRateLimitService = new PluginServiceRateLimitService();
-
-        //use up the first second
+        final PluginServiceRateLimitService pluginServiceRateLimitService = new PluginServiceRateLimitService();
+        // use up the first second
         assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
-
-        //use up the reserve
+        // use up the reserve
         assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
     }
-
 }

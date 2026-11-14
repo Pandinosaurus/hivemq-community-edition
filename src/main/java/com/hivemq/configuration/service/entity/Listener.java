@@ -23,10 +23,10 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  * @author Dominik Obermaier
  * @author Christoph Schaebel
  * @author Georg Held
- * @see TcpListener
- * @see TlsTcpListener
- * @see WebsocketListener
- * @see TlsWebsocketListener
+ * @see    TcpListener
+ * @see    TlsTcpListener
+ * @see    WebsocketListener
+ * @see    TlsWebsocketListener
  */
 public interface Listener {
 
@@ -49,7 +49,7 @@ public interface Listener {
 
     /**
      * @return the name of the listener
-     * @since 4.1
+     * @since  4.1
      */
     @NotNull String getName();
 }

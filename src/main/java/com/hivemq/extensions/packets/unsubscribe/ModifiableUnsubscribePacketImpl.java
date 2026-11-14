@@ -34,19 +34,15 @@ public class ModifiableUnsubscribePacketImpl implements ModifiableUnsubscribePac
     private @NotNull ImmutableList<String> topicFilters;
     private final @NotNull ModifiableUserPropertiesImpl userProperties;
     private final int packetIdentifier;
-
     private final @NotNull FullConfigurationService configurationService;
     private boolean modified = false;
-
     public ModifiableUnsubscribePacketImpl(
             final @NotNull UnsubscribePacketImpl packet,
             final @NotNull FullConfigurationService configurationService) {
-
         topicFilters = packet.topicFilters;
-        userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+        userProperties = new ModifiableUserPropertiesImpl(packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         packetIdentifier = packet.packetIdentifier;
-
         this.configurationService = configurationService;
     }
 

@@ -16,6 +16,7 @@
 package com.hivemq.codec.decoder;
 
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
@@ -24,157 +25,113 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
+import util.DummyClientConnection;
 import util.TestMqttDecoder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class Mqtt3UnsubscribeDecoderTest {
 
-    private @NotNull EmbeddedChannel channel;
-
+    private final @NotNull EmbeddedChannel channel = new EmbeddedChannel(TestMqttDecoder.create());
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        channel = new EmbeddedChannel(TestMqttDecoder.create());
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(new DummyClientConnection(channel, null));
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
     }
 
     @Test
     public void test_unsubscribe_received() {
-
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1010_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(12);
-
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
-
         // "a/b"
         buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-
         // "c/d"
         buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-
-
         channel.writeInbound(buf);
-
         final UNSUBSCRIBE subscribe = channel.readInbound();
-
         assertNotNull(subscribe);
-
         assertEquals(55555, subscribe.getPacketIdentifier());
         assertEquals(2, subscribe.getTopics().size());
-
         assertEquals("a/b", subscribe.getTopics().get(0));
-
         assertEquals("c/d", subscribe.getTopics().get(1));
-
         assertTrue(channel.isActive());
     }
 
     @Test
     public void test_empty_unsubscribe() {
-
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1010_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(2);
-
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
-
         channel.writeInbound(buf);
-
         final UNSUBSCRIBE unsubscribe = channel.readInbound();
-
         assertNull(unsubscribe);
-
-
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_unsubscribe_has_empty_topic() {
-
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1010_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(4);
-
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
-
         // Empty
         buf.writeBytes(new byte[]{0, 0});
-
-
         channel.writeInbound(buf);
-
-
         final UNSUBSCRIBE unsubscribe = channel.readInbound();
-
         assertNull(unsubscribe);
-
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_unsubscribe_invalid_header_mqtt_311() {
-
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(new DummyClientConnection(channel, null));
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1010_0100);
-        //Remaining length
+        // Remaining length
         buf.writeByte(12);
-
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
-
         // "a/b"
         buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-
         // "c/d"
         buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-
         channel.writeInbound(buf);
-
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_unsubscribe_invalid_header_mqtt_31() {
-
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(new DummyClientConnection(channel, null));
+        ClientConnection.of(channel).setProtocolVersion(ProtocolVersion.MQTTv3_1);
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1010_0100);
-        //Remaining length
+        // Remaining length
         buf.writeByte(12);
-
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
-
         // "a/b"
         buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-
         // "c/d"
         buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-
         channel.writeInbound(buf);
-
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
-
 }

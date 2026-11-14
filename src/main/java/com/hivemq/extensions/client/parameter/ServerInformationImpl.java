@@ -16,10 +16,10 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.collect.ImmutableSet;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.bootstrap.ioc.lazysingleton.LazySingleton;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 
@@ -30,62 +30,54 @@ import java.util.Set;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @LazySingleton
 public class ServerInformationImpl implements ServerInformation {
 
-    @NotNull
-    private final SystemInformation systemInformation;
-
-    @NotNull
-    private final ListenerConfigurationService listenerConfigurationService;
-
+    @NotNull private final SystemInformation systemInformation;
+    @NotNull private final ListenerConfigurationService listenerConfigurationService;
     @Inject
-    public ServerInformationImpl(@NotNull final SystemInformation systemInformation, @NotNull final ListenerConfigurationService listenerConfigurationService) {
+    public ServerInformationImpl(
+            @NotNull final SystemInformation systemInformation,
+            @NotNull final ListenerConfigurationService listenerConfigurationService) {
         this.systemInformation = systemInformation;
         this.listenerConfigurationService = listenerConfigurationService;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String getVersion() {
         return systemInformation.getHiveMQVersion();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public File getHomeFolder() {
         return systemInformation.getHiveMQHomeFolder();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public File getDataFolder() {
         return systemInformation.getDataFolder();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public File getLogFolder() {
         return systemInformation.getLogFolder();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public File getExtensionsFolder() {
         return systemInformation.getExtensionsFolder();
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public Set<Listener> getListener() {
-        final List<com.hivemq.configuration.service.entity.Listener> listeners = listenerConfigurationService.getListeners();
+        final List<com.hivemq.configuration.service.entity.Listener> listeners =
+                listenerConfigurationService.getListeners();
         final ImmutableSet.Builder<Listener> builder = ImmutableSet.builder();
         for (final com.hivemq.configuration.service.entity.Listener listener : listeners) {
             builder.add(new ListenerImpl(listener));
         }
         return builder.build();
     }
-
 }

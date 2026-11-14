@@ -44,13 +44,11 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
 
     private final @NotNull ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private @NotNull List<MqttUserProperty> list;
-
     private final boolean validateUTF8;
     private boolean modified = false;
-
     public ModifiableUserPropertiesImpl(
-            final @NotNull ImmutableList<MqttUserProperty> list, final boolean validateUTF8) {
-
+            final @NotNull ImmutableList<MqttUserProperty> list,
+            final boolean validateUTF8) {
         this.list = list;
         this.validateUTF8 = validateUTF8;
     }
@@ -58,7 +56,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public @NotNull Optional<String> getFirst(final @NotNull String name) {
         checkNotNull(name, "Name must never be null");
-
         final Lock lock = readWriteLock.readLock();
         lock.lock();
         try {
@@ -74,7 +71,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public @NotNull List<String> getAllForName(final @NotNull String name) {
         checkNotNull(name, "Name must never be null");
-
         final Lock lock = readWriteLock.readLock();
         lock.lock();
         try {
@@ -125,7 +121,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
         if (!(userProperty instanceof MqttUserProperty)) {
             throw new DoNotImplementException(UserProperty.class.getSimpleName());
         }
-
         final Lock lock = readWriteLock.writeLock();
         lock.lock();
         try {
@@ -138,7 +133,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public void addUserProperty(final @NotNull String name, final @NotNull String value) {
         PluginBuilderUtil.checkUserProperty(name, value, validateUTF8);
-
         final Lock lock = readWriteLock.writeLock();
         lock.lock();
         try {
@@ -151,7 +145,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public void removeUserProperty(final @NotNull String name, final @NotNull String value) {
         PluginBuilderUtil.checkUserProperty(name, value, validateUTF8);
-
         final Lock lock = readWriteLock.writeLock();
         lock.lock();
         try {
@@ -164,7 +157,6 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public @NotNull ImmutableList<UserProperty> removeName(final @NotNull String name) {
         PluginBuilderUtil.checkUserPropertyName(name, validateUTF8);
-
         final Lock lock = readWriteLock.writeLock();
         lock.lock();
         try {

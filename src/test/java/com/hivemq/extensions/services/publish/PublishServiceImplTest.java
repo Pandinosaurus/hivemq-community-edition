@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.FullConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
@@ -40,8 +41,6 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 
 import java.nio.ByteBuffer;
@@ -50,7 +49,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,34 +63,27 @@ import static org.mockito.Mockito.when;
  */
 public class PublishServiceImplTest {
 
-    @Mock
-    PluginServiceRateLimitService rateLimitService;
-
-    @Mock
-    InternalPublishService internalPublishService;
-
-    @Mock
-    ShutdownHooks shutdownHooks;
-
-    @Mock
-    PublishDistributor publishDistributor;
-
-    @Mock
-    LocalTopicTree topicTree;
-
-    private GlobalManagedExtensionExecutorService managedPluginExecutorService;
-
+    private final @NotNull PluginServiceRateLimitService rateLimitService = mock();
+    private final @NotNull InternalPublishService internalPublishService = mock();
+    private final @NotNull ShutdownHooks shutdownHooks = mock();
+    private final @NotNull PublishDistributor publishDistributor = mock();
+    private final @NotNull LocalTopicTree topicTree = mock();
     private final HivemqId hiveMQId = new HivemqId();
-    private final FullConfigurationService fullConfigurationService = new TestConfigurationBootstrap().getFullConfigurationService();
+    private final FullConfigurationService fullConfigurationService =
+            new TestConfigurationBootstrap().getFullConfigurationService();
     private PublishServiceImpl publishService;
-
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
-        managedPluginExecutorService = new GlobalManagedExtensionExecutorService(shutdownHooks);
+        final GlobalManagedExtensionExecutorService managedPluginExecutorService =
+                new GlobalManagedExtensionExecutorService(shutdownHooks);
         managedPluginExecutorService.postConstruct();
-        publishService = new PublishServiceImpl(rateLimitService, managedPluginExecutorService, internalPublishService, publishDistributor, hiveMQId, topicTree);
+        publishService = new PublishServiceImpl(rateLimitService,
+                managedPluginExecutorService,
+                internalPublishService,
+                publishDistributor,
+                hiveMQId,
+                topicTree);
     }
 
     @Test(expected = DoNotImplementException.class)
@@ -101,7 +98,9 @@ public class PublishServiceImplTest {
     @Test(expected = RateLimitExceededException.class)
     public void test_publish_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic").payload(ByteBuffer.wrap("message".getBytes())).build();
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+                .payload(ByteBuffer.wrap("message".getBytes()))
+                .build();
         try {
             publishService.publish(publish).get();
         } catch (final ExecutionException e) {
@@ -121,7 +120,9 @@ public class PublishServiceImplTest {
     @Test(expected = RateLimitExceededException.class)
     public void test_publish_to_client_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic").payload(ByteBuffer.wrap("message".getBytes())).build();
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+                .payload(ByteBuffer.wrap("message".getBytes()))
+                .build();
         try {
             publishService.publishToClient(publish, "client").get();
         } catch (final ExecutionException e) {
@@ -131,10 +132,11 @@ public class PublishServiceImplTest {
 
     @Test(timeout = 10000)
     public void test_publish() throws Throwable {
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic").payload(ByteBuffer.wrap("message".getBytes())).build();
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+                .payload(ByteBuffer.wrap("message".getBytes()))
+                .build();
         when(internalPublishService.publish(any(PUBLISH.class), any(ExecutorService.class), isNull()))
                 .thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
-
         publishService.publish(publish).get();
         verify(internalPublishService).publish(any(PUBLISH.class), any(ExecutorService.class), isNull());
     }
@@ -142,23 +144,27 @@ public class PublishServiceImplTest {
     @Test(timeout = 10000)
     public void test_publish_to_client() throws Exception {
         final byte subscriptionFlags = SubscriptionFlag.getDefaultFlags(false, false, false);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic").payload(ByteBuffer.wrap("message".getBytes())).build();
-        when(topicTree.findSubscriber("client", "topic")).thenReturn(
-                new SubscriberWithIdentifiers("client", 1, subscriptionFlags, null));
-        when(publishDistributor.sendMessageToSubscriber(any(PUBLISH.class), anyString(), anyInt(), anyBoolean(), anyBoolean(),
-                any(ImmutableIntArray.class))).thenReturn(Futures.immediateFuture(PublishStatus.DELIVERED));
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+                .payload(ByteBuffer.wrap("message".getBytes()))
+                .build();
+        when(topicTree.findSubscriber("client", "topic"))
+                .thenReturn(new SubscriberWithIdentifiers("client", 1, subscriptionFlags, null));
+        when(publishDistributor.sendMessageToSubscriber(any(
+                PUBLISH.class), anyString(), anyInt(), anyBoolean(), anyBoolean(), any(ImmutableIntArray.class)))
+                .thenReturn(Futures.immediateFuture(PublishStatus.DELIVERED));
         final PublishToClientResult result = publishService.publishToClient(publish, "client").get();
         assertEquals(PublishToClientResult.SUCCESSFUL, result);
     }
 
     @Test(timeout = 10000)
     public void test_publish_to_client_not_subscribed() throws Exception {
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic").payload(ByteBuffer.wrap("message".getBytes())).build();
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+                .payload(ByteBuffer.wrap("message".getBytes()))
+                .build();
         when(topicTree.findSubscriber("client", "topic")).thenReturn(null);
         final PublishToClientResult result = publishService.publishToClient(publish, "client").get();
         assertEquals(PublishToClientResult.NOT_SUBSCRIBED, result);
     }
-
     private static class TestPublish implements Publish {
 
         @Override

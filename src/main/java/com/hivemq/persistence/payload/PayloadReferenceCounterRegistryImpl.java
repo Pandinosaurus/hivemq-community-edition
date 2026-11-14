@@ -17,25 +17,24 @@ package com.hivemq.persistence.payload;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import org.eclipse.collections.api.tuple.primitive.LongIntPair;
 import org.eclipse.collections.impl.map.mutable.primitive.LongIntHashMap;
+import oshi.annotation.concurrent.NotThreadSafe;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author Daniel Krüger
- * <p>
- * Most methods are NOT thread-safe and the exclusive access on the bucket must be secured by the caller
- * The reason is that the caller (primarly PublishPayloadPersistence) calls often multiple methods and the lock must cover all sequential calls to methods
+ * Most methods are NOT thread-safe and the exclusive access on the bucket must be secured by the caller. The reason is
+ * that the caller (primarily PublishPayloadPersistence) calls often multiple methods and the lock must cover all
+ * sequential calls to methods.
  */
 @NotThreadSafe
 public class PayloadReferenceCounterRegistryImpl implements PayloadReferenceCounterRegistry {
 
     private final @NotNull BucketLock bucketLock;
     private final @NotNull LongIntHashMap @NotNull [] buckets;
-
     PayloadReferenceCounterRegistryImpl(final @NotNull BucketLock bucketLock) {
         this.bucketLock = bucketLock;
         this.buckets = new LongIntHashMap[bucketLock.getBucketCount()];
@@ -51,13 +50,13 @@ public class PayloadReferenceCounterRegistryImpl implements PayloadReferenceCoun
     }
 
     @Override
-    public int getAndIncrementBy(@NotNull long payloadId, int delta) {
+    public int getAndIncrement(final long payloadId) {
         final LongIntHashMap map = buckets[bucketIndexForPayloadId(payloadId)];
         final int previousValue = map.getIfAbsent(payloadId, UNKNOWN_PAYLOAD);
         if (previousValue == UNKNOWN_PAYLOAD) {
-            map.put(payloadId, delta);
+            map.put(payloadId, 1);
         } else {
-            map.put(payloadId, previousValue + delta);
+            map.put(payloadId, previousValue + 1);
         }
         return previousValue;
     }
@@ -79,7 +78,7 @@ public class PayloadReferenceCounterRegistryImpl implements PayloadReferenceCoun
     }
 
     @Override
-    public void remove(@NotNull long payloadId) {
+    public void delete(final long payloadId) {
         final LongIntHashMap map = buckets[bucketIndexForPayloadId(payloadId)];
         if (map == null) {
             return;
@@ -87,13 +86,13 @@ public class PayloadReferenceCounterRegistryImpl implements PayloadReferenceCoun
         map.remove(payloadId);
     }
 
+    @ThreadSafe
     @Override
     public @NotNull ImmutableMap<Long, Integer> getAll() {
         final ImmutableMap.Builder<Long, Integer> builder = ImmutableMap.builder();
         for (int i = 0; i < buckets.length; i++) {
-            final int bucketIndex = i;
-            bucketLock.accessBucket(bucketIndex, () -> {
-                for (LongIntPair longIntPair : buckets[bucketIndex].keyValuesView()) {
+            bucketLock.accessBucket(i, (bucketIndex) -> {
+                for (final LongIntPair longIntPair : buckets[bucketIndex].keyValuesView()) {
                     builder.put(longIntPair.getOne(), longIntPair.getTwo());
                 }
             });
@@ -101,14 +100,12 @@ public class PayloadReferenceCounterRegistryImpl implements PayloadReferenceCoun
         return builder.build();
     }
 
+    @ThreadSafe
     @Override
     public int size() {
         final AtomicInteger sum = new AtomicInteger();
         for (int i = 0; i < buckets.length; i++) {
-            final int bucketIndex = i;
-            bucketLock.accessBucket(bucketIndex, () ->
-                    sum.addAndGet(buckets[bucketIndex].size())
-            );
+            bucketLock.accessBucket(i, (bucketIndex) -> sum.addAndGet(buckets[bucketIndex].size()));
         }
         return sum.get();
     }

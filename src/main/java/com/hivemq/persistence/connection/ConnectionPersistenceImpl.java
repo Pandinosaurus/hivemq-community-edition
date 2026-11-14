@@ -19,7 +19,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -44,13 +48,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ConnectionPersistenceImpl implements ConnectionPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectionPersistenceImpl.class);
-
     private final @NotNull Map<String, ClientConnection> clientConnectionMap;
     private final @NotNull Map<String, Channel> serverChannelMap;
     private final @NotNull AtomicBoolean interrupted;
     private final boolean shutdownLegacy;
     private final int shutdownPartitionSize;
-
     @Inject
     public ConnectionPersistenceImpl() {
         shutdownLegacy = InternalConfigurations.NETTY_SHUTDOWN_LEGACY;
@@ -90,10 +92,10 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
         if (shutdownLegacy) {
             return Futures.immediateFuture(null);
         }
-
         final ListenableFuture<Void> allServersClosedFuture = shutDownListeners();
         final SettableFuture<Void> allClientsClosedFuture = SettableFuture.create();
         Futures.addCallback(allServersClosedFuture, new FutureCallback<>() {
+
             @Override
             public void onSuccess(final @Nullable Void result) {
                 shutDownClients(allClientsClosedFuture);
@@ -108,7 +110,6 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
                 }
                 shutDownClients(allClientsClosedFuture);
             }
-
         }, MoreExecutors.directExecutor());
         return allClientsClosedFuture;
     }
@@ -125,10 +126,10 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
                     closeFuture.set(null);
                 });
             }
-
             final ListenableFuture<List<Void>> future = Futures.allAsList(futureBuilder.build());
             final SettableFuture<Void> resultFuture = SettableFuture.create();
             Futures.addCallback(future, new FutureCallback<>() {
+
                 @Override
                 public void onSuccess(final @Nullable List<Void> result) {
                     resultFuture.set(null);
@@ -151,7 +152,8 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
             allClientsClosedFuture.set(null);
             return;
         }
-        final List<List<ClientConnection>> connectionPartitions = Lists.partition(allConnections, shutdownPartitionSize);
+        final List<List<ClientConnection>> connectionPartitions =
+                Lists.partition(allConnections, shutdownPartitionSize);
         shutDownPartition(connectionPartitions, 0, allClientsClosedFuture);
     }
 
@@ -159,7 +161,6 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
             final @NotNull List<List<ClientConnection>> connectionPartitions,
             final int index,
             final @NotNull SettableFuture<Void> closeFuture) {
-
         if (interrupted.get() || index >= connectionPartitions.size()) {
             closeFuture.set(null);
             return;
@@ -177,7 +178,6 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
                 channelFuture.addListener((ChannelFutureListener) future -> channelCloseFuture.set(null));
             }
         }
-
         Futures.whenAllComplete(closeFutures).run(() -> {
             shutDownPartition(connectionPartitions, index + 1, closeFuture);
         }, MoreExecutors.directExecutor());

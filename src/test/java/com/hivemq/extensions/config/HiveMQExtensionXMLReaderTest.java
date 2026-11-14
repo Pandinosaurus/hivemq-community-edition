@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.config;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -27,7 +26,9 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class HiveMQExtensionXMLReaderTest {
 
@@ -37,13 +38,14 @@ public class HiveMQExtensionXMLReaderTest {
     @Test
     public void test_unmarschal_plugin_meta() throws Exception {
         final File extensionXML = temporaryFolder.newFile("hivemq-extension.xml");
-        FileUtils.writeStringToFile(extensionXML, "<hivemq-extension>" + //
-                "<id>some-id</id>" + //
-                "<name>Some Name</name>" + //
-                "<version>1.0.0</version>" + //
-                "<priority>1000</priority>" + //
-                "<author>Some Author</author>" + //
-                "</hivemq-extension>", Charset.defaultCharset());
+        FileUtils.writeStringToFile(extensionXML, """
+                <hivemq-extension>
+                <id>some-id</id>
+                <name>Some Name</name>
+                <version>1.0.0</version>
+                <priority>1000</priority>
+                <author>Some Author</author>
+                </hivemq-extension>""", Charset.defaultCharset());
         final Optional<HiveMQExtensionEntity> optionalPluginEntityFromXML =
                 HiveMQExtensionXMLReader.getExtensionEntityFromXML(extensionXML.toPath().getParent(), true);
         assertTrue(optionalPluginEntityFromXML.isPresent());
@@ -58,11 +60,12 @@ public class HiveMQExtensionXMLReaderTest {
     @Test(timeout = 5000)
     public void test_missing_id_in_plugin_meta() throws Exception {
         final File extensionXML = temporaryFolder.newFile("hivemq-extension.xml");
-        FileUtils.writeStringToFile(extensionXML, "<hivemq-extension>" + //
-                "<name>Some Name</name>" + //
-                "<version>1.0.0</version>" + //
-                "<priority>1000</priority>" + //
-                "</hivemq-extension>", Charset.defaultCharset());
+        FileUtils.writeStringToFile(extensionXML, """
+                <hivemq-extension>
+                <name>Some Name</name>
+                <version>1.0.0</version>
+                <priority>1000</priority>
+                </hivemq-extension>""", Charset.defaultCharset());
         final Optional<HiveMQExtensionEntity> optionalExtensionEntityFromXML =
                 HiveMQExtensionXMLReader.getExtensionEntityFromXML(extensionXML.toPath().getParent(), true);
         assertFalse(optionalExtensionEntityFromXML.isPresent());

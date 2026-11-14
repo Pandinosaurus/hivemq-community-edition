@@ -41,13 +41,14 @@ public class KeepAliveDisconnectService {
     private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     private final long disconnectBatch;
     private final AtomicInteger submittedTasks = new AtomicInteger();
-
     @Inject
-    public KeepAliveDisconnectService(final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                                      final @NotNull ShutdownHooks shutdownHooks) {
+    public KeepAliveDisconnectService(
+            final @NotNull MqttServerDisconnector mqttServerDisconnector,
+            final @NotNull ShutdownHooks shutdownHooks) {
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.disconnectBatch = InternalConfigurations.DISCONNECT_KEEP_ALIVE_BATCH;
         shutdownHooks.add(new HiveMQShutdownHook() {
+
             @Override
             public @NotNull String name() {
                 return "KeepAliveDisconnectService shutdown";
@@ -70,8 +71,8 @@ public class KeepAliveDisconnectService {
             }
         }
     }
-
     public class DisconnectorTask implements Runnable {
+
         @Override
         public void run() {
             int i = 0;

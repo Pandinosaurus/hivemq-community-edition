@@ -16,8 +16,13 @@
 package com.hivemq.configuration.entity.listener;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
-import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,17 +36,13 @@ public class TlsWebsocketListenerEntity extends ListenerEntity {
 
     @XmlElement(name = "path", required = true)
     private @NotNull String path = "/mqtt";
-
     @XmlElementWrapper(name = "subprotocols")
     @XmlElement(name = "subprotocol")
     private @NotNull List<String> subprotocols = defaultProtocols();
-
     @XmlElement(name = "allow-extensions", defaultValue = "false")
     private boolean allowExtensions = false;
-
     @XmlElementRef
     private @NotNull TLSEntity tls = new TLSEntity();
-
     public @NotNull String getPath() {
         return path;
     }
@@ -60,7 +61,6 @@ public class TlsWebsocketListenerEntity extends ListenerEntity {
 
     private @NotNull List<String> defaultProtocols() {
         final List<String> protocols = new ArrayList<>();
-
         protocols.add("mqttv3.1");
         protocols.add("mqtt");
         return protocols;

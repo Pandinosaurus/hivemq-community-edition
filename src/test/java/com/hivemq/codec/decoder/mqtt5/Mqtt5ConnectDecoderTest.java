@@ -18,6 +18,7 @@ package com.hivemq.codec.decoder.mqtt5;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Bytes;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger;
 import com.hivemq.configuration.service.FullConfigurationService;
@@ -31,15 +32,24 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Before;
 import org.junit.Test;
+import util.DummyClientConnection;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
 import java.nio.charset.StandardCharsets;
 
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.*;
-import static com.hivemq.mqtt.message.connect.MqttWillPublish.WILL_DELAY_INTERVAL_NOT_SET;
-import static org.junit.Assert.*;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_PROBLEM_INFORMATION_REQUESTED;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_RECEIVE_MAXIMUM;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_RESPONSE_INFORMATION_REQUESTED;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_TOPIC_ALIAS_MAXIMUM;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -50,83 +60,79 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     @Before
     public void setUp() {
         super.setUp();
-        //protocol version must not be set when a CONNECT is sent.
+        // protocol version must not be set when a CONNECT is sent.
         clientConnection.setProtocolVersion(null);
     }
 
     @Test
     public void test_decode_all_properties() {
-
         final byte[] encoded = {
                 // fixed header
-                //   type, flags
+                // type, flags
                 0b0001_0000,
                 // remaining length (223)
                 (byte) (128 + 95), 1,
                 // variable header
-                //   protocol name
+                // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b1110_1110,
-                //   keep alive
+                // keep alive
                 0, 10,
-                //   properties
+                // properties
                 88,
-                //     session expiry interval
+                // session expiry interval
                 0x11, 0, 0, 0, 10,
-                //     request response information
+                // request response information
                 0x19, 1,
-                //     request problem information
+                // request problem information
                 0x17, 0,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
-                //     auth data
+                // auth data
                 0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                //     receive maximum
+                // receive maximum
                 0x21, 0, 5,
-                //     topic alias maximum
+                // topic alias maximum
                 0x22, 0, 10,
-                //     maximum packet size
+                // maximum packet size
                 0x27, 0, 0, 0, 100,
-                //     user properties
+                // user properties
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 6, 'v', 'a', 'l', 'u', 'e', '2', //
                 0x26, 0, 5, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 't', 'e', 's', 't',
-                //   will properties
+                // will properties
                 82,
-                //     message expiry interval
+                // message expiry interval
                 0x02, 0, 0, 0, 10,
-                //     payload format indicator
+                // payload format indicator
                 0x01, 1,
-                //     content type
+                // content type
                 0x03, 0, 4, 't', 'e', 'x', 't',
-                //     response topic
+                // response topic
                 0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', 's', 'e',
-                //     correlation data
+                // correlation data
                 0x09, 0, 5, 5, 4, 3, 2, 1,
-                //     user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e', //
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 6, 'v', 'a', 'l', 'u', 'e', '2', //
                 0x26, 0, 5, 't', 'e', 's', 't', '2', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //     will delay interval
+                // will delay interval
                 0x18, 0, 0, 0, 5,
-                //   will topic
+                // will topic
                 0, 5, 't', 'o', 'p', 'i', 'c',
-                //   will payload
+                // will payload
                 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                //   username
+                // username
                 0, 8, 'u', 's', 'e', 'r', 'n', 'a', 'm', 'e',
-                //   password
-                0, 4, 'p', 'a', 's', 's'
-        };
-
+                // password
+                0, 4, 'p', 'a', 's', 's'};
         final CONNECT connect = decodeInternal(encoded);
-
         assertEquals("GS2-KRB5", connect.getAuthMethod());
         assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, connect.getAuthData());
         assertEquals(5, connect.getReceiveMaximum());
@@ -138,11 +144,9 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         assertTrue(connect.isResponseInformationRequested());
         assertFalse(connect.isProblemInformationRequested());
         assertEquals("test", connect.getClientIdentifier());
-
         assertEquals("username", connect.getUsername());
         assertArrayEquals(new byte[]{'p', 'a', 's', 's'}, connect.getPassword());
         assertEquals("pass", connect.getPasswordAsUTF8String());
-
         final ImmutableList<MqttUserProperty> userProperties = connect.getUserProperties().asList();
         assertEquals("test", userProperties.get(0).getName());
         assertEquals("value", userProperties.get(0).getValue());
@@ -150,9 +154,7 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         assertEquals("value2", userProperties.get(1).getValue());
         assertEquals("test2", userProperties.get(2).getName());
         assertEquals("value", userProperties.get(2).getValue());
-
         final MqttWillPublish willPublish = connect.getWillPublish();
-
         assertEquals(5, willPublish.getDelayInterval());
         assertEquals("topic", willPublish.getTopic());
         assertArrayEquals(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, willPublish.getPayload());
@@ -170,36 +172,33 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         assertEquals("value2", willUserProperties.get(1).getValue());
         assertEquals("test2", willUserProperties.get(2).getName());
         assertEquals("value", willUserProperties.get(2).getValue());
-
-        assertNull(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectKeepAlive());
-        assertEquals("username", channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthUsername());
-        assertEquals("pass", new String(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthPassword(), StandardCharsets.UTF_8));
+        assertNull(ClientConnection.of(channel).getConnectKeepAlive());
+        assertEquals("username", ClientConnection.of(channel).getAuthUsername());
+        assertEquals("pass", new String(ClientConnection.of(channel).getAuthPassword(), StandardCharsets.UTF_8));
     }
 
     @Test
     public void decode_simple() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 17,
                 // variable header
-                //   protocol name
+                // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
-
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals(ProtocolVersion.MQTTv5, connect.getProtocolVersion());
         assertEquals(0, connect.getKeepAlive());
@@ -212,18 +211,15 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         assertEquals(DEFAULT_TOPIC_ALIAS_MAXIMUM, connect.getTopicAliasMaximum());
         assertEquals(DEFAULT_RESPONSE_INFORMATION_REQUESTED, connect.isResponseInformationRequested());
         assertEquals(DEFAULT_PROBLEM_INFORMATION_REQUESTED, connect.isProblemInformationRequested());
-
-        assertNull(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getTopicAliasMapping());
+        assertNull(ClientConnection.of(channel).getTopicAliasMapping());
     }
 
     @Test
     public void decode_header_failed_no_protocol_version() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
-                0b0001_0001,
-                0
-        };
+                // type, reserved
+                0b0001_0001, 0};
         decodeNullExpected(encoded);
     }
 
@@ -231,13 +227,10 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_unknown_protocol_version() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
-                0b0001_0001,
-                7,
-                0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
-                6,
-        };
+                // type, reserved
+                0b0001_0001, 7, 0, 4, 'M', 'Q', 'T', 'T',
+                // protocol version
+                6,};
         decodeNullExpected(encoded);
     }
 
@@ -245,13 +238,10 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_incorrect_variable_header() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
-                0b0001_0000,
-                7,
-                0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
-                5,
-        };
+                // type, reserved
+                0b0001_0000, 7, 0, 4, 'M', 'Q', 'T', 'T',
+                // protocol version
+                5,};
         decodeNullExpected(encoded);
     }
 
@@ -259,13 +249,10 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_invalid_fixed_header() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
-                0b0001_0001,
-                7,
-                0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
-                5,
-        };
+                // type, reserved
+                0b0001_0001, 7, 0, 4, 'M', 'Q', 'T', 'T',
+                // protocol version
+                5,};
         decodeNullExpected(encoded);
     }
 
@@ -273,19 +260,18 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_invalid_protocol_name() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 10,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'D',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
-                0, 0,
-        };
+                // keep alive
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -293,19 +279,18 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_invalid_connect_flags() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 10,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0001,
-                //   keep alive
-                0, 0,
-        };
+                // keep alive
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -313,19 +298,18 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_invalid_will_qos_3() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 10,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0001_1000,
-                //   keep alive
-                0, 0,
-        };
+                // keep alive
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -333,19 +317,18 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_no_will_flag_but_will_qos() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 10,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_1000,
-                //   keep alive
-                0, 0,
-        };
+                // keep alive
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -353,19 +336,18 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_header_failed_no_will_flag_but_will_retain() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 10,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_0000,
-                //   keep alive
-                0, 0,
-        };
+                // keep alive
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -373,24 +355,23 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_properties_length_to_large() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 17,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 27,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -398,24 +379,23 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_properties_length_negative() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 17,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 -1,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -423,26 +403,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_properties_length_not_enough() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 21,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     session expiry interval
+                // session expiry interval
                 0x11, 0, 0, 0, 10,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -450,27 +429,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_session_expiry_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 26,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 10,
-                //     session expiry interval
-                0x11, 0, 0, 0, 10,
-                0x11, 0, 0, 0, 10,
+                // session expiry interval
+                0x11, 0, 0, 0, 10, 0x11, 0, 0, 0, 10,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -478,23 +455,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_session_expiry_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 15,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     session expiry interval
-                0x11, 0, 0, 10,
-        };
+                // session expiry interval
+                0x11, 0, 0, 10,};
         decodeNullExpected(encoded);
     }
 
@@ -502,27 +478,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_receive_maximum_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 22,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 6,
-                //   receive maximum
-                0x21, 0, 3,
-                0x21, 0, 3,
+                // receive maximum
+                0x21, 0, 3, 0x21, 0, 3,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -530,26 +504,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_receive_maximum_zero() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 19,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 3,
-                //   receive maximum
+                // receive maximum
                 0x21, 0, 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -557,23 +530,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_receive_maximum_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //   receive maximum
-                0x21, 0,
-        };
+                // receive maximum
+                0x21, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -581,23 +553,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_maximum_packet_size_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //   maximum packet size
-                0x27, 0,
-        };
+                // maximum packet size
+                0x27, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -605,27 +576,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_maximum_packet_size_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 26,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 10,
-                //   maximum packet size
-                0x27, 0, 0, 0, 100,
-                0x27, 0, 0, 0, 100,
+                // maximum packet size
+                0x27, 0, 0, 0, 100, 0x27, 0, 0, 0, 100,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -633,26 +602,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_maximum_packet_size_zero() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 21,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 5,
-                //   maximum packet size
+                // maximum packet size
                 0x27, 0, 0, 0, 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -660,27 +628,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_topic_alias_maximum_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 22,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 6,
-                //     topic alias maximum
-                0x22, 0, 10,
-                0x22, 0, 10,
+                // topic alias maximum
+                0x22, 0, 10, 0x22, 0, 10,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -688,23 +654,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_topic_alias_maximum_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //     topic alias maximum
-                0x22, 10,
-        };
+                // topic alias maximum
+                0x22, 10,};
         decodeNullExpected(encoded);
     }
 
@@ -712,27 +677,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_response_information_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 20,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     request response information
-                0x19, 1,
-                0x19, 1,
+                // request response information
+                0x19, 1, 0x19, 1,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -740,21 +703,21 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_response_information_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 12,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 1,
-                //     request response information
+                // request response information
                 0x19,
                 // payload
         };
@@ -765,27 +728,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_response_information_3() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 20,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     request response information
-                0x19, 3,
-                0x19, 1,
+                // request response information
+                0x19, 3, 0x19, 1,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -793,26 +754,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_request_response_information_0() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 19,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //     request response information
+                // request response information
                 0x19, 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         final CONNECT connect = decodeInternal(encoded);
         assertFalse(connect.isResponseInformationRequested());
     }
@@ -821,27 +781,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_problem_information_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 20,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     request problem information
-                0x17, 0,
-                0x17, 0,
+                // request problem information
+                0x17, 0, 0x17, 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -849,27 +807,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_problem_information_3() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 20,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 4,
-                //     request problem information
-                0x17, 3,
-                0x17, 0,
+                // request problem information
+                0x17, 3, 0x17, 0,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -877,21 +833,21 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_request_problem_information_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 12,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 1,
-                //     request problem information
+                // request problem information
                 0x17,
                 // payload
         };
@@ -902,26 +858,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_request_problem_information_1() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 19,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //     request problem information
+                // request problem information
                 0x17, 1,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         final CONNECT connect = decodeInternal(encoded);
         assertTrue(connect.isProblemInformationRequested());
     }
@@ -930,27 +885,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_data_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 42,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 26,
-                //     auth data
-                0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                // auth data
+                0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -958,26 +911,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_data_no_method() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 30,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 13,
-                //     auth data
+                // auth data
                 0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -985,23 +937,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_data_malformed_data_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 23,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 12,
-                //     auth data
-                0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-        };
+                // auth data
+                0x16, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9,};
         decodeNullExpected(encoded);
     }
 
@@ -1009,23 +960,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_data_malformed_readable_bytes_1() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //     auth data
-                0x16, 0,
-        };
+                // auth data
+                0x16, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -1033,27 +983,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_method_twice() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 38,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 22,
-                //     auth method
-                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
-                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
+                // auth method
+                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5', 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 't', 'e', 's', 't'
-        };
+                // client identifier
+                0, 4, 't', 'e', 's', 't'};
         decodeNullExpected(encoded);
     }
 
@@ -1061,23 +1009,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_method_malformed_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 21,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 10,
-                //     auth method
-                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B',
-        };
+                // auth method
+                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B',};
         decodeNullExpected(encoded);
     }
 
@@ -1085,23 +1032,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_method_malformed_readable_bytes_1() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //     auth method
-                0x15, 0,
-        };
+                // auth method
+                0x15, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -1109,23 +1055,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_method_malformed_utf8() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 17,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 6,
-                //     auth method
-                0x15, 0, 3, (byte) 0x7F, 'a', 'b'
-        };
+                // auth method
+                0x15, 0, 3, (byte) 0x7F, 'a', 'b'};
         decodeNullExpected(encoded);
     }
 
@@ -1133,23 +1078,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_auth_method_malformed_utf16_surrogate() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 17,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 6,
-                //     auth method
-                0x15, 0, 3, -19, -96, 'b'
-        };
+                // auth method
+                0x15, 0, 3, -19, -96, 'b'};
         decodeNullExpected(encoded);
     }
 
@@ -1157,23 +1101,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_value_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 24,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',};
         decodeNullExpected(encoded);
     }
 
@@ -1181,23 +1124,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_key_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 24,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -1205,23 +1147,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_to_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 13,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 2,
-                //   user property
-                0x26, 0,
-        };
+                // user property
+                0x26, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -1229,23 +1170,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_key_contains_must_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 25,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -1253,23 +1193,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_key_contains_should_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 25,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -1277,23 +1216,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_value_contains_must_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 25,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF};
         decodeNullExpected(encoded);
     }
 
@@ -1301,23 +1239,22 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_connect_failed_by_property_user_property_value_contains_should_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 25,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F};
         decodeNullExpected(encoded);
     }
 
@@ -1325,63 +1262,58 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_empty_client_id_assigned() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 24,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 0,
-        };
-
+                // client identifier
+                0, 0,};
         final CONNECT connect = decodeInternal(encoded);
-
         assertEquals(44, connect.getClientIdentifier().length());
-        assertTrue(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isClientIdAssigned());
+        assertTrue(ClientConnection.of(channel).isClientIdAssigned());
     }
 
     @Test
     public void decode_with_client_id_assigned_not_allowed() {
-
         final FullConfigurationService fullConfig = new TestConfigurationBootstrap().getFullConfigurationService();
         fullConfig.securityConfiguration().setAllowServerAssignedClientId(false);
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
-        clientConnection = new ClientConnection(channel, null);
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        clientConnection = new DummyClientConnection(channel, null);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 24,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 0,
-        };
+                // client identifier
+                0, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -1389,57 +1321,53 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_with_client_id_not_assigned() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', 'u'
-        };
-
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u'};
         final CONNECT connect = decodeInternal(encoded);
-
         assertEquals("huhu", connect.getClientIdentifier());
-        assertFalse(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isClientIdAssigned());
+        assertFalse(ClientConnection.of(channel).isClientIdAssigned());
     }
 
     @Test
     public void decode_failed_wrong_identifier() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     unknown
+                // unknown
                 0x18, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', 'u'
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u'};
         decodeNullExpected(encoded);
     }
 
@@ -1447,26 +1375,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_client_id_malformed_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 27,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h'
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h'};
         decodeNullExpected(encoded);
     }
 
@@ -1474,26 +1401,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_client_id_malformed_utf_8() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', (byte) 0xFF
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h', (byte) 0xFF};
         decodeNullExpected(encoded);
     }
 
@@ -1501,26 +1427,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_client_id_malformed_utf_16_surrogate() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', -19, -96, 'u'
-        };
+                // client identifier
+                0, 4, 'h', -19, -96, 'u'};
         decodeNullExpected(encoded);
     }
 
@@ -1528,26 +1453,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_username_flag_no_username() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b1000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', 'u'
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u'};
         decodeNullExpected(encoded);
     }
 
@@ -1555,26 +1479,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_password_flag_no_password() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0100_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', 'u'
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u'};
         decodeNullExpected(encoded);
     }
 
@@ -1582,28 +1505,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_password_length_malformed() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 29,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0100_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // password
-                0,
-        };
+                0,};
         decodeNullExpected(encoded);
     }
 
@@ -1611,28 +1533,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_password_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 34,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0100_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // password
-                0, 5, 1, 2, 3, 4
-        };
+                0, 5, 1, 2, 3, 4};
         decodeNullExpected(encoded);
     }
 
@@ -1640,28 +1561,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_password_empty() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 30,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0100_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // password
-                0, 0
-        };
+                0, 0};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals(0, connect.getPassword().length);
     }
@@ -1670,28 +1590,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_username_malformed_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 29,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b1000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   username
-                0,
-        };
+                // username
+                0,};
         decodeNullExpected(encoded);
     }
 
@@ -1699,28 +1618,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_username_empty() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 30,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b1000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   username
-                0, 0
-        };
+                // username
+                0, 0};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals("", connect.getUsername());
     }
@@ -1729,28 +1647,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_failed_username_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 34,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b1000_0000,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   username
-                0, 5, 'h', 'u', 'h', 'u',
-        };
+                // username
+                0, 5, 'h', 'u', 'h', 'u',};
         decodeNullExpected(encoded);
     }
 
@@ -1758,30 +1675,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_malformed_properties_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 34,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // will properties
                 4,
-                //     message expiry interval
-                0x02, 0, 0, 0, 10,
-        };
+                // message expiry interval
+                0x02, 0, 0, 0, 10,};
         decodeNullExpected(encoded);
     }
 
@@ -1789,30 +1705,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_invalid_properties_length_remaining_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 34,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // will properties
                 6,
-                //     message expiry interval
-                0x02, 0, 0, 0, 10,
-        };
+                // message expiry interval
+                0x02, 0, 0, 0, 10,};
         decodeNullExpected(encoded);
     }
 
@@ -1820,28 +1735,27 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_invalid_properties_length_negative() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 29,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
                 // will properties
-                -1,
-        };
+                -1,};
         decodeNullExpected(encoded);
     }
 
@@ -1849,26 +1763,25 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_invalid_properties_not_enough_bytes() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 28,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
-                0, 4, 'h', 'u', 'h', 'u',
-        };
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u',};
         decodeNullExpected(encoded);
     }
 
@@ -1876,31 +1789,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_delay_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 39,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 10,
-                //     will delay interval
-                0x18, 0, 0, 0, 5,
-                0x18, 0, 0, 0, 5,
-        };
+                // will delay interval
+                0x18, 0, 0, 0, 5, 0x18, 0, 0, 0, 5,};
         decodeNullExpected(encoded);
     }
 
@@ -1908,30 +1819,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_delay_to_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 33,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 4,
-                //     will delay interval
-                0x18, 0, 0, 5,
-        };
+                // will delay interval
+                0x18, 0, 0, 5,};
         decodeNullExpected(encoded);
     }
 
@@ -1939,30 +1849,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_payload_format_indicator_illegal() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 31,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 2,
-                //   payload format indicator
-                0x01, 2
-        };
+                // payload format indicator
+                0x01, 2};
         decodeNullExpected(encoded);
     }
 
@@ -1970,30 +1879,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_payload_format_indicator_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 30,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 1,
-                //   payload format indicator
-                0x01,
-        };
+                // payload format indicator
+                0x01,};
         decodeNullExpected(encoded);
     }
 
@@ -2001,31 +1909,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_payload_format_indicator_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 33,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 4,
-                //   payload format indicator
-                0x01, 1,
-                0x01, 1
-        };
+                // payload format indicator
+                0x01, 1, 0x01, 1};
         decodeNullExpected(encoded);
     }
 
@@ -2033,31 +1939,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_message_expiry_interval_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 39,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 10,
-                //   message expiry interval
-                0x02, 0, 0, 0, 5,
-                0x02, 0, 0, 0, 5,
-        };
+                // message expiry interval
+                0x02, 0, 0, 0, 5, 0x02, 0, 0, 0, 5,};
         decodeNullExpected(encoded);
     }
 
@@ -2065,73 +1969,69 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_message_expiry_interval_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 32,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 3,
-                //   message expiry interval
-                0x02, 0, 5,
-        };
+                // message expiry interval
+                0x02, 0, 5,};
         decodeNullExpected(encoded);
     }
 
     @Test
     public void decode_property_message_expiry_interval_larger_than_config_max_value() {
-
         final FullConfigurationService fullConfig = new TestConfigurationBootstrap().getFullConfigurationService();
         fullConfig.mqttConfiguration().setMaxMessageExpiryInterval(100);
-
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
-        channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
+        channel.attr(ClientConnectionContext.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 53,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 19,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   message expiry interval
+                // message expiry interval
                 0x02, 0, 0, 0, 110,
-                //   will topic
+                // will topic
                 0, 1, 't',
-                //   will payload
-                0, 0,
-        };
+                // will payload
+                0, 0,};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals(110, connect.getWillPublish().getMessageExpiryInterval());
     }
@@ -2140,30 +2040,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_content_type_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 31,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 2,
-                //   content type
-                0x03, 5,
-        };
+                // content type
+                0x03, 5,};
         decodeNullExpected(encoded);
     }
 
@@ -2171,31 +2070,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_content_type_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   content type
-                0x03, 0, 4, 't', 'e', 'x', 't',
-                0x03, 0, 4, 't', 'e', 'x', 't',
-        };
+                // content type
+                0x03, 0, 4, 't', 'e', 'x', 't', 0x03, 0, 4, 't', 'e', 'x', 't',};
         decodeNullExpected(encoded);
     }
 
@@ -2203,31 +2100,30 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_response_topic_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 51,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 22,
-                //   response topic
-                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', 's', 'e',
-                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', 's', 'e',
-        };
+                // response topic
+                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', 's', 'e', 0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', 's',
+                'e',};
         decodeNullExpected(encoded);
     }
 
@@ -2235,30 +2131,59 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_response_topic_to_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 31,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 2,
-                //   response topic
-                0x08, 8,
-        };
+                // response topic
+                0x08, 8,};
+        decodeNullExpected(encoded);
+    }
+
+    @Test
+    public void decode_will_failed_by_property_response_topic_empty() {
+        final byte[] encoded = {
+                // fixed header
+                // type, reserved
+                0b0001_0000,
+                // remaining length
+                32,
+                // protocol name
+                0, 4, 'M', 'Q', 'T', 'T',
+                // protocol version
+                5,
+                // connect flags
+                (byte) 0b0010_1100,
+                // keep alive
+                0, 0,
+                // properties
+                11,
+                // auth method
+                0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
+                // payload
+                // client identifier
+                0, 4, 'h', 'u', 'h', 'u',
+                // will properties
+                3,
+                // response topic
+                0x08, 0, 0};
         decodeNullExpected(encoded);
     }
 
@@ -2266,30 +2191,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_response_topic_wild_card_hash() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 40,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 11,
-                //   response topic
-                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', '/', '#',
-        };
+                // response topic
+                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', '/', '#',};
         decodeNullExpected(encoded);
     }
 
@@ -2297,30 +2221,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_response_topic_wild_card_plus() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 40,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 11,
-                //   response topic
-                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', '/', '+',
-        };
+                // response topic
+                0x08, 0, 8, 'r', 'e', 's', 'p', 'o', 'n', '/', '+',};
         decodeNullExpected(encoded);
     }
 
@@ -2328,30 +2251,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_correlation_data_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 31,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 2,
-                //   correlation data
-                0x09, 0,
-        };
+                // correlation data
+                0x09, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -2359,30 +2281,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_correlation_data_length_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 33,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 4,
-                //   correlation data
-                0x09, 0, 5, 1
-        };
+                // correlation data
+                0x09, 0, 5, 1};
         decodeNullExpected(encoded);
     }
 
@@ -2390,31 +2311,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_correlation_data_moreThanOnce() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 37,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 8,
-                //   correlation data
-                0x09, 0, 1, 1,
-                0x09, 0, 1, 1,
-        };
+                // correlation data
+                0x09, 0, 1, 1, 0x09, 0, 1, 1,};
         decodeNullExpected(encoded);
     }
 
@@ -2422,30 +2341,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_value_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 42,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u',};
         decodeNullExpected(encoded);
     }
 
@@ -2453,30 +2371,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_key_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 42,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 13,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -2484,30 +2401,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_to_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 31,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 2,
-                //   user property
-                0x26, 0,
-        };
+                // user property
+                0x26, 0,};
         decodeNullExpected(encoded);
     }
 
@@ -2515,30 +2431,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_key_contains_must_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', (byte) 0xFF, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -2546,30 +2461,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_key_contains_should_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 0x7F, 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -2577,30 +2491,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_value_contains_must_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', (byte) 0xFF};
         decodeNullExpected(encoded);
     }
 
@@ -2608,30 +2521,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_property_user_property_value_contains_should_not() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 0x7F};
         decodeNullExpected(encoded);
     }
 
@@ -2639,30 +2551,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_by_unknown_property() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   unknown property
-                0x25, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // unknown property
+                0x25, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -2670,30 +2581,29 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_no_topic() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 43,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'
-        };
+                // user property
+                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e'};
         decodeNullExpected(encoded);
     }
 
@@ -2701,32 +2611,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 50,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 6, 't', 'o', 'p', 'i', 'c',
-        };
+                // will topic
+                0, 6, 't', 'o', 'p', 'i', 'c',};
         decodeNullExpected(encoded);
     }
 
@@ -2734,32 +2643,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_remaining_length() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 44,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0,
-        };
+                // will topic
+                0,};
         decodeNullExpected(encoded);
     }
 
@@ -2767,32 +2675,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_empty() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 45,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 0
-        };
+                // will topic
+                0, 0};
         decodeNullExpected(encoded);
     }
 
@@ -2800,32 +2707,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_wildcard_plus() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 46,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 1, '+'
-        };
+                // will topic
+                0, 1, '+'};
         decodeNullExpected(encoded);
     }
 
@@ -2833,32 +2739,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_wildcard_hash() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 46,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 1, '#'
-        };
+                // will topic
+                0, 1, '#'};
         decodeNullExpected(encoded);
     }
 
@@ -2866,32 +2771,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_contains_must_not_char() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 46,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 1, 0
-        };
+                // will topic
+                0, 1, 0};
         decodeNullExpected(encoded);
     }
 
@@ -2899,32 +2803,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_topic_contains_should_not_char() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 46,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 1, 0x7F
-        };
+                // will topic
+                0, 1, 0x7F};
         decodeNullExpected(encoded);
     }
 
@@ -2932,32 +2835,31 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_no_payload() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 46,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
-                0, 1, 't'
-        };
+                // will topic
+                0, 1, 't'};
         decodeNullExpected(encoded);
     }
 
@@ -2965,34 +2867,33 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_failed_payload_too_short() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 57,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
+                // will topic
                 0, 1, 't',
-                //   will payload
-                0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-        };
+                // will payload
+                0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9,};
         decodeNullExpected(encoded);
     }
 
@@ -3000,34 +2901,33 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_payload_empty() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 48,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
+                // will topic
                 0, 1, 't',
-                //   will payload
-                0, 0,
-        };
+                // will payload
+                0, 0,};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals(0, connect.getWillPublish().getPayload().length);
     }
@@ -3037,35 +2937,33 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         final int[] encode = MqttVariableByteInteger.encode(65583);
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 (byte) encode[0], (byte) encode[1], (byte) encode[2],
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
+                // will topic
                 0, 1, 't',
-                //   will payload
-                (byte) 0xFF, (byte) 0xFF
-        };
-
+                // will payload
+                (byte) 0xFF, (byte) 0xFF};
         final byte[] bytes = Bytes.concat(encoded, new byte[0xFFFF]);
         final CONNECT connect = decodeInternal(bytes);
         assertEquals(65535, connect.getWillPublish().getPayload().length);
@@ -3075,34 +2973,33 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
     public void decode_will_default_will_delay() {
         final byte[] encoded = {
                 // fixed header
-                //   type, reserved
+                // type, reserved
                 0b0001_0000,
                 // remaining length
                 48,
                 // protocol name
                 0, 4, 'M', 'Q', 'T', 'T',
-                //   protocol version
+                // protocol version
                 5,
-                //   connect flags
+                // connect flags
                 (byte) 0b0010_1100,
-                //   keep alive
+                // keep alive
                 0, 0,
-                //   properties
+                // properties
                 11,
-                //     auth method
+                // auth method
                 0x15, 0, 8, 'G', 'S', '2', '-', 'K', 'R', 'B', '5',
                 // payload
-                //   client identifier
+                // client identifier
                 0, 4, 'h', 'u', 'h', 'u',
-                //   will properties
+                // will properties
                 14,
-                //   user property
+                // user property
                 0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                //   will topic
+                // will topic
                 0, 1, 't',
-                //   will payload
-                0, 0,
-        };
+                // will payload
+                0, 0,};
         final CONNECT connect = decodeInternal(encoded);
         assertEquals(MqttWillPublish.WILL_DELAY_INTERVAL_DEFAULT, connect.getWillPublish().getDelayInterval());
     }
@@ -3111,10 +3008,8 @@ public class Mqtt5ConnectDecoderTest extends AbstractMqtt5DecoderTest {
         final ByteBuf byteBuf = channel.alloc().buffer();
         byteBuf.writeBytes(encoded);
         channel.writeInbound(byteBuf);
-
         final CONNECT publishInternal = channel.readInbound();
         assertNotNull(publishInternal);
-
         return publishInternal;
     }
 }

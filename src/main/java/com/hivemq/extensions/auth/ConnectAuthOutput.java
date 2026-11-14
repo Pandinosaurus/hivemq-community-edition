@@ -42,8 +42,8 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
 
     private @NotNull Mqtt5ConnAckReasonCode reasonCode = Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
     private @NotNull Mqtt5ConnAckReasonCode timeoutReasonCode = Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
+    private @Nullable Boolean clearPasswordAfterAuth;
     private final boolean supportsEnhancedAuth;
-
     public ConnectAuthOutput(
             final @NotNull PluginOutPutAsyncer asyncer,
             final boolean validateUTF8,
@@ -51,7 +51,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
             final @NotNull ModifiableClientSettingsImpl clientSettings,
             final int timeout,
             final boolean supportsEnhancedAuth) {
-
         super(asyncer, validateUTF8, defaultPermissions, clientSettings, timeout);
         this.supportsEnhancedAuth = supportsEnhancedAuth;
         setDefaultReasonStrings();
@@ -66,6 +65,11 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
     private void setDefaultReasonStrings() {
         reasonString = ReasonStrings.AUTH_FAILED;
         timeoutReasonString = ReasonStrings.AUTH_FAILED_EXTENSION_TIMEOUT;
+    }
+
+    public void authenticateSuccessfully(final boolean clearPasswordAfterAuth) {
+        this.clearPasswordAfterAuth = clearPasswordAfterAuth;
+        super.authenticateSuccessfully();
     }
 
     @Override
@@ -116,7 +120,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
     public void failAuthentication(
             final @NotNull DisconnectedReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         failAuthentication(reasonString);
         this.reasonCode = connAckReasonCode;
@@ -126,7 +129,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @NotNull ConnackReasonCode reasonCode) {
-
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback);
         timeoutReasonCode = connAckReasonCode;
@@ -138,7 +140,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
             final @NotNull TimeoutFallback fallback,
             final @NotNull ConnackReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback, reasonString);
         timeoutReasonCode = connAckReasonCode;
@@ -150,7 +151,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
             final @NotNull DisconnectedReasonCode reasonCode) {
-
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback);
         timeoutReasonCode = connAckReasonCode;
@@ -163,7 +163,6 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
             final @NotNull TimeoutFallback fallback,
             final @NotNull DisconnectedReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         final Async<EnhancedAuthOutput> async = async(timeout, fallback, reasonString);
         timeoutReasonCode = connAckReasonCode;
@@ -194,17 +193,19 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
         return reasonCode;
     }
 
+    public @Nullable Boolean isClearPasswordAfterAuth() {
+        return clearPasswordAfterAuth;
+    }
+
     private static @NotNull Mqtt5ConnAckReasonCode checkReasonCode(final @NotNull ConnackReasonCode reasonCode) {
         checkNotNull(reasonCode, "CONNACK reason code must never be null");
-        checkArgument(
-                reasonCode != ConnackReasonCode.SUCCESS,
+        checkArgument(reasonCode != ConnackReasonCode.SUCCESS,
                 "CONNACK reason code must not be SUCCESS for failed authentication");
         return Mqtt5ConnAckReasonCode.from(reasonCode);
     }
 
     private static @NotNull Mqtt5ConnAckReasonCode checkReasonCode(
             final @NotNull DisconnectedReasonCode disconnectedReasonCode) {
-
         Preconditions.checkNotNull(disconnectedReasonCode, "Disconnected reason code must never be null");
         final Mqtt5ConnAckReasonCode connackReasonCode = Mqtt5ConnAckReasonCode.from(disconnectedReasonCode);
         Preconditions.checkArgument(connackReasonCode != null,

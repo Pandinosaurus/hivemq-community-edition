@@ -24,12 +24,12 @@ import java.util.Objects;
  * @author Georg Held
  */
 public class HiveMQExtensionEvent {
+
     private final Change change;
     private final String extensionId;
     private final int priority;
     private final Path extensionFolder;
     private final boolean embedded;
-
     public HiveMQExtensionEvent(
             @NotNull final Change change,
             @NotNull final String extensionId,
@@ -43,13 +43,11 @@ public class HiveMQExtensionEvent {
         this.embedded = embedded;
     }
 
-    @NotNull
-    public Change getChange() {
+    @NotNull public Change getChange() {
         return change;
     }
 
-    @NotNull
-    public String getExtensionId() {
+    @NotNull public String getExtensionId() {
         return extensionId;
     }
 
@@ -57,33 +55,34 @@ public class HiveMQExtensionEvent {
         return priority;
     }
 
-    @NotNull
-    public Path getExtensionFolder() {
+    @NotNull public Path getExtensionFolder() {
         return extensionFolder;
     }
 
     public boolean isEmbedded() {
         return embedded;
     }
-
-    public enum Change {ENABLE, DISABLE}
-
+    public enum Change {
+        ENABLE,
+        DISABLE
+    }
     @Override
     public String toString() {
-        return "HiveMQExtensionEvent{" +
-                "change=" + change +
-                ", extensionId='" + extensionId + '\'' +
-                ", priority=" + priority +
-                ", extensionFolder=" + extensionFolder +
-                '}';
+        return "HiveMQExtensionEvent{" + "change=" + change + ", extensionId='" + extensionId + '\'' + ", priority=" +
+                priority + ", extensionFolder=" + extensionFolder + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         HiveMQExtensionEvent that = (HiveMQExtensionEvent) o;
-        return priority == that.priority && change == that.change && Objects.equals(extensionId, that.extensionId) && Objects.equals(extensionFolder, that.extensionFolder);
+        return priority == that.priority && change == that.change && Objects.equals(extensionId, that.extensionId) &&
+                Objects.equals(extensionFolder, that.extensionFolder);
     }
 
     @Override

@@ -20,11 +20,13 @@ import com.hivemq.bootstrap.ioc.SingletonModule;
 import com.hivemq.bootstrap.ioc.lazysingleton.LazySingleton;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl;
-import com.hivemq.persistence.clientsession.*;
+import com.hivemq.persistence.clientsession.ClientSessionPersistence;
+import com.hivemq.persistence.clientsession.ClientSessionPersistenceProvider;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistenceProvider;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import com.hivemq.persistence.ioc.provider.local.IncomingMessageFlowPersistenceLocalProvider;
@@ -43,7 +45,6 @@ class LocalPersistenceModule extends SingletonModule<Class<LocalPersistenceModul
 
     private final @NotNull Injector persistenceInjector;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
-
     public LocalPersistenceModule(
             @NotNull final Injector persistenceInjector,
             @NotNull final PersistenceConfigurationService persistenceConfigurationService) {
@@ -54,46 +55,38 @@ class LocalPersistenceModule extends SingletonModule<Class<LocalPersistenceModul
 
     @Override
     protected void configure() {
-
         /* Local */
         if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.FILE) {
             install(new LocalPersistenceFileModule(persistenceInjector));
         } else {
             install(new LocalPersistenceMemoryModule(persistenceInjector));
         }
-
         /* Retained Message */
         bind(RetainedMessagePersistence.class).toProvider(RetainedMessagePersistenceProvider.class)
                 .in(LazySingleton.class);
-
         /* Connection */
         bind(ConnectionPersistence.class).to(ConnectionPersistenceImpl.class).in(Singleton.class);
-
         /* Client Session */
         bind(ClientSessionPersistence.class).toProvider(ClientSessionPersistenceProvider.class).in(LazySingleton.class);
-
         /* Client Session Sub */
-        bind(SharedSubscriptionService.class).to(SharedSubscriptionServiceImpl.class).in(LazySingleton.class);
         bind(ClientSessionSubscriptionPersistence.class).toProvider(ClientSessionSubscriptionPersistenceProvider.class)
                 .in(LazySingleton.class);
-
         /* QoS Handling */
         bind(IncomingMessageFlowPersistence.class).to(IncomingMessageFlowPersistenceImpl.class);
         bind(IncomingMessageFlowLocalPersistence.class).toProvider(IncomingMessageFlowPersistenceLocalProvider.class)
                 .in(LazySingleton.class);
-
         /* Client Queue */
         bind(ClientQueuePersistence.class).to(ClientQueuePersistenceImpl.class).in(LazySingleton.class);
-
         /* Payload Persistence */
         if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
-            bind(PublishPayloadPersistence.class).toInstance(persistenceInjector.getInstance(PublishPayloadNoopPersistenceImpl.class));
+            bind(PublishPayloadPersistence.class)
+                    .toInstance(persistenceInjector.getInstance(PublishPayloadNoopPersistenceImpl.class));
         } else {
-            bind(PublishPayloadPersistence.class).toInstance(persistenceInjector.getInstance(PublishPayloadPersistence.class));
-            bind(PublishPayloadPersistenceImpl.class).toInstance(persistenceInjector.getInstance(
-                    PublishPayloadPersistenceImpl.class));
+            bind(PublishPayloadPersistence.class)
+                    .toInstance(persistenceInjector.getInstance(PublishPayloadPersistence.class));
+            bind(PublishPayloadPersistenceImpl.class)
+                    .toInstance(persistenceInjector.getInstance(PublishPayloadPersistenceImpl.class));
         }
-
         /* Startup */
         bind(PersistenceStartup.class).toInstance(persistenceInjector.getInstance(PersistenceStartup.class));
     }

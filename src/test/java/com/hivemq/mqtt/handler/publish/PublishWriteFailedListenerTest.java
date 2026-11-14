@@ -16,16 +16,16 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.EncoderException;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.nio.channels.ClosedChannelException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,22 +33,17 @@ import static org.mockito.Mockito.when;
  */
 public class PublishWriteFailedListenerTest {
 
-    @Mock
-    ChannelFuture channelFuture;
-
+    private final @NotNull ChannelFuture channelFuture = mock();
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
     }
 
     @Test
     public void test_failed() throws Exception {
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
         when(channelFuture.cause()).thenReturn(new EncoderException());
-
         final PublishWriteFailedListener promiseListener = new PublishWriteFailedListener(statusFuture);
         promiseListener.operationComplete(channelFuture);
-
         assertEquals(PublishStatus.FAILED, statusFuture.get());
     }
 
@@ -58,10 +53,8 @@ public class PublishWriteFailedListenerTest {
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
         storedInPersistenceFuture.set(null);
         when(channelFuture.cause()).thenReturn(new ClosedChannelException());
-
         final PublishWriteFailedListener promiseListener = new PublishWriteFailedListener(statusFuture);
         promiseListener.operationComplete(channelFuture);
-
         assertEquals(PublishStatus.NOT_CONNECTED, statusFuture.get());
     }
 }

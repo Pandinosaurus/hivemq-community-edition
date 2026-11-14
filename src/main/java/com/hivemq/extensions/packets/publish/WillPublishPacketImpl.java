@@ -31,13 +31,12 @@ import java.util.Objects;
 /**
  * @author Florian Limpöck
  * @author Silvio Giebl
- * @since 4.0.0
+ * @since  4.0.0
  */
 @Immutable
 public class WillPublishPacketImpl extends PublishPacketImpl implements WillPublishPacket {
 
     final long willDelay;
-
     public WillPublishPacketImpl(
             final @NotNull String topic,
             final @NotNull Qos qos,
@@ -51,9 +50,7 @@ public class WillPublishPacketImpl extends PublishPacketImpl implements WillPubl
             final @NotNull UserPropertiesImpl userProperties,
             final long willDelay,
             final long timestamp) {
-
-        super(
-                topic,
+        super(topic,
                 qos,
                 qos,
                 0,
@@ -72,8 +69,7 @@ public class WillPublishPacketImpl extends PublishPacketImpl implements WillPubl
     }
 
     public WillPublishPacketImpl(final @NotNull MqttWillPublish willPublish, final long timestamp) {
-        this(
-                willPublish.getTopic(),
+        this(willPublish.getTopic(),
                 willPublish.getQos().toQos(),
                 (willPublish.getPayload() == null) ? null : ByteBuffer.wrap(willPublish.getPayload()),
                 willPublish.isRetain(),

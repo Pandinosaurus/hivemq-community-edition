@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.iteration;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -25,7 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AllItemsItemCallbackTest {
 
@@ -33,14 +34,11 @@ public class AllItemsItemCallbackTest {
     public void iterateAllItems() throws ExecutionException, InterruptedException {
         final List<String> input = Arrays.asList("1", "2", "3");
         final List<String> output = new ArrayList<>();
-
         final AllItemsItemCallback<String> stringCallback =
                 new AllItemsItemCallback<>(MoreExecutors.directExecutor(), (ctx, item) -> {
                     output.add(item);
                 });
-
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-
         assertTrue(future.get());
         assertEquals(input, output);
     }
@@ -49,15 +47,12 @@ public class AllItemsItemCallbackTest {
     public void contextCancelled() throws ExecutionException, InterruptedException {
         final List<String> input = Arrays.asList("1", "2", "3");
         final List<String> output = new ArrayList<>();
-
         final AllItemsItemCallback<String> stringCallback =
                 new AllItemsItemCallback<>(MoreExecutors.directExecutor(), (ctx, item) -> {
                     ctx.abortIteration();
                     output.add(item);
                 });
-
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-
         assertFalse(future.get());
         assertEquals(1, output.size());
     }
@@ -65,12 +60,10 @@ public class AllItemsItemCallbackTest {
     @Test(timeout = 10000, expected = RuntimeException.class)
     public void iterateExceptionally() throws Throwable {
         final List<String> input = Arrays.asList("1", "2", "3");
-
         final AllItemsItemCallback<String> stringCallback =
                 new AllItemsItemCallback<>(MoreExecutors.directExecutor(), (ctx, item) -> {
                     throw new RuntimeException("test-exception");
                 });
-
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
         try {
             future.get();
@@ -82,12 +75,10 @@ public class AllItemsItemCallbackTest {
     @Test(timeout = 10000, expected = Error.class)
     public void iterateError() throws Throwable {
         final List<String> input = Arrays.asList("1", "2", "3");
-
         final AllItemsItemCallback<String> stringCallback =
                 new AllItemsItemCallback<>(MoreExecutors.directExecutor(), (ctx, item) -> {
                     throw new Error("test-exception");
                 });
-
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
         try {
             future.get();

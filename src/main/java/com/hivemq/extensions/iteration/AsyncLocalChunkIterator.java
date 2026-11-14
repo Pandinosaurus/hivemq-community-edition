@@ -38,18 +38,15 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
     private final @NotNull ResultBuffer<V> resultBuffer;
     private final @NotNull ItemCallback<V> itemCallback;
     private final @NotNull ExecutorService executorService;
-
     private final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
     private final CompletableFuture<Void> fetchFuture = new CompletableFuture<>();
-
     private final AtomicBoolean iterating = new AtomicBoolean(false);
     private final AtomicBoolean aborted = new AtomicBoolean(false);
-
     private final Lock lock = new ReentrantLock();
-
-    AsyncLocalChunkIterator(@NotNull final FetchCallback<V> fetchCallback,
-                            @NotNull final ItemCallback<V> itemCallback,
-                            @NotNull final ExecutorService executorService) {
+    AsyncLocalChunkIterator(
+            @NotNull final FetchCallback<V> fetchCallback,
+            @NotNull final ItemCallback<V> itemCallback,
+            @NotNull final ExecutorService executorService) {
         this.fetchCallback = fetchCallback;
         this.resultBuffer = new ResultBuffer<>((cursor, resultBuffer) -> {
             fetchNextChunk(cursor);
@@ -65,34 +62,28 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
     private void fetchNextChunk(@Nullable final ChunkCursor cursor) {
         final ListenableFuture<ChunkResult<V>> singleFuture = fetchCallback.fetchNextResults(cursor);
-        Futures.addCallback(
-                singleFuture, new ChunkResultFutureCallback<V>(resultBuffer, this, lock), executorService);
+        Futures.addCallback(singleFuture, new ChunkResultFutureCallback<V>(resultBuffer, this, lock), executorService);
     }
 
     private synchronized void triggerIteration() {
-
         if (!iterating.compareAndSet(false, true)) {
-            //protect from late arrivals
+            // protect from late arrivals
             return;
         }
-
         if (aborted.get()) {
             return;
         }
-
         // read from buffer
         final Collection<V> items = resultBuffer.getNextChunk();
-
         if (items == null) {
             if (fetchFuture.isDone()) {
-                //no results available and all done
+                // no results available and all done
                 resultBuffer.clean();
                 finishedFuture.complete(null);
             }
             iterating.set(false);
             return;
         }
-
         callCallback(items);
     }
 
@@ -104,13 +95,11 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         Futures.addCallback(itemFuture, new ChunkCallback<V>(this, resultBuffer, lock), executorService);
     }
 
-    @NotNull
-    public CompletableFuture<Void> getFinishedFuture() {
+    @NotNull public CompletableFuture<Void> getFinishedFuture() {
         return finishedFuture;
     }
 
-    @NotNull
-    @VisibleForTesting
+    @NotNull @VisibleForTesting
     CompletableFuture<Void> getFetchFuture() {
         return fetchFuture;
     }
@@ -121,16 +110,15 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         fetchFuture.completeExceptionally(t);
         finishedFuture.completeExceptionally(t);
     }
-
     private static class ChunkResultFutureCallback<V> implements FutureCallback<ChunkResult<V>> {
 
         private final @NotNull ResultBuffer<V> resultBuffer;
         private final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator;
         private final @NotNull Lock lock;
-
-        ChunkResultFutureCallback(@NotNull final ResultBuffer<V> resultBuffer,
-                                  @NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                                  @NotNull final Lock lock) {
+        ChunkResultFutureCallback(
+                @NotNull final ResultBuffer<V> resultBuffer,
+                @NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                @NotNull final Lock lock) {
             this.resultBuffer = resultBuffer;
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.lock = lock;
@@ -138,33 +126,27 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
         @Override
         public void onSuccess(final ChunkResult<V> result) {
-
             if (asyncLocalChunkIterator.aborted.get()) {
-                //the current iteration has been aborted, ignore results
+                // the current iteration has been aborted, ignore results
                 return;
             }
-
             if (result == null) {
                 asyncLocalChunkIterator.abortExceptionally(new NullPointerException("chunk result cannot be null"));
                 return;
             }
-
             lock.lock();
             try {
-                //add chunk to buffer
+                // add chunk to buffer
                 if (!result.getResults().isEmpty()) {
                     resultBuffer.addChunk(result);
                 }
-
                 if (result.isFinished()) {
                     asyncLocalChunkIterator.getFetchFuture().complete(null);
                 }
             } finally {
                 lock.unlock();
             }
-
             asyncLocalChunkIterator.triggerIteration();
-
         }
 
         @Override
@@ -178,10 +160,10 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         private final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator;
         private final @NotNull ResultBuffer<V> resultBuffer;
         private final @NotNull Lock lock;
-
-        private ChunkCallback(@NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                              @NotNull final ResultBuffer<V> resultBuffer,
-                              @NotNull final Lock lock) {
+        private ChunkCallback(
+                @NotNull final AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                @NotNull final ResultBuffer<V> resultBuffer,
+                @NotNull final Lock lock) {
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.resultBuffer = resultBuffer;
             this.lock = lock;
@@ -193,23 +175,20 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
                 asyncLocalChunkIterator.abortExceptionally(new NullPointerException("callback result cannot be null"));
                 return;
             }
-
             if (!result) {
-                //iteration aborted
+                // iteration aborted
                 asyncLocalChunkIterator.aborted.set(true);
                 resultBuffer.clean();
                 asyncLocalChunkIterator.getFinishedFuture().complete(null);
                 return;
             }
-
             lock.lock();
             try {
                 // read from buffer
                 final Collection<V> items = resultBuffer.getNextChunk();
-
                 if (items == null) {
                     asyncLocalChunkIterator.iterating.set(false);
-                    //no results available anymore, but all chunks done
+                    // no results available anymore, but all chunks done
                     if (asyncLocalChunkIterator.getFetchFuture().isDone()) {
                         resultBuffer.clean();
                         asyncLocalChunkIterator.getFinishedFuture().complete(null);
@@ -217,11 +196,9 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
                     return;
                 }
                 asyncLocalChunkIterator.callCallback(items);
-
             } finally {
                 lock.unlock();
             }
-
         }
 
         @Override

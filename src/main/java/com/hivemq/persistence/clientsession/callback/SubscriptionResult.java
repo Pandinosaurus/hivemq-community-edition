@@ -24,26 +24,20 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 @Immutable
 public class SubscriptionResult {
 
-    @NotNull
-    private final Topic topic;
+    @NotNull private final Topic topic;
     private final boolean subscriptionAlreadyExisted;
-    @Nullable
-    private final String shareName;
-
-
-    public SubscriptionResult(@NotNull final Topic topic,
-                              final boolean subscriptionAlreadyExisted,
-                              @Nullable final String shareName) {
-
+    @Nullable private final String shareName;
+    public SubscriptionResult(
+            @NotNull final Topic topic,
+            final boolean subscriptionAlreadyExisted,
+            @Nullable final String shareName) {
         Preconditions.checkNotNull(topic, "Topic cannot be null");
-
         this.topic = topic;
         this.subscriptionAlreadyExisted = subscriptionAlreadyExisted;
         this.shareName = shareName;
     }
 
-    @NotNull
-    public Topic getTopic() {
+    @NotNull public Topic getTopic() {
         return topic;
     }
 
@@ -51,8 +45,7 @@ public class SubscriptionResult {
         return subscriptionAlreadyExisted;
     }
 
-    @Nullable
-    public String getShareName() {
+    @Nullable public String getShareName() {
         return shareName;
     }
 }

@@ -29,13 +29,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @Singleton
-public class Mqtt5UnsubackEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithReasonStringEncoder<UNSUBACK> {
+public class Mqtt5UnsubackEncoder
+        extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithReasonStringEncoder<UNSUBACK> {
 
     private static final int FIXED_HEADER = MessageType.UNSUBACK.ordinal() << 4;
-
     public Mqtt5UnsubackEncoder(
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull SecurityConfigurationService securityConfigurationService) {

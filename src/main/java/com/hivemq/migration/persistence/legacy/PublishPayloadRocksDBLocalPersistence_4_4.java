@@ -25,10 +25,8 @@ import com.hivemq.persistence.local.rocksdb.RocksDBLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadRocksDBLocalPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
-import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
-import org.rocksdb.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,18 +38,18 @@ import static com.hivemq.migration.persistence.legacy.serializer.PublishPayloadR
 /**
  * @author Florian Limpöck
  * @author Lukas Brandl
- * @since 4.5.0
+ * @since  4.5.0
  */
 @LazySingleton
-public class PublishPayloadRocksDBLocalPersistence_4_4 extends RocksDBLocalPersistence implements PublishPayloadLocalPersistence_4_4 {
+public class PublishPayloadRocksDBLocalPersistence_4_4 extends RocksDBLocalPersistence
+        implements PublishPayloadLocalPersistence_4_4 {
 
     private static final Logger log = LoggerFactory.getLogger(PublishPayloadRocksDBLocalPersistence.class);
-
     public static final String PERSISTENCE_VERSION = "040000_R";
-
     @Inject
-    public PublishPayloadRocksDBLocalPersistence_4_4(final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
-                                                     final @NotNull PersistenceStartup persistenceStartup) {
+    public PublishPayloadRocksDBLocalPersistence_4_4(
+            final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
+            final @NotNull PersistenceStartup persistenceStartup) {
         super(localPersistenceFileUtil,
                 persistenceStartup,
                 InternalConfigurations.PAYLOAD_PERSISTENCE_BUCKET_COUNT.get(),
@@ -61,18 +59,15 @@ public class PublishPayloadRocksDBLocalPersistence_4_4 extends RocksDBLocalPersi
                 false);
     }
 
-    @NotNull
-    protected String getName() {
+    @NotNull protected String getName() {
         return PublishPayloadLocalPersistence.PERSISTENCE_NAME;
     }
 
-    @NotNull
-    protected String getVersion() {
+    @NotNull protected String getVersion() {
         return PERSISTENCE_VERSION;
     }
 
-    @NotNull
-    protected Logger getLogger() {
+    @NotNull protected Logger getLogger() {
         return log;
     }
 
@@ -83,11 +78,10 @@ public class PublishPayloadRocksDBLocalPersistence_4_4 extends RocksDBLocalPersi
 
     @Override
     protected void init() {
-        //noop
+        // noop
     }
 
-    @Nullable
-    public byte[] get(final long id) {
+    @Nullable public byte[] get(final long id) {
         final RocksDB bucket = getRocksDb(Long.toString(id));
         try {
             return bucket.get(serializeKey(id));

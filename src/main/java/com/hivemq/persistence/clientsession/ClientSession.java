@@ -30,7 +30,6 @@ public class ClientSession implements Sizable {
     private long sessionExpiryIntervalSec;
     private int inMemorySize = SIZE_NOT_CALCULATED;
     private @Nullable ClientSessionWill willPublish;
-
     public ClientSession(final boolean connected, final long sessionExpiryInterval) {
         this(connected, sessionExpiryInterval, null, null);
     }
@@ -40,11 +39,8 @@ public class ClientSession implements Sizable {
             final long sessionExpiryIntervalSec,
             final @Nullable ClientSessionWill willPublish,
             final @Nullable Long queueLimit) {
-
-        Preconditions.checkArgument(
-                sessionExpiryIntervalSec >= SESSION_EXPIRE_ON_DISCONNECT,
+        Preconditions.checkArgument(sessionExpiryIntervalSec >= SESSION_EXPIRE_ON_DISCONNECT,
                 "Session expiry interval must never be less than zero");
-
         this.connected = connected;
         this.sessionExpiryIntervalSec = sessionExpiryIntervalSec;
         this.willPublish = willPublish;
@@ -80,8 +76,7 @@ public class ClientSession implements Sizable {
     }
 
     public @NotNull ClientSession deepCopy() {
-        return new ClientSession(
-                connected,
+        return new ClientSession(connected,
                 sessionExpiryIntervalSec,
                 willPublish != null ? willPublish.deepCopy() : null,
                 queueLimit);
@@ -93,16 +88,13 @@ public class ClientSession implements Sizable {
 
     @Override
     public int getEstimatedSize() {
-
         if (inMemorySize != SIZE_NOT_CALCULATED) {
             return inMemorySize;
         }
-
         int size = ObjectMemoryEstimation.objectShellSize();
         size += ObjectMemoryEstimation.intSize(); // inMemorySize
         size += ObjectMemoryEstimation.booleanSize(); // connected
         size += ObjectMemoryEstimation.longSize(); // sessionExpiryInterval
-
         size += ObjectMemoryEstimation.objectRefSize(); // reference to will
         if (willPublish != null) {
             size += willPublish.getEstimatedSize();
@@ -110,9 +102,7 @@ public class ClientSession implements Sizable {
         if (queueLimit != null) {
             size += ObjectMemoryEstimation.longSize();
         }
-
         inMemorySize = size;
-
         return inMemorySize;
     }
 
@@ -120,7 +110,6 @@ public class ClientSession implements Sizable {
         if (connected) {
             return false;
         }
-
         return timeSinceDisconnectMsec / 1000 >= sessionExpiryIntervalSec;
     }
 }

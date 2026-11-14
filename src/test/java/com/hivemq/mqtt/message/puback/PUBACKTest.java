@@ -22,7 +22,9 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 
 /**
  * @author Yannick Weber
@@ -34,9 +36,7 @@ public class PUBACKTest {
     public void test_constructMqtt3() {
         final PUBACK origin = new PUBACK(1);
         final PubackPacketImpl packet = new PubackPacketImpl(origin);
-
         final PUBACK merged = PUBACK.from(packet);
-
         assertNotNull(merged);
         assertNotSame(origin, merged);
         assertPUBACKequals(origin, merged);
@@ -44,12 +44,12 @@ public class PUBACKTest {
 
     @Test
     public void test_constructMqtt5() {
-        final PUBACK origin = new PUBACK(
-                1, Mqtt5PubAckReasonCode.NOT_AUTHORIZED, "NotAuthorized", Mqtt5UserProperties.NO_USER_PROPERTIES);
+        final PUBACK origin = new PUBACK(1,
+                Mqtt5PubAckReasonCode.NOT_AUTHORIZED,
+                "NotAuthorized",
+                Mqtt5UserProperties.NO_USER_PROPERTIES);
         final PubackPacketImpl packet = new PubackPacketImpl(origin);
-
         final PUBACK merged = PUBACK.from(packet);
-
         assertNotNull(merged);
         assertNotSame(origin, merged);
         assertPUBACKequals(origin, merged);
@@ -57,17 +57,12 @@ public class PUBACKTest {
 
     @Test
     public void test_constructMqtt5_withUserProperties() {
-        final Mqtt5UserProperties userProperties = Mqtt5UserProperties.of(
-                new MqttUserProperty("user1", "value1"),
+        final Mqtt5UserProperties userProperties = Mqtt5UserProperties.of(new MqttUserProperty("user1", "value1"),
                 new MqttUserProperty("user2", "value2"),
                 new MqttUserProperty("user3", "value3"));
-
-        final PUBACK origin =
-                new PUBACK(1, Mqtt5PubAckReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
+        final PUBACK origin = new PUBACK(1, Mqtt5PubAckReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
         final PubackPacketImpl packet = new PubackPacketImpl(origin);
-
         final PUBACK merged = PUBACK.from(packet);
-
         assertNotNull(merged);
         assertNotSame(origin, merged);
         assertPUBACKequals(origin, merged);

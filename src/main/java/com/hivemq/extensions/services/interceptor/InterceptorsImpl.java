@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.interceptor;
 
 import com.google.common.collect.ImmutableMap;
@@ -39,23 +38,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @LazySingleton
 public class InterceptorsImpl implements Interceptors {
 
-    @NotNull
-    private final Map<@NotNull String, @NotNull ConnectInboundInterceptorProvider> connectInboundInterceptorProviderMap;
-
-    @NotNull
-    private final Map<@NotNull String, @NotNull ConnackOutboundInterceptorProvider>
-            connackOutboundInterceptorProviderMap;
-
-    @NotNull
-    private final HiveMQExtensions hiveMQExtensions;
-
-    @NotNull
-    private final ReadWriteLock readWriteLock;
-
+    @NotNull private final Map<@NotNull String, @NotNull ConnectInboundInterceptorProvider> connectInboundInterceptorProviderMap;
+    @NotNull private final Map<@NotNull String,
+            @NotNull ConnackOutboundInterceptorProvider> connackOutboundInterceptorProviderMap;
+    @NotNull private final HiveMQExtensions hiveMQExtensions;
+    @NotNull private final ReadWriteLock readWriteLock;
     @Inject
     public InterceptorsImpl(@NotNull final HiveMQExtensions hiveMQExtensions) {
         this.hiveMQExtensions = hiveMQExtensions;
-        final ExtensionPriorityComparator extensionPriorityComparator = new ExtensionPriorityComparator(hiveMQExtensions);
+        final ExtensionPriorityComparator extensionPriorityComparator =
+                new ExtensionPriorityComparator(hiveMQExtensions);
         this.connectInboundInterceptorProviderMap = new TreeMap<>(extensionPriorityComparator);
         this.connackOutboundInterceptorProviderMap = new TreeMap<>(extensionPriorityComparator);
         this.readWriteLock = new ReentrantReadWriteLock();
@@ -65,35 +57,26 @@ public class InterceptorsImpl implements Interceptors {
                 removeInterceptors(hiveMQExtension.getId());
             }
         });
-
     }
 
     @Override
     public void addConnectInboundInterceptorProvider(@NotNull final ConnectInboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
-
         writeLock.lock();
-
         try {
-
             final ClassLoader pluginClassloader = provider.getClass().getClassLoader();
-
             final HiveMQExtension plugin = hiveMQExtensions.getExtensionForClassloader(pluginClassloader);
-
             if (plugin != null) {
                 connectInboundInterceptorProviderMap.put(plugin.getId(), provider);
             }
-
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    @NotNull
-    public ImmutableMap<String, ConnectInboundInterceptorProvider> connectInboundInterceptorProviders() {
+    @NotNull public ImmutableMap<String, ConnectInboundInterceptorProvider> connectInboundInterceptorProviders() {
         final Lock readLock = readWriteLock.readLock();
-
         readLock.lock();
         try {
             return ImmutableMap.copyOf(connectInboundInterceptorProviderMap);
@@ -105,19 +88,13 @@ public class InterceptorsImpl implements Interceptors {
     @Override
     public void addConnackOutboundInterceptorProvider(final @NotNull ConnackOutboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
-
         writeLock.lock();
-
         try {
-
             final ClassLoader pluginClassloader = provider.getClass().getClassLoader();
-
             final HiveMQExtension plugin = hiveMQExtensions.getExtensionForClassloader(pluginClassloader);
-
             if (plugin != null) {
                 connackOutboundInterceptorProviderMap.put(plugin.getId(), provider);
             }
-
         } finally {
             writeLock.unlock();
         }
@@ -126,7 +103,6 @@ public class InterceptorsImpl implements Interceptors {
     @Override
     public @NotNull ImmutableMap<String, ConnackOutboundInterceptorProvider> connackOutboundInterceptorProviders() {
         final Lock readLock = readWriteLock.readLock();
-
         readLock.lock();
         try {
             return ImmutableMap.copyOf(connackOutboundInterceptorProviderMap);
@@ -136,9 +112,7 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     private void removeInterceptors(@NotNull final String pluginId) {
-
         final Lock writeLock = readWriteLock.writeLock();
-
         writeLock.lock();
         try {
             connectInboundInterceptorProviderMap.remove(pluginId);

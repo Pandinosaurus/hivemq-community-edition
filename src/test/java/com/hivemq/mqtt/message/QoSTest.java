@@ -18,7 +18,9 @@ package com.hivemq.mqtt.message;
 import org.junit.Test;
 import util.EnumTestUtil;
 
-import static com.hivemq.mqtt.message.QoS.*;
+import static com.hivemq.mqtt.message.QoS.AT_LEAST_ONCE;
+import static com.hivemq.mqtt.message.QoS.AT_MOST_ONCE;
+import static com.hivemq.mqtt.message.QoS.EXACTLY_ONCE;
 import static org.junit.Assert.assertEquals;
 
 public class QoSTest {
@@ -31,7 +33,6 @@ public class QoSTest {
     @Test
     public void getMinQoS_whenBothQosEqual_thenResultIsEitherOfInputs() {
         final QoS result = QoS.getMinQoS(AT_LEAST_ONCE, AT_LEAST_ONCE);
-
         assertEquals(AT_LEAST_ONCE, result);
     }
 
@@ -39,10 +40,8 @@ public class QoSTest {
     public void getMinQoS_whenTheSecondQosIsSmaller_thenTheSecondQosIsReturned() {
         final QoS result = QoS.getMinQoS(AT_LEAST_ONCE, AT_MOST_ONCE);
         assertEquals(AT_MOST_ONCE, result);
-
         final QoS result2 = QoS.getMinQoS(EXACTLY_ONCE, AT_LEAST_ONCE);
         assertEquals(AT_LEAST_ONCE, result2);
-
         final QoS result3 = QoS.getMinQoS(EXACTLY_ONCE, AT_MOST_ONCE);
         assertEquals(AT_MOST_ONCE, result3);
     }
@@ -51,10 +50,8 @@ public class QoSTest {
     public void getMinQoS_whenTheFirstQosIsSmaller_thenTheFirstQosIsReturned() {
         final QoS result = QoS.getMinQoS(AT_MOST_ONCE, AT_LEAST_ONCE);
         assertEquals(AT_MOST_ONCE, result);
-
         final QoS result2 = QoS.getMinQoS(AT_LEAST_ONCE, EXACTLY_ONCE);
         assertEquals(AT_LEAST_ONCE, result2);
-
         final QoS result3 = QoS.getMinQoS(AT_MOST_ONCE, EXACTLY_ONCE);
         assertEquals(AT_MOST_ONCE, result3);
     }

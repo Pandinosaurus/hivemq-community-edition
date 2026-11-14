@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.auth;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -37,10 +36,8 @@ public class WrappedAuthenticatorProviderTest {
     private final @NotNull SimpleAuthenticator simpleAuthenticator = mock(SimpleAuthenticator.class);
     private final @NotNull Authenticator authenticator = mock(Authenticator.class);
     private final @NotNull AuthenticatorProviderInput input = mock(AuthenticatorProviderInput.class);
-
     private final @NotNull IsolatedExtensionClassloader isolatedExtensionClassloader =
             IsolatedExtensionClassloaderUtil.buildClassLoader();
-
     @Test(timeout = 5000)
     public void test_null_provider_returns_null() {
         final WrappedAuthenticatorProvider wrapped =

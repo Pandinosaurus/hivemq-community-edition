@@ -15,15 +15,19 @@
  */
 package com.hivemq.bootstrap.netty;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.bootstrap.netty.initializer.*;
+import com.hivemq.bootstrap.netty.initializer.AbstractChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TcpChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TlsTcpChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.TlsWebsocketChannelInitializer;
+import com.hivemq.bootstrap.netty.initializer.WebsocketChannelInitializer;
 import com.hivemq.configuration.service.entity.Listener;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * Interface for {@link ChannelInitializerFactoryImpl}
  *
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public interface ChannelInitializerFactory {
 
@@ -36,12 +40,10 @@ public interface ChannelInitializerFactory {
      * <li>{@link TlsWebsocketChannelInitializer}</li>
      * </ul>
      *
-     * @param listener the listener to create a channel initializer for
-     * @return a channel initializer for a specific listener.
+     * @param  listener                 the listener to create a channel initializer for
+     * @return                          a channel initializer for a specific listener.
      * @throws NullPointerException     If listener is null.
      * @throws IllegalArgumentException If listener type is unknown.
      */
-    @NotNull
-    AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener);
-
+    @NotNull AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener);
 }

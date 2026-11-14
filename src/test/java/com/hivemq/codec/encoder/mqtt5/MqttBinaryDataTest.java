@@ -21,15 +21,19 @@ import org.junit.Test;
 
 import java.util.Random;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Silvio Giebl
  * @author Lukas Brandl
  */
 public class MqttBinaryDataTest {
-    private final Random random = new Random();
 
+    private final Random random = new Random();
     @Test
     public void test_decodeBinaryData_zero_length() {
         final ByteBuf byteBuf = Unpooled.buffer();

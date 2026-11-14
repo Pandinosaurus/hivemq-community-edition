@@ -16,8 +16,8 @@
 package com.hivemq.bootstrap.netty.ioc;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.bootstrap.netty.NettyConfiguration;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -37,50 +37,42 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Singleton
 public class NettyConfigurationProvider implements Provider<NettyConfiguration> {
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public NettyConfiguration get() {
-
         final EventLoopGroup parentGroup = createParentEventLoop();
         final EventLoopGroup childGroup = createChildEventLoop();
-
         return new NettyConfiguration(NioServerSocketChannel.class, NioSocketChannel.class, parentGroup, childGroup);
     }
 
     /**
-     * Creates the Parent Eventloop. Creates either a NIO Eventloop or a native Epoll Eventloop with a preference
-     * for native Epoll.
+     * Creates the Parent Eventloop. Creates either a NIO Eventloop or a native Epoll Eventloop with a preference for
+     * native Epoll.
      *
      * @return the Boss EventLoopGroup
      */
-    @NotNull
-    private EventLoopGroup createParentEventLoop() {
+    @NotNull private EventLoopGroup createParentEventLoop() {
         return new NioEventLoopGroup(1, createThreadFactory("hivemq-eventloop-parent-%d"));
     }
 
     /**
-     * Creates the Child Eventloop. Creates either a NIO Eventloop or a native Epoll Eventloop with a preference
-     * for native Epoll.
+     * Creates the Child Eventloop. Creates either a NIO Eventloop or a native Epoll Eventloop with a preference for
+     * native Epoll.
      *
      * @return the Boss EventLoopGroup
      */
-    @NotNull
-    private EventLoopGroup createChildEventLoop() {
-        //Default Netty Threads.
+    @NotNull private EventLoopGroup createChildEventLoop() {
+        // Default Netty Threads.
         return new NioEventLoopGroup(0, createThreadFactory("hivemq-eventloop-child-%d"));
     }
 
     /**
      * Creates a Thread Factory that names Threads with the given format
      *
-     * @param nameFormat the format
-     * @return a ThreadFactory that names Threads with the given format
+     * @param  nameFormat the format
+     * @return            a ThreadFactory that names Threads with the given format
      */
     private ThreadFactory createThreadFactory(final @NotNull String nameFormat) {
-
         checkNotNull(nameFormat, "Thread Factory Name Format must not be null");
-        return new ThreadFactoryBuilder().
-                setNameFormat(nameFormat).
-                build();
+        return new ThreadFactoryBuilder().setNameFormat(nameFormat).build();
     }
 }

@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.services.builder.*;
+import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.RetainedPublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicPermissionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicSubscriptionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.WillPublishBuilder;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -33,13 +36,13 @@ public class ExtensionBuilderDependenciesImpl implements ExtensionBuilderDepende
     private final @NotNull Provider<PublishBuilder> publishBuilderProvider;
     private final @NotNull Provider<TopicPermissionBuilder> topicPermissionBuilderProvider;
     private final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider;
-
     @Inject
-    public ExtensionBuilderDependenciesImpl(final @NotNull Provider<RetainedPublishBuilder> retainedPublishBuilderProvider,
-                                            final @NotNull Provider<TopicSubscriptionBuilder> topicSubscriptionBuilderProvider,
-                                            final @NotNull Provider<TopicPermissionBuilder> topicPermissionBuilderProvider,
-                                            final @NotNull Provider<PublishBuilder> publishBuilderProvider,
-                                            final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider) {
+    public ExtensionBuilderDependenciesImpl(
+            final @NotNull Provider<RetainedPublishBuilder> retainedPublishBuilderProvider,
+            final @NotNull Provider<TopicSubscriptionBuilder> topicSubscriptionBuilderProvider,
+            final @NotNull Provider<TopicPermissionBuilder> topicPermissionBuilderProvider,
+            final @NotNull Provider<PublishBuilder> publishBuilderProvider,
+            final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider) {
         this.retainedPublishBuilderProvider = retainedPublishBuilderProvider;
         this.topicSubscriptionBuilderProvider = topicSubscriptionBuilderProvider;
         this.topicPermissionBuilderProvider = topicPermissionBuilderProvider;
@@ -47,17 +50,14 @@ public class ExtensionBuilderDependenciesImpl implements ExtensionBuilderDepende
         this.willPublishBuilderProvider = willPublishBuilderProvider;
     }
 
-    @NotNull
-    public ImmutableMap<String, Supplier<Object>> getDependenciesMap() {
+    @NotNull public ImmutableMap<String, Supplier<Object>> getDependenciesMap() {
         // classLoader is unused but prepared here for future use
         final ImmutableMap.Builder<String, Supplier<Object>> builder = ImmutableMap.builder();
-
         builder.put(RetainedPublishBuilder.class.getCanonicalName(), retainedPublishBuilderProvider::get);
         builder.put(TopicSubscriptionBuilder.class.getCanonicalName(), topicSubscriptionBuilderProvider::get);
         builder.put(PublishBuilder.class.getCanonicalName(), publishBuilderProvider::get);
         builder.put(TopicPermissionBuilder.class.getCanonicalName(), topicPermissionBuilderProvider::get);
         builder.put(WillPublishBuilder.class.getCanonicalName(), willPublishBuilderProvider::get);
-
         return builder.build();
     }
 }

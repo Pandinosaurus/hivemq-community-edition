@@ -30,13 +30,11 @@ abstract class AbstractEnhancedAuthTask<I extends PluginTaskInput, O extends Aut
         extends AbstractAuthTask<I, O> {
 
     private final @NotNull ClientAuthenticators clientAuthenticators;
-
     AbstractEnhancedAuthTask(
             final @NotNull WrappedAuthenticatorProvider wrappedAuthenticatorProvider,
             final @NotNull AuthenticatorProviderInput authenticatorProviderInput,
             final @NotNull String extensionId,
             final @NotNull ClientAuthenticators clientAuthenticators) {
-
         super(wrappedAuthenticatorProvider, authenticatorProviderInput, extensionId);
         this.clientAuthenticators = clientAuthenticators;
     }

@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.google.inject.Inject;
-import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.ClientConnectionContext;
 import com.hivemq.configuration.service.FullConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
@@ -60,19 +59,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DisconnectInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DisconnectInterceptorHandler.class);
-
     private final @NotNull FullConfigurationService configurationService;
     private final @NotNull PluginOutPutAsyncer asyncer;
     private final @NotNull HiveMQExtensions hiveMQExtensions;
     private final @NotNull PluginTaskExecutorService executorService;
-
     @Inject
     public DisconnectInterceptorHandler(
             final @NotNull FullConfigurationService configurationService,
             final @NotNull PluginOutPutAsyncer asyncer,
             final @NotNull HiveMQExtensions hiveMQExtensions,
             final @NotNull PluginTaskExecutorService executorService) {
-
         this.configurationService = configurationService;
         this.asyncer = asyncer;
         this.hiveMQExtensions = hiveMQExtensions;
@@ -80,16 +76,15 @@ public class DisconnectInterceptorHandler {
     }
 
     public void handleInboundDisconnect(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull DISCONNECT disconnect) {
-
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull DISCONNECT disconnect) {
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        final String clientId = clientConnection.getClientId();
+        final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(channel);
+        final String clientId = clientConnectionContext.getClientId();
         if (clientId == null) {
             return;
         }
-
-        final ClientContextImpl clientContext = clientConnection.getExtensionClientContext();
+        final ClientContextImpl clientContext = clientConnectionContext.getExtensionClientContext();
         if (clientContext == null) {
             ctx.fireChannelRead(disconnect);
             return;
@@ -99,35 +94,27 @@ public class DisconnectInterceptorHandler {
             ctx.fireChannelRead(disconnect);
             return;
         }
-
         channel.config().setOption(ChannelOption.ALLOW_HALF_CLOSURE, true);
-
         final ClientInformation clientInfo = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         final ConnectionInformation connectionInfo = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
-        final Long originalSessionExpiryInterval = clientConnection.getClientSessionExpiryInterval();
-
+        final Long originalSessionExpiryInterval = clientConnectionContext.getClientSessionExpiryInterval();
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(disconnect);
         final DisconnectInboundInputImpl input = new DisconnectInboundInputImpl(clientInfo, connectionInfo, packet);
         final ExtensionParameterHolder<DisconnectInboundInputImpl> inputHolder = new ExtensionParameterHolder<>(input);
-
         final ModifiableInboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableInboundDisconnectPacketImpl(packet, configurationService, originalSessionExpiryInterval);
         final DisconnectInboundOutputImpl output = new DisconnectInboundOutputImpl(asyncer, modifiablePacket);
         final ExtensionParameterHolder<DisconnectInboundOutputImpl> outputHolder =
                 new ExtensionParameterHolder<>(output);
-
         final DisconnectInboundInterceptorContext context =
                 new DisconnectInboundInterceptorContext(clientId, interceptors.size(), ctx, inputHolder, outputHolder);
-
         for (final DisconnectInboundInterceptor interceptor : interceptors) {
-
             final HiveMQExtension extension =
                     hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
             }
-
             final DisconnectInboundInterceptorTask task =
                     new DisconnectInboundInterceptorTask(interceptor, extension.getId());
             executorService.handlePluginInOutTaskExecution(context, inputHolder, outputHolder, task);
@@ -138,15 +125,13 @@ public class DisconnectInterceptorHandler {
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull DISCONNECT disconnect,
             final @NotNull ChannelPromise promise) {
-
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        final String clientId = clientConnection.getClientId();
+        final ClientConnectionContext clientConnectionContext = ClientConnectionContext.of(channel);
+        final String clientId = clientConnectionContext.getClientId();
         if (clientId == null) {
             return;
         }
-
-        final ClientContextImpl clientContext = clientConnection.getExtensionClientContext();
+        final ClientContextImpl clientContext = clientConnectionContext.getExtensionClientContext();
         if (clientContext == null) {
             ctx.write(disconnect, promise);
             return;
@@ -156,42 +141,34 @@ public class DisconnectInterceptorHandler {
             ctx.write(disconnect, promise);
             return;
         }
-
         final ClientInformation clientInfo = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         final ConnectionInformation connectionInfo = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
-
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(disconnect);
         final DisconnectOutboundInputImpl input = new DisconnectOutboundInputImpl(clientInfo, connectionInfo, packet);
         final ExtensionParameterHolder<DisconnectOutboundInputImpl> inputHolder = new ExtensionParameterHolder<>(input);
-
         final ModifiableOutboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableOutboundDisconnectPacketImpl(packet, configurationService);
         final DisconnectOutboundOutputImpl output = new DisconnectOutboundOutputImpl(asyncer, modifiablePacket);
         final ExtensionParameterHolder<DisconnectOutboundOutputImpl> outputHolder =
                 new ExtensionParameterHolder<>(output);
-
         final DisconnectOutboundInterceptorContext context = new DisconnectOutboundInterceptorContext(clientId,
                 interceptors.size(),
                 ctx,
                 promise,
                 inputHolder,
                 outputHolder);
-
         for (final DisconnectOutboundInterceptor interceptor : interceptors) {
-
             final HiveMQExtension extension =
                     hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
             }
-
             final DisconnectOutboundInterceptorTask task =
                     new DisconnectOutboundInterceptorTask(interceptor, extension.getId());
             executorService.handlePluginInOutTaskExecution(context, inputHolder, outputHolder, task);
         }
     }
-
     private static class DisconnectOutboundInterceptorContext
             extends PluginInOutTaskContext<DisconnectOutboundOutputImpl> implements Runnable {
 
@@ -201,7 +178,6 @@ public class DisconnectInterceptorHandler {
         private final @NotNull ChannelPromise promise;
         private final @NotNull ExtensionParameterHolder<DisconnectOutboundInputImpl> inputHolder;
         private final @NotNull ExtensionParameterHolder<DisconnectOutboundOutputImpl> outputHolder;
-
         DisconnectOutboundInterceptorContext(
                 final @NotNull String identifier,
                 final int interceptorCount,
@@ -209,7 +185,6 @@ public class DisconnectInterceptorHandler {
                 final @NotNull ChannelPromise promise,
                 final @NotNull ExtensionParameterHolder<DisconnectOutboundInputImpl> inputHolder,
                 final @NotNull ExtensionParameterHolder<DisconnectOutboundOutputImpl> outputHolder) {
-
             super(identifier);
             this.interceptorCount = interceptorCount;
             this.counter = new AtomicInteger(0);
@@ -253,18 +228,17 @@ public class DisconnectInterceptorHandler {
 
         private final @NotNull DisconnectOutboundInterceptor interceptor;
         private final @NotNull String extensionId;
-
         DisconnectOutboundInterceptorTask(
-                final @NotNull DisconnectOutboundInterceptor interceptor, final @NotNull String extensionId) {
-
+                final @NotNull DisconnectOutboundInterceptor interceptor,
+                final @NotNull String extensionId) {
             this.interceptor = interceptor;
             this.extensionId = extensionId;
         }
 
         @Override
         public @NotNull DisconnectOutboundOutputImpl apply(
-                final @NotNull DisconnectOutboundInputImpl input, final @NotNull DisconnectOutboundOutputImpl output) {
-
+                final @NotNull DisconnectOutboundInputImpl input,
+                final @NotNull DisconnectOutboundOutputImpl output) {
             try {
                 interceptor.onOutboundDisconnect(input, output);
             } catch (final Throwable e) {
@@ -293,14 +267,12 @@ public class DisconnectInterceptorHandler {
         private final @NotNull ChannelHandlerContext ctx;
         private final @NotNull ExtensionParameterHolder<DisconnectInboundInputImpl> inputHolder;
         private final @NotNull ExtensionParameterHolder<DisconnectInboundOutputImpl> outputHolder;
-
         DisconnectInboundInterceptorContext(
                 final @NotNull String identifier,
                 final int interceptorCount,
                 final @NotNull ChannelHandlerContext ctx,
                 final @NotNull ExtensionParameterHolder<DisconnectInboundInputImpl> inputHolder,
                 final @NotNull ExtensionParameterHolder<DisconnectInboundOutputImpl> outputHolder) {
-
             super(identifier);
             this.interceptorCount = interceptorCount;
             this.counter = new AtomicInteger(0);
@@ -343,18 +315,17 @@ public class DisconnectInterceptorHandler {
 
         private final @NotNull DisconnectInboundInterceptor interceptor;
         private final @NotNull String extensionId;
-
         DisconnectInboundInterceptorTask(
-                final @NotNull DisconnectInboundInterceptor interceptor, final @NotNull String extensionId) {
-
+                final @NotNull DisconnectInboundInterceptor interceptor,
+                final @NotNull String extensionId) {
             this.interceptor = interceptor;
             this.extensionId = extensionId;
         }
 
         @Override
         public @NotNull DisconnectInboundOutputImpl apply(
-                final @NotNull DisconnectInboundInputImpl input, final @NotNull DisconnectInboundOutputImpl output) {
-
+                final @NotNull DisconnectInboundInputImpl input,
+                final @NotNull DisconnectInboundOutputImpl output) {
             try {
                 interceptor.onInboundDisconnect(input, output);
             } catch (final Throwable e) {

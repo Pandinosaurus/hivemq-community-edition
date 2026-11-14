@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.persistence.payload;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,7 +28,11 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.local.rocksdb.RocksDBLocalPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
-import org.rocksdb.*;
+import org.rocksdb.FlushOptions;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +42,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.persistence.payload.PublishPayloadRocksDBSerializer.deserializeKey;
 import static com.hivemq.persistence.payload.PublishPayloadRocksDBSerializer.serializeKey;
 
-/**
- * @author Florian Limpöck
- */
 @LazySingleton
 public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersistence
         implements PublishPayloadLocalPersistence {
@@ -49,13 +49,10 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
     @VisibleForTesting
     static final Logger log = LoggerFactory.getLogger(PublishPayloadRocksDBLocalPersistence.class);
     private final FlushOptions FLUSH_OPTIONS = new FlushOptions().setAllowWriteStall(true); // must not be gc´d
-
     public static final String PERSISTENCE_VERSION = "040500_R";
-    private final long memtableSize;
+    private final long memTableSize;
     private final boolean forceFlush;
-
-     private long @NotNull [] rocksdbToMemTableSize;
-
+    private long @NotNull [] rocksdbToMemTableSize;
     @Inject
     public PublishPayloadRocksDBLocalPersistence(
             final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
@@ -67,25 +64,21 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
                 InternalConfigurations.PAYLOAD_PERSISTENCE_BLOCK_CACHE_SIZE_PORTION.get(),
                 InternalConfigurations.PAYLOAD_PERSISTENCE_BLOCK_SIZE_BYTES,
                 InternalConfigurations.PAYLOAD_PERSISTENCE_TYPE.get() == PersistenceType.FILE_NATIVE);
-        this.memtableSize = physicalMemory() /
-                InternalConfigurations.PAYLOAD_PERSISTENCE_MEMTABLE_SIZE_PORTION.get() /
+        this.memTableSize = physicalMemory() / InternalConfigurations.PAYLOAD_PERSISTENCE_MEMTABLE_SIZE_PORTION.get() /
                 InternalConfigurations.PAYLOAD_PERSISTENCE_BUCKET_COUNT.get();
         this.rocksdbToMemTableSize = new long[InternalConfigurations.PAYLOAD_PERSISTENCE_BUCKET_COUNT.get()];
         this.forceFlush = InternalConfigurations.PUBLISH_PAYLOAD_FORCE_FLUSH_ENABLED.get();
     }
 
-    @NotNull
-    protected String getName() {
+    @NotNull protected String getName() {
         return PERSISTENCE_NAME;
     }
 
-    @NotNull
-    protected String getVersion() {
+    @NotNull protected String getVersion() {
         return PERSISTENCE_VERSION;
     }
 
-    @NotNull
-    protected Logger getLogger() {
+    @NotNull protected Logger getLogger() {
         return log;
     }
 
@@ -100,7 +93,6 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
                     .setMaxBytesForLevelBase(InternalConfigurations.PAYLOAD_PERSISTENCE_BLOB_MAX_SIZE_LEVEL_BASE_BYTES);
         }
     }
-
 
     @PostConstruct
     protected void postConstruct() {
@@ -124,7 +116,6 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
                 }
             }
             PUBLISH.PUBLISH_COUNTER.set(maxId + 1);
-
         } catch (final Exception e) {
             log.error("An error occurred while preparing the Publish Payload persistence.");
             log.debug("Original Exception:", e);
@@ -133,38 +124,22 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
     }
 
     @Override
-    public void put(final long id, @NotNull final byte[] payload) {
+    public void put(final long id, final byte @NotNull [] payload) {
         checkNotNull(payload, "payload must not be null");
         final int index = getBucketIndex(Long.toString(id));
         final RocksDB bucket = buckets[index];
-        ;
         try {
             bucket.put(serializeKey(id), payload);
             if (forceFlush) {
-                flushOnMemtableOverflow(bucket, index, payload.length);
+                flushOnMemTableOverflow(bucket, index, payload.length);
             }
         } catch (final RocksDBException e) {
             log.error("Could not put a payload because of an exception: ", e);
         }
     }
 
-    private void flushOnMemtableOverflow(final @NotNull RocksDB bucket, final int bucketIndex, final int payloadSize)
-            throws RocksDBException {
-        final long updatedSize = payloadSize + rocksdbToMemTableSize[bucketIndex];
-        if (updatedSize >= memtableSize) {
-            bucket.flush(FLUSH_OPTIONS);
-            if (log.isDebugEnabled()) {
-                log.debug("Hard flushing memTable due to exceeding memTable limit {}.", memtableSize);
-            }
-            rocksdbToMemTableSize[bucketIndex] = 0L;
-        } else {
-            rocksdbToMemTableSize[bucketIndex] = updatedSize;
-        }
-    }
-
-    @Nullable
     @Override
-    public byte[] get(final long id) {
+    public byte @Nullable [] get(final long id) {
         final RocksDB bucket = getRocksDb(Long.toString(id));
         try {
             return bucket.get(serializeKey(id));
@@ -174,10 +149,8 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
         return null;
     }
 
-    @NotNull
     @Override
-    public ImmutableList<Long> getAllIds() {
-
+    public @NotNull ImmutableList<Long> getAllIds() {
         final ImmutableList.Builder<Long> builder = ImmutableList.builder();
         for (final RocksDB bucket : buckets) {
             try (final RocksIterator rocksIterator = bucket.newIterator()) {
@@ -189,7 +162,6 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
                 }
             }
         }
-
         return builder.build();
     }
 
@@ -225,8 +197,22 @@ public class PublishPayloadRocksDBLocalPersistence extends RocksDBLocalPersisten
         return rocksdbToMemTableSize;
     }
 
-    public long getMemtableSize() {
-        return memtableSize;
+    @VisibleForTesting
+    public long getMemTableSize() {
+        return memTableSize;
     }
 
+    private void flushOnMemTableOverflow(final @NotNull RocksDB bucket, final int bucketIndex, final int payloadSize)
+            throws RocksDBException {
+        final long updatedSize = payloadSize + rocksdbToMemTableSize[bucketIndex];
+        if (updatedSize >= memTableSize) {
+            bucket.flush(FLUSH_OPTIONS);
+            if (log.isDebugEnabled()) {
+                log.debug("Hard flushing memTable due to exceeding memTable limit {}.", memTableSize);
+            }
+            rocksdbToMemTableSize[bucketIndex] = 0L;
+        } else {
+            rocksdbToMemTableSize[bucketIndex] = updatedSize;
+        }
+    }
 }

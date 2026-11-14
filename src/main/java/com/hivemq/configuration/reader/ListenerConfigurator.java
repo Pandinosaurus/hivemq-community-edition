@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.configuration.entity.listener.*;
+import com.hivemq.configuration.entity.listener.ListenerEntity;
+import com.hivemq.configuration.entity.listener.TCPListenerEntity;
+import com.hivemq.configuration.entity.listener.TLSEntity;
+import com.hivemq.configuration.entity.listener.TlsTCPListenerEntity;
+import com.hivemq.configuration.entity.listener.TlsWebsocketListenerEntity;
+import com.hivemq.configuration.entity.listener.WebsocketListenerEntity;
 import com.hivemq.configuration.entity.listener.tls.ClientAuthenticationModeEntity;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.service.entity.*;
+import com.hivemq.configuration.service.entity.Listener;
+import com.hivemq.configuration.service.entity.TcpListener;
+import com.hivemq.configuration.service.entity.Tls;
+import com.hivemq.configuration.service.entity.TlsTcpListener;
+import com.hivemq.configuration.service.entity.TlsWebsocketListener;
+import com.hivemq.configuration.service.entity.WebsocketListener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -35,14 +44,10 @@ import java.util.List;
 public class ListenerConfigurator {
 
     private static final Logger log = LoggerFactory.getLogger(ListenerConfigurator.class);
-
     private static final String JKS = "JKS";
-
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull SystemInformation systemInformation;
-
     private final @NotNull List<String> chosenNames;
-
     public ListenerConfigurator(
             final @NotNull ListenerConfigurationService listenerConfigurationService,
             final @NotNull SystemInformation systemInformation) {
@@ -53,7 +58,6 @@ public class ListenerConfigurator {
 
     void setListenerConfig(final @NotNull List<ListenerEntity> entities) {
         final ImmutableList<Listener> listeners = convertListenerEntities(entities);
-
         for (final Listener listener : listeners) {
             listenerConfigurationService.addListener(listener);
         }
@@ -61,27 +65,22 @@ public class ListenerConfigurator {
 
     private @NotNull ImmutableList<Listener> convertListenerEntities(final @NotNull List<ListenerEntity> entities) {
         final ImmutableList.Builder<Listener> builder = ImmutableList.builder();
-
         for (final ListenerEntity entity : entities) {
             final Listener listener = convertListener(entity);
             if (listener != null) {
                 builder.add(listener);
             }
         }
-
         return builder.build();
     }
 
     @Nullable Listener convertListener(final @NotNull ListenerEntity entity) {
         if (entity instanceof TCPListenerEntity) {
             return convertTcpListener((TCPListenerEntity) entity);
-
         } else if (entity instanceof WebsocketListenerEntity) {
             return convertWebsocketListener((WebsocketListenerEntity) entity);
-
         } else if (entity instanceof TlsTCPListenerEntity) {
             return convertTlsTcpListener((TlsTCPListenerEntity) entity);
-
         } else if (entity instanceof TlsWebsocketListenerEntity) {
             return convertTlsWebsocketListener((TlsWebsocketListenerEntity) entity);
         }
@@ -120,23 +119,17 @@ public class ListenerConfigurator {
                 .build();
     }
 
-    @NotNull
-    private String getName(final @NotNull ListenerEntity entity, final @NotNull String defaultPrefix) {
-
+    @NotNull private String getName(final @NotNull ListenerEntity entity, final @NotNull String defaultPrefix) {
         final String chosenName =
                 (entity.getName() == null || entity.getName().trim().isEmpty()) ? defaultPrefix + entity.getPort() :
                         entity.getName();
-
         if (chosenNames.contains(chosenName)) {
-
             int count = 1;
             String newName = chosenName + "-" + count++;
             while (chosenNames.contains(newName)) {
                 newName = chosenName + "-" + count++;
             }
-
-            log.warn(
-                    "Name '{}' already in use. Renaming listener with address '{}' and port '{}' to: '{}'",
+            log.warn("Name '{}' already in use. Renaming listener with address '{}' and port '{}' to: '{}'",
                     chosenName,
                     entity.getBindAddress(),
                     entity.getPort(),
@@ -147,45 +140,35 @@ public class ListenerConfigurator {
             chosenNames.add(chosenName);
             return chosenName;
         }
-
     }
 
     @NotNull Tls convertTls(final @NotNull TLSEntity entity) {
-
         final String keystorePath = getPathFromEntityPath(entity.getKeystoreEntity().getPath());
         final String truststorePath = getPathFromEntityPath(entity.getTruststoreEntity().getPath());
-
         Preconditions.checkNotNull(keystorePath, "Keystore path must not be null");
-
         return new Tls.Builder().withKeystorePath(keystorePath)
                 .withKeystoreType(JKS)
                 .withKeystorePassword(entity.getKeystoreEntity().getPassword())
                 .withPrivateKeyPassword(entity.getKeystoreEntity().getPrivateKeyPassword())
-
                 .withProtocols(entity.getProtocols())
-
                 .withTruststorePath(truststorePath)
                 .withTruststoreType(JKS)
                 .withTruststorePassword(entity.getTruststoreEntity().getPassword())
-
                 .withClientAuthMode(getClientAuthMode(entity.getClientAuthMode()))
                 .withCipherSuites(entity.getCipherSuites())
                 .withPreferServerCipherSuites(entity.isPreferServerCipherSuites())
-
                 .withHandshakeTimeout(entity.getHandshakeTimeout())
-
                 .build();
     }
 
     /**
      * Tries to find a file if set in the given absolute path or relative to the HiveMQ home folder.
      *
-     * @param path the absolute or relative path set in the config entity.
-     * @return the absolute path to the file or null if unset.
+     * @param  path the absolute or relative path set in the config entity.
+     * @return      the absolute path to the file or null if unset.
      */
-    @Nullable
-    private String getPathFromEntityPath(final @NotNull String path) {
-        //blank is default for unused
+    @Nullable private String getPathFromEntityPath(final @NotNull String path) {
+        // blank is default for unused
         if (path.isBlank()) {
             return null;
         } else {
@@ -200,16 +183,15 @@ public class ListenerConfigurator {
 
     @NotNull Tls.ClientAuthMode getClientAuthMode(final @NotNull ClientAuthenticationModeEntity entity) {
         switch (entity) {
-            case OPTIONAL:
+            case OPTIONAL :
                 return Tls.ClientAuthMode.OPTIONAL;
-            case REQUIRED:
+            case REQUIRED :
                 return Tls.ClientAuthMode.REQUIRED;
-            case NONE:
+            case NONE :
                 return Tls.ClientAuthMode.NONE;
-            default:
-                //This should never happen
+            default :
+                // This should never happen
                 return Tls.ClientAuthMode.NONE;
         }
     }
-
 }

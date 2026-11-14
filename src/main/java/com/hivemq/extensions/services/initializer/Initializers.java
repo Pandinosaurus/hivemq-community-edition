@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public interface Initializers {
 

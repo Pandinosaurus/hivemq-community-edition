@@ -52,7 +52,11 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscriptions are stored.
      */
     @ExecuteInSingleWriter
-    void addSubscriptions(@NotNull String clientId, @NotNull ImmutableSet<Topic> topics, long timestamp, int bucketIndex);
+    void addSubscriptions(
+            @NotNull String clientId,
+            @NotNull ImmutableSet<Topic> topics,
+            long timestamp,
+            int bucketIndex);
 
     /**
      * Remove a subscription of specific topic for a specific client from a persistence bucket.
@@ -74,7 +78,11 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscriptions are stored.
      */
     @ExecuteInSingleWriter
-    void removeSubscriptions(@NotNull String clientId, @NotNull ImmutableSet<String> topics, long timestamp, int bucketIndex);
+    void removeSubscriptions(
+            @NotNull String clientId,
+            @NotNull ImmutableSet<String> topics,
+            long timestamp,
+            int bucketIndex);
 
     /**
      * Remove all subscriptions for a specific client from a persistence bucket.
@@ -97,23 +105,25 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
     /**
      * Get all subscriptions for a specific client.
      *
-     * @param client The client identifier of the subscriber.
-     * @return A read only set of {@link Topic}s.
+     * @param  client The client identifier of the subscriber.
+     * @return        A read only set of {@link Topic}s.
      */
     @ReadOnly
-    @NotNull
-    ImmutableSet<Topic> getSubscriptions(@NotNull final String client);
+    @NotNull ImmutableSet<Topic> getSubscriptions(@NotNull final String client);
 
     /**
      * Get a chunk of subscriptions.
      *
-     * @param bucketIndex  the bucket index
-     * @param lastClientId the last client identifier for this chunk. Pass <code>null</code> to start at the beginning.
-     * @param maxResults   the max amount of results contained in the chunk (can be exceeded). Subscriptions (not
-     *                     clientids) are counted here. When the subscription count for one client
-     *                     exceeds the limit, it will contain all subscriptions for this client anyway.
-     * @return a {@link BucketChunkResult} with the entries and the information if more chunks are available
+     * @param  bucketIndex  the bucket index
+     * @param  lastClientId the last client identifier for this chunk. Pass <code>null</code> to start at the beginning.
+     * @param  maxResults   the max amount of results contained in the chunk (can be exceeded). Subscriptions (not
+     *                      clientids) are counted here. When the subscription count for one client exceeds the limit,
+     *                      it will contain all subscriptions for this client anyway.
+     * @return              a {@link BucketChunkResult} with the entries and the information if more chunks are
+     *                      available
      */
-    @NotNull
-    BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(int bucketIndex, @Nullable String lastClientId, int maxResults);
+    @NotNull BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(
+            int bucketIndex,
+            @Nullable String lastClientId,
+            int maxResults);
 }

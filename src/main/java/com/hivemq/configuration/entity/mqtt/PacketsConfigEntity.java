@@ -15,16 +15,16 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 @XmlRootElement(name = "packets")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -33,7 +33,6 @@ public class PacketsConfigEntity {
 
     @XmlElement(name = "max-packet-size", defaultValue = "268435460")
     private int maxPacketSize = DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
-
     public int getMaxPacketSize() {
         return maxPacketSize;
     }

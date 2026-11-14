@@ -15,9 +15,9 @@
  */
 package com.hivemq.bootstrap;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.exceptions.UnrecoverableException;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,8 +26,7 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This class verifies if the listener startup was successful and gives
- * feedback to the user by logging
+ * This class verifies if the listener startup was successful and gives feedback to the user by logging
  *
  * @author Dominik Obermaier
  */
@@ -35,25 +34,23 @@ public class StartupListenerVerifier {
 
     private static final Logger log = LoggerFactory.getLogger(StartupListenerVerifier.class);
     private final List<ListenerStartupInformation> startupInformation;
-
     public StartupListenerVerifier(@NotNull final List<ListenerStartupInformation> startupInformation) {
-
         checkNotNull(startupInformation);
         this.startupInformation = startupInformation;
     }
 
     /**
-     * Verifies that at least one listener was started successfully and prints out information
-     * to the user to the log file
+     * Verifies that at least one listener was started successfully and prints out information to the user to the log
+     * file
      *
      * @throws UnrecoverableException if no listener could be started successfully
      */
     public void verifyAndPrint() throws UnrecoverableException {
         if (startupInformation.isEmpty()) {
-            log.error("No listener was configured. In order to operate properly, HiveMQ needs at least one listener. Shutting down HiveMQ");
+            log.error(
+                    "No listener was configured. In order to operate properly, HiveMQ needs at least one listener. Shutting down HiveMQ");
             throw new UnrecoverableException(false);
         }
-
         int successfullyStarted = 0;
         for (final ListenerStartupInformation startupInfo : startupInformation) {
             if (startupInfo.isSuccessful()) {
@@ -66,43 +63,25 @@ public class StartupListenerVerifier {
                 }
             }
         }
-
         if (successfullyStarted < 1) {
             log.error("Could not bind any listener. Stopping HiveMQ.");
             throw new UnrecoverableException(false);
         }
     }
 
-    private String getSuccessfulStartedString(final ListenerStartupInformation startupInfo) {
-        final StringBuilder builder = new StringBuilder();
-
-        final Listener listener = startupInfo.getOriginalListener();
-
-        builder.append("Started ");
-        builder.append(listener.readableName());
-        builder.append(" ");
-        builder.append("on address ");
-        builder.append(listener.getBindAddress());
-        builder.append(" and on port ");
-        builder.append(startupInfo.getPort());
-
-        return builder.toString();
+    private @NotNull String getSuccessfulStartedString(final @NotNull ListenerStartupInformation startupInfo) {
+        final Listener listener = startupInfo.getListener();
+        return String.format("Started %s on address %s and on port %s.",
+                listener.readableName(),
+                listener.getBindAddress(),
+                listener.getPort());
     }
 
-    private String getNotSuccessfulStartedString(final ListenerStartupInformation startupInfo) {
-        final StringBuilder builder = new StringBuilder();
-
-        final Listener listener = startupInfo.getOriginalListener();
-
-        builder.append("Could not start ");
-        builder.append(listener.readableName());
-        builder.append(" ");
-        builder.append("on port ");
-        builder.append(startupInfo.getPort());
-        builder.append(" and address ");
-        builder.append(listener.getBindAddress());
-        builder.append(". Is it already in use?");
-
-        return builder.toString();
+    private @NotNull String getNotSuccessfulStartedString(final @NotNull ListenerStartupInformation startupInfo) {
+        final Listener listener = startupInfo.getListener();
+        return String.format("Could not start %s on port %s and address %s. Is it already in use?",
+                listener.readableName(),
+                listener.getPort(),
+                listener.getBindAddress());
     }
 }

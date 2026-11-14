@@ -29,7 +29,13 @@ import com.hivemq.extension.sdk.api.services.general.IterationCallback;
 import com.hivemq.extension.sdk.api.services.session.ClientService;
 import com.hivemq.extension.sdk.api.services.session.SessionInformation;
 import com.hivemq.extensions.ListenableFutureConverter;
-import com.hivemq.extensions.iteration.*;
+import com.hivemq.extensions.iteration.AllItemsFetchCallback;
+import com.hivemq.extensions.iteration.AllItemsItemCallback;
+import com.hivemq.extensions.iteration.AsyncIterator;
+import com.hivemq.extensions.iteration.AsyncIteratorFactory;
+import com.hivemq.extensions.iteration.ChunkCursor;
+import com.hivemq.extensions.iteration.FetchCallback;
+import com.hivemq.extensions.iteration.MultipleChunkResult;
 import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
@@ -57,7 +63,6 @@ public class ClientServiceImpl implements ClientService {
     private final @NotNull ClientSessionPersistence clientSessionPersistence;
     private final @NotNull GlobalManagedExtensionExecutorService managedExtensionExecutorService;
     private final @NotNull AsyncIteratorFactory asyncIteratorFactory;
-
     @Inject
     public ClientServiceImpl(
             @NotNull final PluginServiceRateLimitService pluginServiceRateLimitService,
@@ -70,8 +75,7 @@ public class ClientServiceImpl implements ClientService {
         this.asyncIteratorFactory = asyncIteratorFactory;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Boolean> isClientConnected(@NotNull final String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
@@ -84,14 +88,12 @@ public class ClientServiceImpl implements ClientService {
         return CompletableFuture.completedFuture(session.isConnected());
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Optional<SessionInformation>> getSession(@NotNull final String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-
         final ClientSession session = clientSessionPersistence.getSession(clientId, false);
         if (session == null) {
             return CompletableFuture.completedFuture(Optional.empty());
@@ -100,54 +102,44 @@ public class ClientServiceImpl implements ClientService {
                 new SessionInformationImpl(clientId, session.getSessionExpiryIntervalSec(), session.isConnected())));
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Boolean> disconnectClient(@NotNull final String clientId) {
         return disconnectClient(clientId, false);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Boolean> disconnectClient(
-            @NotNull final String clientId, final boolean preventWillMessage) {
+            @NotNull final String clientId,
+            final boolean preventWillMessage) {
         return disconnectClient(clientId, preventWillMessage, null, null);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Boolean> disconnectClient(
             final @NotNull String clientId,
             final boolean preventWillMessage,
             final @Nullable DisconnectReasonCode reasonCode,
             final @Nullable String reasonString) {
-
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (reasonCode != null) {
-            Preconditions.checkArgument(
-                    reasonCode != DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
-                    "Reason code %s must not be used for disconnect packets.", reasonCode);
-            Preconditions.checkArgument(
-                    Mqtt5DisconnectReasonCode.from(reasonCode).canBeSentByServer(),
+            Preconditions.checkArgument(reasonCode != DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                    "Reason code %s must not be used for disconnect packets.",
+                    reasonCode);
+            Preconditions.checkArgument(Mqtt5DisconnectReasonCode.from(reasonCode).canBeSentByServer(),
                     "Reason code %s must not be used for outbound disconnect packets from the server to a client.",
                     reasonCode);
         }
-
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-
         final Mqtt5DisconnectReasonCode disconnectReasonCode =
                 reasonCode != null ? Mqtt5DisconnectReasonCode.valueOf(reasonCode.name()) : null;
-
-        final ListenableFuture<Boolean> disconnectFuture =
-                clientSessionPersistence.forceDisconnectClient(
-                        clientId, preventWillMessage, EXTENSION, disconnectReasonCode, reasonString);
-
+        final ListenableFuture<Boolean> disconnectFuture = clientSessionPersistence
+                .forceDisconnectClient(clientId, preventWillMessage, EXTENSION, disconnectReasonCode, reasonString);
         return ListenableFutureConverter.toCompletable(disconnectFuture, managedExtensionExecutorService);
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public CompletableFuture<Boolean> invalidateSession(@NotNull final String clientId) {
         Preconditions.checkNotNull(clientId, "A client id must never be null");
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
@@ -157,6 +149,7 @@ public class ClientServiceImpl implements ClientService {
         final ListenableFuture<Boolean> setSessionFuture =
                 clientSessionPersistence.invalidateSession(clientId, EXTENSION);
         Futures.addCallback(setSessionFuture, new FutureCallback<>() {
+
             @Override
             public void onSuccess(@Nullable final Boolean disconnected) {
                 if (disconnected == null) {
@@ -172,7 +165,6 @@ public class ClientServiceImpl implements ClientService {
                 setSessionSettableFuture.setException(t);
             }
         }, managedExtensionExecutorService);
-
         return ListenableFutureConverter.toCompletable(setSessionSettableFuture, managedExtensionExecutorService);
     }
 
@@ -184,22 +176,17 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public @NotNull CompletableFuture<Void> iterateAllClients(
-            @NotNull final IterationCallback<SessionInformation> callback, @NotNull final Executor callbackExecutor) {
+            @NotNull final IterationCallback<SessionInformation> callback,
+            @NotNull final Executor callbackExecutor) {
         Preconditions.checkNotNull(callback, "Callback cannot be null");
         Preconditions.checkNotNull(callbackExecutor, "Callback executor cannot be null");
-
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-
         final FetchCallback<SessionInformation> fetchCallback = new AllClientsFetchCallback(clientSessionPersistence);
-        final AsyncIterator<SessionInformation> asyncIterator =
-                asyncIteratorFactory.createIterator(
-                        fetchCallback,
-                        new AllItemsItemCallback<>(callbackExecutor, callback));
-
+        final AsyncIterator<SessionInformation> asyncIterator = asyncIteratorFactory.createIterator(fetchCallback,
+                new AllItemsItemCallback<>(callbackExecutor, callback));
         asyncIterator.fetchAndIterate();
-
         final SettableFuture<Void> settableFuture = SettableFuture.create();
         asyncIterator.getFinishedFuture().whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
@@ -208,27 +195,30 @@ public class ClientServiceImpl implements ClientService {
                 settableFuture.set(null);
             }
         });
-
         return ListenableFutureConverter.toCompletable(settableFuture, managedExtensionExecutorService);
     }
-
     static class AllClientsFetchCallback extends AllItemsFetchCallback<SessionInformation, Map<String, ClientSession>> {
 
-        @NotNull
-        private final ClientSessionPersistence clientSessionPersistence;
-
+        @NotNull private final ClientSessionPersistence clientSessionPersistence;
         AllClientsFetchCallback(@NotNull final ClientSessionPersistence clientSessionPersistence) {
             this.clientSessionPersistence = clientSessionPersistence;
         }
 
         @Override
-        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, ClientSession>>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, ClientSession>>> persistenceCall(
+                final @NotNull ChunkCursor chunkCursor) {
             return clientSessionPersistence.getAllLocalClientsChunk(chunkCursor);
         }
 
         @Override
-        protected @NotNull Collection<SessionInformation> transform(final @NotNull Map<String, ClientSession> stringClientSessionMap) {
-            return stringClientSessionMap.entrySet().stream().map(entry -> new SessionInformationImpl(entry.getKey(), entry.getValue().getSessionExpiryIntervalSec(), entry.getValue().isConnected())).collect(Collectors.toUnmodifiableList());
+        protected @NotNull Collection<SessionInformation> transform(
+                final @NotNull Map<String, ClientSession> stringClientSessionMap) {
+            return stringClientSessionMap.entrySet()
+                    .stream()
+                    .map(entry -> new SessionInformationImpl(entry.getKey(),
+                            entry.getValue().getSessionExpiryIntervalSec(),
+                            entry.getValue().isConnected()))
+                    .collect(Collectors.toUnmodifiableList());
         }
     }
 }

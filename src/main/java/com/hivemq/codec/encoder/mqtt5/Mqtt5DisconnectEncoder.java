@@ -35,10 +35,10 @@ import static com.hivemq.mqtt.message.mqtt5.MessageProperties.SERVER_REFERENCE;
  * @author Florian Limpöck
  */
 @Singleton
-public class Mqtt5DisconnectEncoder extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
+public class Mqtt5DisconnectEncoder
+        extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
 
     private static final int FIXED_HEADER = MessageType.DISCONNECT.ordinal() << 4;
-
     public Mqtt5DisconnectEncoder(
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull SecurityConfigurationService securityConfigurationService) {

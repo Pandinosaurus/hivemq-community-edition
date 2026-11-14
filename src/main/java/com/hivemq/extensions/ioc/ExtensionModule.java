@@ -21,7 +21,11 @@ import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extension.sdk.api.services.auth.SecurityRegistry;
-import com.hivemq.extension.sdk.api.services.builder.*;
+import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.RetainedPublishBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicPermissionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.TopicSubscriptionBuilder;
+import com.hivemq.extension.sdk.api.services.builder.WillPublishBuilder;
 import com.hivemq.extension.sdk.api.services.cluster.ClusterService;
 import com.hivemq.extension.sdk.api.services.interceptor.GlobalInterceptorRegistry;
 import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
@@ -45,10 +49,29 @@ import com.hivemq.extensions.handler.PluginAuthorizerService;
 import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl;
 import com.hivemq.extensions.ioc.annotation.PluginStartStop;
 import com.hivemq.extensions.ioc.annotation.PluginTaskQueue;
-import com.hivemq.extensions.loader.*;
+import com.hivemq.extensions.loader.ExtensionBuilderDependencies;
+import com.hivemq.extensions.loader.ExtensionBuilderDependenciesImpl;
+import com.hivemq.extensions.loader.ExtensionLifecycleHandler;
+import com.hivemq.extensions.loader.ExtensionLifecycleHandlerImpl;
+import com.hivemq.extensions.loader.ExtensionLoader;
+import com.hivemq.extensions.loader.ExtensionLoaderImpl;
+import com.hivemq.extensions.loader.ExtensionServicesDependencies;
+import com.hivemq.extensions.loader.ExtensionServicesDependenciesImpl;
+import com.hivemq.extensions.loader.ExtensionStaticInitializer;
+import com.hivemq.extensions.loader.ExtensionStaticInitializerImpl;
+import com.hivemq.extensions.loader.HiveMQExtensionFactory;
+import com.hivemq.extensions.loader.HiveMQExtensionFactoryImpl;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
-import com.hivemq.extensions.services.auth.*;
-import com.hivemq.extensions.services.builder.*;
+import com.hivemq.extensions.services.auth.Authenticators;
+import com.hivemq.extensions.services.auth.AuthenticatorsImpl;
+import com.hivemq.extensions.services.auth.Authorizers;
+import com.hivemq.extensions.services.auth.AuthorizersImpl;
+import com.hivemq.extensions.services.auth.SecurityRegistryImpl;
+import com.hivemq.extensions.services.builder.PublishBuilderImpl;
+import com.hivemq.extensions.services.builder.RetainedPublishBuilderImpl;
+import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
+import com.hivemq.extensions.services.builder.TopicSubscriptionBuilderImpl;
+import com.hivemq.extensions.services.builder.WillPublishBuilderImpl;
 import com.hivemq.extensions.services.cluster.ClusterServiceNoopImpl;
 import com.hivemq.extensions.services.initializer.InitializerRegistryImpl;
 import com.hivemq.extensions.services.initializer.Initializers;
@@ -76,7 +99,6 @@ public class ExtensionModule extends SingletonModule<Class<ExtensionModule>> {
 
     @Override
     protected void configure() {
-
         bind(ExtensionBootstrap.class).to(ExtensionBootstrapImpl.class);
         bind(ExtensionStaticInitializer.class).to(ExtensionStaticInitializerImpl.class);
         bind(HiveMQExtensionFactory.class).to(HiveMQExtensionFactoryImpl.class);
@@ -86,43 +108,30 @@ public class ExtensionModule extends SingletonModule<Class<ExtensionModule>> {
         bind(Authenticators.class).to(AuthenticatorsImpl.class);
         bind(Authorizers.class).to(AuthorizersImpl.class);
         bind(SecurityRegistry.class).to(SecurityRegistryImpl.class);
-
         bind(ExecutorService.class).annotatedWith(PluginStartStop.class)
                 .toProvider(ExtensionStartStopExecutorProvider.class)
                 .in(LazySingleton.class);
-
         bind(PluginTaskExecutorService.class).to(PluginTaskExecutorServiceImpl.class);
         bind(PluginOutPutAsyncer.class).to(PluginOutputAsyncerImpl.class);
-
         bind(InitializerRegistry.class).to(InitializerRegistryImpl.class);
         bind(Initializers.class).to(InitializersImpl.class).in(LazySingleton.class);
         bind(ServerInformation.class).to(ServerInformationImpl.class).in(LazySingleton.class);
-
         bind(AtomicLong.class).annotatedWith(PluginTaskQueue.class).toInstance(new AtomicLong(0));
-
         bind(RetainedMessageStore.class).to(RetainedMessageStoreImpl.class).in(LazySingleton.class);
         bind(ClientService.class).to(ClientServiceImpl.class).in(LazySingleton.class);
         bind(RetainedPublishBuilder.class).to(RetainedPublishBuilderImpl.class);
-
         bind(SubscriptionStore.class).to(SubscriptionStoreImpl.class).in(LazySingleton.class);
         bind(TopicSubscriptionBuilder.class).to(TopicSubscriptionBuilderImpl.class);
-
         bind(TopicPermissionBuilder.class).to(TopicPermissionBuilderImpl.class);
-
         bind(ExtensionBuilderDependencies.class).to(ExtensionBuilderDependenciesImpl.class);
-
         bind(PublishService.class).to(PublishServiceImpl.class).in(LazySingleton.class);
         bind(PublishBuilder.class).to(PublishBuilderImpl.class);
         bind(WillPublishBuilder.class).to(WillPublishBuilderImpl.class);
-
         bind(EventRegistry.class).to(EventRegistryImpl.class).in(Singleton.class);
         bind(LifecycleEventListeners.class).to(LifecycleEventListenersImpl.class).in(LazySingleton.class);
-
         bind(ClusterService.class).to(ClusterServiceNoopImpl.class).in(LazySingleton.class);
-
         bind(PluginAuthorizerService.class).to(PluginAuthorizerServiceImpl.class);
         bind(PluginAuthenticatorService.class).to(PluginAuthenticatorServiceImpl.class);
-
         bind(GlobalInterceptorRegistry.class).to(GlobalInterceptorRegistryImpl.class).in(LazySingleton.class);
         bind(Interceptors.class).to(InterceptorsImpl.class).in(LazySingleton.class);
         bind(AdminService.class).to(AdminServiceImpl.class).in(LazySingleton.class);

@@ -22,25 +22,24 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigurationFileTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
     @Test
     public void test_null_configuration_file() throws Exception {
         final ConfigurationFile configurationFile = new ConfigurationFile(null);
-
-        assertEquals(false, configurationFile.file().isPresent());
+        assertFalse(configurationFile.file().isPresent());
     }
 
     @Test
     public void test_configuration_file_exists() throws Exception {
         final File file = temporaryFolder.newFile();
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
-
-        assertEquals(true, configurationFile.file().isPresent());
+        assertTrue(configurationFile.file().isPresent());
         assertEquals(file, configurationFile.file().get());
     }
 }

@@ -43,7 +43,6 @@ public class PersistenceMigrationModule extends SingletonModule<Class<Persistenc
 
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
-
     public PersistenceMigrationModule(
             @NotNull final MetricRegistry metricRegistry,
             @NotNull final PersistenceConfigurationService persistenceConfigurationService) {
@@ -54,31 +53,24 @@ public class PersistenceMigrationModule extends SingletonModule<Class<Persistenc
 
     @Override
     protected void configure() {
-
         bind(ShutdownHooks.class).asEagerSingleton();
         bind(PersistenceStartup.class).asEagerSingleton();
         bind(PersistenceStartupShutdownHookInstaller.class).asEagerSingleton();
-
         if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.FILE) {
             install(new PersistenceMigrationFileModule());
         } else {
             install(new LocalPersistenceMemoryModule(null));
         }
-
         if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
             bind(PublishPayloadPersistence.class).to(PublishPayloadNoopPersistenceImpl.class);
         } else {
             bind(PublishPayloadPersistence.class).to(PublishPayloadPersistenceImpl.class);
         }
-
         bind(MetricRegistry.class).toInstance(metricRegistry);
         bind(MetricsHolder.class).toProvider(MetricsHolderProvider.class).asEagerSingleton();
-
         bind(ListeningScheduledExecutorService.class).annotatedWith(PayloadPersistence.class)
                 .toProvider(PayloadPersistenceScheduledExecutorProvider.class)
                 .in(LazySingleton.class);
-
         bind(MessageDroppedService.class).toProvider(MessageDroppedServiceProvider.class).in(Singleton.class);
-
     }
 }

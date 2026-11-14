@@ -16,73 +16,51 @@
 package com.hivemq.persistence;
 
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
  * @author Florian Limpöck
- * @since 4.0.0
+ * @since  4.0.0
  */
 public class PersistenceStartupTest {
 
-    private AutoCloseable closeableMock;
-
     private PersistenceStartup persistenceStartup;
-
-    @Mock
-    private FilePersistence filePersistence;
-
-    @Before
-    public void setUp() throws Exception {
-        closeableMock = MockitoAnnotations.openMocks(this);
-    }
-
+    private final @NotNull FilePersistence filePersistence = mock();
     @After
     public void tearDown() throws Exception {
         if (persistenceStartup != null) {
             persistenceStartup.finish();
         }
-        closeableMock.close();
     }
 
     @Test
     public void test_shut_down_stops_persistences() throws InterruptedException {
-
         persistenceStartup = new PersistenceStartup();
-
         persistenceStartup.submitPersistenceStart(filePersistence);
-
-        //blocks till calls
+        // blocks till calls
         persistenceStartup.finish();
-
         verify(filePersistence).start();
-
         persistenceStartup.run();
-
         verify(filePersistence).stop();
     }
 
     @Test
     public void test_shut_down_interrupts_environment_creation_at_timeout() throws InterruptedException {
-
         InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.set(0);
-
         persistenceStartup = new PersistenceStartup();
-
         persistenceStartup.submitPersistenceStart(filePersistence);
-
         final CountDownLatch interupted = new CountDownLatch(1);
-
         persistenceStartup.submitEnvironmentCreate(new Runnable() {
+
             @Override
             public void run() {
                 try {
@@ -92,34 +70,24 @@ public class PersistenceStartupTest {
                 }
             }
         });
-
         persistenceStartup.run();
-
         verify(filePersistence).stop();
         assertTrue(interupted.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void test_shut_down_interrupts_start_at_timeout() throws InterruptedException {
-
         InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.set(0);
-
         persistenceStartup = new PersistenceStartup();
-
         final CountDownLatch interruptedLatch = new CountDownLatch(1);
-
         persistenceStartup.submitPersistenceStart(new TestFilePersistence(interruptedLatch));
-
         persistenceStartup.run();
-
         assertTrue(interruptedLatch.await(5, TimeUnit.SECONDS));
     }
-
     @SuppressWarnings("NullabilityAnnotations")
     private static class TestFilePersistence implements FilePersistence {
 
         private final CountDownLatch interruptedLatch;
-
         private TestFilePersistence(final CountDownLatch interruptedLatch) {
             this.interruptedLatch = interruptedLatch;
         }
@@ -140,7 +108,6 @@ public class PersistenceStartupTest {
 
         @Override
         public void stop() {
-
         }
     }
 }

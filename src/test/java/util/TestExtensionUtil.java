@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package util;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
@@ -30,16 +29,18 @@ import static org.junit.Assert.assertTrue;
 
 public class TestExtensionUtil {
 
-    public static final String validExtensionXML = "<hivemq-extension>" + //
-            "<id>%s</id>" + //
-            "<name>Some Name</name>" + //
-            "<version>1.2.3-Version</version>" + //
-            "<priority>1000</priority>" + //
-            "<start-priority>500</start-priority>" + //
-            "</hivemq-extension>";
+    public static final String validExtensionXML = """
+            <hivemq-extension>
+            <id>%s</id>
+            <name>Some Name</name>
+            <version>1.2.3-Version</version>
+            <priority>1000</priority>
+            <start-priority>500</start-priority>
+            </hivemq-extension>""";
 
     public static @NotNull File createValidExtension(
-            final @NotNull File extensionsFolder, final @NotNull String extensionId) throws Exception {
+            final @NotNull File extensionsFolder,
+            final @NotNull String extensionId) throws Exception {
         return createValidExtension(extensionsFolder, extensionId, true, true);
     }
 
@@ -49,12 +50,8 @@ public class TestExtensionUtil {
             final boolean createJar,
             final boolean enable) throws Exception {
         final File validExtensionsFolder = new File(extensionsFolder, extensionId + (enable ? "" : ".disabled"));
-
         final File xmlFile = new File(validExtensionsFolder, "hivemq-extension.xml");
-        FileUtils.writeStringToFile(xmlFile,
-                String.format(validExtensionXML, extensionId),
-                Charset.defaultCharset());
-
+        FileUtils.writeStringToFile(xmlFile, String.format(validExtensionXML, extensionId), Charset.defaultCharset());
         if (createJar) {
             final File jarFile = new File(validExtensionsFolder, "extension.jar");
             assertTrue(jarFile.createNewFile());

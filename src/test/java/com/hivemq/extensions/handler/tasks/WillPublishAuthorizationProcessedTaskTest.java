@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler.tasks;
 
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -32,7 +31,11 @@ import org.junit.Test;
 import util.CollectUserEventsHandler;
 import util.TestMessageUtil;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class WillPublishAuthorizationProcessedTaskTest {
@@ -41,7 +44,6 @@ public class WillPublishAuthorizationProcessedTaskTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull WillPublishAuthorizationProcessedTask task;
     private @NotNull PublishAuthorizerOutputImpl output;
-
     @Before
     public void before() {
         eventsCollector = new CollectUserEventsHandler<>(AuthorizeWillResultEvent.class);
@@ -49,7 +51,6 @@ public class WillPublishAuthorizationProcessedTaskTest {
         final ChannelHandlerContext ctx = channel.pipeline().context(CollectUserEventsHandler.class);
         final CONNECT connect = TestMessageUtil.createMqtt5ConnectWithWill();
         task = new WillPublishAuthorizationProcessedTask(connect, ctx);
-
         final PluginOutPutAsyncer asyncer = new PluginOutputAsyncerImpl(mock(ShutdownHooks.class));
         output = new PublishAuthorizerOutputImpl(asyncer);
     }
@@ -59,7 +60,6 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.disconnectClient();
         task.onSuccess(output);
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(AckReasonCode.NOT_AUTHORIZED, resultEvent.getResult().getAckReasonCode());
@@ -71,7 +71,6 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.disconnectClient(DisconnectReasonCode.QUOTA_EXCEEDED);
         task.onSuccess(output);
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
@@ -82,7 +81,6 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.disconnectClient(DisconnectReasonCode.QUOTA_EXCEEDED, "test-string");
         task.onSuccess(output);
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
@@ -94,9 +92,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.failAuthorization();
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(AckReasonCode.NOT_AUTHORIZED, resultEvent.getResult().getAckReasonCode());
@@ -110,9 +106,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.failAuthorization(AckReasonCode.TOPIC_NAME_INVALID);
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(AckReasonCode.TOPIC_NAME_INVALID, resultEvent.getResult().getAckReasonCode());
@@ -126,9 +120,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.failAuthorization(AckReasonCode.TOPIC_NAME_INVALID, "test-string");
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(AckReasonCode.TOPIC_NAME_INVALID, resultEvent.getResult().getAckReasonCode());
@@ -140,9 +132,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.authorizeSuccessfully();
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertEquals(AckReasonCode.SUCCESS, resultEvent.getResult().getAckReasonCode());
@@ -153,9 +143,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
         output.authorizerPresent();
         output.nextExtensionOrDefault();
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertTrue(resultEvent.getResult().isAuthorizerPresent());
@@ -166,9 +154,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
     @Test
     public void test_undecided() {
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertFalse(resultEvent.getResult().isAuthorizerPresent());
@@ -180,9 +166,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
     public void test_undecided_authorizers_present() {
         output.authorizerPresent();
         task.onSuccess(output);
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertTrue(resultEvent.getResult().isAuthorizerPresent());
@@ -192,9 +176,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
     @Test
     public void test_failure() {
         task.onFailure(new RuntimeException("test"));
-
         channel.runPendingTasks();
-
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
         assertTrue(resultEvent.getResult().isAuthorizerPresent());

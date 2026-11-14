@@ -23,9 +23,11 @@ import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
 import com.hivemq.util.ObjectMemoryEstimation;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @since 1.4
@@ -34,30 +36,29 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
         implements Mqtt3PUBREL, Mqtt5PUBREL {
 
     private static final int SIZE_NOT_CALCULATED = -1;
-
     private @Nullable Long publishTimestamp;
     private @Nullable Long messageExpiryInterval;
-
     private int sizeInMemory = SIZE_NOT_CALCULATED;
-
-    //MQTT 3
+    // MQTT 3
     public PUBREL(final int packetIdentifier) {
         super(packetIdentifier, Mqtt5PubRelReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    public PUBREL(final int packetIdentifier, final @Nullable Long publishTimestamp, final @Nullable Long messageExpiryInterval) {
+    public PUBREL(
+            final int packetIdentifier,
+            final @Nullable Long publishTimestamp,
+            final @Nullable Long messageExpiryInterval) {
         super(packetIdentifier, Mqtt5PubRelReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
         this.publishTimestamp = publishTimestamp;
         this.messageExpiryInterval = messageExpiryInterval;
     }
 
-    //MQTT 5
+    // MQTT 5
     public PUBREL(
             final int packetIdentifier,
             final @NotNull Mqtt5PubRelReasonCode reasonCode,
             final @Nullable String reasonString,
             final @NotNull Mqtt5UserProperties userProperties) {
-
         super(packetIdentifier, reasonCode, reasonString, userProperties);
     }
 
@@ -68,7 +69,6 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
             final @NotNull Mqtt5UserProperties userProperties,
             final @Nullable Long publishTimestamp,
             final @Nullable Long messageExpiryInterval) {
-
         super(packetIdentifier, reasonCode, reasonString, userProperties);
         this.publishTimestamp = publishTimestamp;
         this.messageExpiryInterval = messageExpiryInterval;
@@ -95,30 +95,27 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
         this.publishTimestamp = publishTimestamp;
     }
 
-    public long getRemainingExpiry() {
-        if (isExpiryDisabled()) {
-            return PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
-        }
-        final long waitingSeconds = (System.currentTimeMillis() - publishTimestamp) / 1000;
-        return Math.max(0, messageExpiryInterval - waitingSeconds);
-    }
-
     public boolean isExpiryDisabled() {
         return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED) ||
                 (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 
-    public boolean hasExpired() {
+    public boolean hasExpired(final long maximalPubRelExpiry) {
         if ((publishTimestamp == null) || (messageExpiryInterval == null)) {
             return false;
         }
-
-        return getRemainingExpiry() == 0;
+        if (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED ||
+                messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET) {
+            return false;
+        }
+        final long waitingSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - publishTimestamp);
+        final long actualMessageExpiry = Math.min(messageExpiryInterval, maximalPubRelExpiry);
+        final long remainingTime = actualMessageExpiry - waitingSeconds;
+        return remainingTime < 1;
     }
 
     public static @NotNull PUBREL from(final @NotNull PubrelPacketImpl packet) {
-        return new PUBREL(
-                packet.getPacketIdentifier(),
+        return new PUBREL(packet.getPacketIdentifier(),
                 Mqtt5PubRelReasonCode.from(packet.getReasonCode()),
                 packet.getReasonString().orElse(null),
                 Mqtt5UserProperties.of(packet.getUserProperties().asInternalList()));
@@ -137,16 +134,14 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
         size += ObjectMemoryEstimation.intSize(); // packet id
         size += ObjectMemoryEstimation.enumSize(); // reason code
         size += ObjectMemoryEstimation.stringSize(getReasonString()); // reason code
-        size += ObjectMemoryEstimation.longWrapperSize(); //publish timestamp
-        size += ObjectMemoryEstimation.longWrapperSize(); //expiry interval
-
-        size += 24; //User Properties Overhead
+        size += ObjectMemoryEstimation.longWrapperSize(); // publish timestamp
+        size += ObjectMemoryEstimation.longWrapperSize(); // expiry interval
+        size += 24; // User Properties Overhead
         for (final MqttUserProperty userProperty : getUserProperties().asList()) {
-            size += 24; //UserProperty Object Overhead
+            size += 24; // UserProperty Object Overhead
             size += ObjectMemoryEstimation.stringSize(userProperty.getName());
             size += ObjectMemoryEstimation.stringSize(userProperty.getValue());
         }
-
         sizeInMemory = size;
         return sizeInMemory;
     }

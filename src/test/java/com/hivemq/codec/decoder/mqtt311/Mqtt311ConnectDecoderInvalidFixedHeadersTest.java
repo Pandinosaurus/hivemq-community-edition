@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import util.DummyClientConnection;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
@@ -36,7 +37,9 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
 public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
@@ -44,26 +47,27 @@ public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
     private MqttConnacker connacker;
     private ClientConnection clientConnection;
     private Mqtt311ConnectDecoder decoder;
-
     @Parameterized.Parameters
     public static Collection<Byte> parameters() {
-        return Arrays.asList(
-                (byte) 0b0001_0001, (byte) 0b0001_0011, (byte) 0b0001_0111, (byte) 0b0001_1111,
-                (byte) 0b0001_0010, (byte) 0b0001_0110, (byte) 0b0001_1110,
-                (byte) 0b0001_0100, (byte) 0b0001_1100,
+        return Arrays.asList((byte) 0b0001_0001,
+                (byte) 0b0001_0011,
+                (byte) 0b0001_0111,
+                (byte) 0b0001_1111,
+                (byte) 0b0001_0010,
+                (byte) 0b0001_0110,
+                (byte) 0b0001_1110,
+                (byte) 0b0001_0100,
+                (byte) 0b0001_1100,
                 (byte) 0b0001_1000);
     }
-
     @Parameterized.Parameter
     public byte invalidBitHeader;
-
     @Before
     public void setUp() throws Exception {
         final Channel channel = mock(Channel.class);
         connacker = mock(MqttConnacker.class);
-        clientConnection = new ClientConnection(channel, null);
-        when(channel.attr(any(AttributeKey.class))).thenReturn(new TestChannelAttribute(clientConnection));
-
+        clientConnection = new DummyClientConnection(channel, null);
+        when(channel.attr(any(AttributeKey.class))).thenReturn(new TestChannelAttribute<>(clientConnection));
         decoder = new Mqtt311ConnectDecoder(connacker,
                 new ClientIds(new HivemqId()),
                 new TestConfigurationBootstrap().getFullConfigurationService(),

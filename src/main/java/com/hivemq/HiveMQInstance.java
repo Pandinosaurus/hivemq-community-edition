@@ -40,14 +40,12 @@ public class HiveMQInstance {
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull AdminService adminService;
-
     @Inject
     HiveMQInstance(
             final @NotNull HiveMQNettyBootstrap nettyBootstrap,
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService) {
-
         this.nettyBootstrap = nettyBootstrap;
         this.payloadPersistence = payloadPersistence;
         this.extensionBootstrap = extensionBootstrap;
@@ -55,14 +53,11 @@ public class HiveMQInstance {
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws Exception {
-
         payloadPersistence.init();
         extensionBootstrap.startExtensionSystem(embeddedExtension).get();
-
         final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
         Checkpoints.checkpoint("listener-started");
         new StartupListenerVerifier(startupInformation).verifyAndPrint();
-
         ((AdminServiceImpl) adminService).hivemqStarted();
     }
 }

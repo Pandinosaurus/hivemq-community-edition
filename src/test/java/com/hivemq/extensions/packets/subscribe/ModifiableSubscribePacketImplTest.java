@@ -28,7 +28,9 @@ import util.TestConfigurationBootstrap;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -37,11 +39,9 @@ import static org.junit.Assert.*;
 public class ModifiableSubscribePacketImplTest {
 
     private @NotNull FullConfigurationService configurationService;
-
     @Before
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getFullConfigurationService();
-
         final SubscribePacketImpl packet = new SubscribePacketImpl(
                 ImmutableList.of(new SubscriptionImpl("topic", Qos.AT_LEAST_ONCE, RetainHandling.SEND, false, false)),
                 UserPropertiesImpl.of(ImmutableList.of()),
@@ -60,13 +60,10 @@ public class ModifiableSubscribePacketImplTest {
                 1);
         final ModifiableSubscribePacketImpl modifiablePacket =
                 new ModifiableSubscribePacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
-        modifiablePacket.getSubscriptions().get(0).setTopicFilter("test");
-
+        modifiablePacket.getSubscriptions().getFirst().setTopicFilter("test");
         assertTrue(modifiablePacket.isModified());
-        assertEquals("test", modifiablePacket.getSubscriptions().get(0).getTopicFilter());
+        assertEquals("test", modifiablePacket.getSubscriptions().getFirst().getTopicFilter());
     }
 
     @Test
@@ -78,11 +75,8 @@ public class ModifiableSubscribePacketImplTest {
                 1);
         final ModifiableSubscribePacketImpl modifiablePacket =
                 new ModifiableSubscribePacketImpl(packet, configurationService);
-
         assertFalse(modifiablePacket.isModified());
-
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
-
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
     }
@@ -96,9 +90,7 @@ public class ModifiableSubscribePacketImplTest {
                 1);
         final ModifiableSubscribePacketImpl modifiablePacket =
                 new ModifiableSubscribePacketImpl(packet, configurationService);
-
         final SubscribePacketImpl copy = modifiablePacket.copy();
-
         assertEquals(packet, copy);
     }
 
@@ -111,11 +103,9 @@ public class ModifiableSubscribePacketImplTest {
                 1);
         final ModifiableSubscribePacketImpl modifiablePacket =
                 new ModifiableSubscribePacketImpl(packet, configurationService);
-
-        modifiablePacket.getSubscriptions().get(0).setTopicFilter("test");
+        modifiablePacket.getSubscriptions().getFirst().setTopicFilter("test");
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
         final SubscribePacketImpl copy = modifiablePacket.copy();
-
         final SubscribePacketImpl expectedPacket = new SubscribePacketImpl(
                 ImmutableList.of(new SubscriptionImpl("test", Qos.AT_LEAST_ONCE, RetainHandling.SEND, false, false)),
                 UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("testName", "testValue"))),

@@ -26,9 +26,7 @@ import com.hivemq.extension.sdk.api.annotations.Immutable;
 public class ValidationError {
 
     private final String message;
-
     public ValidationError(final String message, final Object... args) {
-
         this.message = String.format(message, args);
     }
 
@@ -38,11 +36,13 @@ public class ValidationError {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ValidationError that = (ValidationError) o;
-
         return message != null ? message.equals(that.message) : that.message == null;
     }
 

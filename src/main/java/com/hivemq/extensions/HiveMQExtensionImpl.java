@@ -32,13 +32,19 @@ import java.nio.file.Path;
 public class HiveMQExtensionImpl extends AbstractHiveMQExtension {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HiveMQExtensionImpl.class);
-
     public HiveMQExtensionImpl(
-            final @NotNull HiveMQExtensionEntity pluginEntity, final @NotNull Path pluginFolderPath,
-            final @NotNull ExtensionMain extensionMain, final boolean enabled) {
-        super(pluginEntity.getId(), pluginEntity.getVersion(), pluginEntity.getName(),
-                pluginEntity.getAuthor(), pluginEntity.getPriority(),
-                pluginEntity.getStartPriority(), extensionMain, enabled,
+            final @NotNull HiveMQExtensionEntity pluginEntity,
+            final @NotNull Path pluginFolderPath,
+            final @NotNull ExtensionMain extensionMain,
+            final boolean enabled) {
+        super(pluginEntity.getId(),
+                pluginEntity.getVersion(),
+                pluginEntity.getName(),
+                pluginEntity.getAuthor(),
+                pluginEntity.getPriority(),
+                pluginEntity.getStartPriority(),
+                extensionMain,
+                enabled,
                 pluginFolderPath);
     }
 

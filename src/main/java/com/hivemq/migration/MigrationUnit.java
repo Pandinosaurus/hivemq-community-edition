@@ -28,15 +28,12 @@ public enum MigrationUnit {
     FILE_PERSISTENCE_RETAINED_MESSAGES("retained message file persistence"),
     PAYLOAD_ID_RETAINED_MESSAGES("retained message payload id"),
     PAYLOAD_ID_CLIENT_QUEUE("client queue payload id");
-
     private final @NotNull String description;
-
     MigrationUnit(final @NotNull String description) {
         this.description = description;
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public String toString() {
         return description;
     }

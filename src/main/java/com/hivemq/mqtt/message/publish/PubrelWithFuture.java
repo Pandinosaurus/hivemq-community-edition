@@ -25,17 +25,18 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
  */
 public class PubrelWithFuture extends PUBREL {
 
-    @NotNull
-    private final SettableFuture<PublishStatus> future;
-
+    @NotNull private final SettableFuture<PublishStatus> future;
     public PubrelWithFuture(@NotNull final PUBREL pubrel, @NotNull final SettableFuture<PublishStatus> future) {
-        super(pubrel.getPacketIdentifier(), pubrel.getReasonCode(), pubrel.getReasonString(), pubrel.getUserProperties(),
-                pubrel.getPublishTimestamp(), pubrel.getMessageExpiryInterval());
+        super(pubrel.getPacketIdentifier(),
+                pubrel.getReasonCode(),
+                pubrel.getReasonString(),
+                pubrel.getUserProperties(),
+                pubrel.getPublishTimestamp(),
+                pubrel.getMessageExpiryInterval());
         this.future = future;
     }
 
-    @NotNull
-    public SettableFuture<PublishStatus> getFuture() {
+    @NotNull public SettableFuture<PublishStatus> getFuture() {
         return future;
     }
 }
